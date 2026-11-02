@@ -51,7 +51,9 @@
 .workspace-sidebar-label, .workspace-kicker { margin: 0 0 11px; color: var(--muted); font-size: 9px; font-weight: 850; letter-spacing: .14em; }
 .workspace-nav { display: grid; gap: 7px; }
 .workspace-nav button { display: flex; align-items: center; gap: 11px; min-height: 45px; padding: 0 12px; border: 1px solid transparent; border-radius: 10px; color: var(--muted); background: transparent; cursor: pointer; text-align: left; font-size: 12px; font-weight: 720; transition: background 150ms ease, color 150ms ease, border-color 150ms ease; }
-.workspace-nav button > span { display: grid; width: 25px; height: 25px; place-items: center; border-radius: 8px; color: var(--blue); background: color-mix(in srgb, var(--sky) 13%, var(--card)); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9px; }
+.workspace-nav-icon { display: grid; width: 25px; height: 25px; flex: 0 0 25px; place-items: center; border-radius: 8px; color: var(--blue); background: color-mix(in srgb, var(--sky) 13%, var(--card)); }
+.workspace-nav-icon svg { width: 15px; height: 15px; stroke-width: 1.9; }
+.workspace-nav-label { min-width: 0; }
 .workspace-nav button:hover { color: var(--ink); background: var(--card); }
 .workspace-nav button.is-active { border-color: color-mix(in srgb, var(--sky) 22%, var(--line)); color: var(--ocean); background: var(--card); box-shadow: 0 7px 20px rgba(1,75,137,.06); }
 :root[data-theme="dark"] .workspace-nav button.is-active { color: #8acbff; }
@@ -188,7 +190,8 @@
   .workspace-sidebar-label, .workspace-side-card { display: none; }
   .workspace-nav { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; max-width: 680px; margin: 0 auto; }
   .workspace-nav button { display: grid; min-height: 52px; justify-items: center; align-content: center; gap: 3px; padding: 4px 2px; font-size: clamp(7px, 2.3vw, 9px); white-space: nowrap; }
-  .workspace-nav button > span { width: 20px; height: 20px; }
+  .workspace-nav-icon { width: 20px; height: 20px; flex-basis: 20px; }
+  .workspace-nav-icon svg { width: 14px; height: 14px; }
   .workspace-main { padding: 22px 13px 18px; }
   .workspace-page-heading { display: grid; align-items: start; gap: 13px; }
   .workspace-page-heading h1 { font-size: clamp(27px, 8vw, 36px); }

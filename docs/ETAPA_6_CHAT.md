@@ -1,37 +1,26 @@
-# Etapa 6 — Chat compartilhado
+# Etapa 6 — Chat geral e grupos
 
-## O que é
+## Conversa geral
 
-A aba **Chat** é uma conversa coletiva única para a equipe. Todas as pessoas autenticadas com perfil `active` podem ler e enviar mensagens; elas chegam em tempo real para as demais pessoas conectadas. Cada mensagem mostra autor e horário definidos pelo banco. Mensagens são somente texto, com limite de 2.000 caracteres. Não há conversa privada, anexos ou edição nesta versão.
+A aba **Chat** mantém a sala **Equipe**, visível e disponível a todos os perfis `active`. Mensagens são texto, com autoria/horário atribuídos pelo banco, limite de 2.000 caracteres e entrega em tempo real. Não há anexos nem edição.
 
-Mensagens ficam no banco até serem removidas por um Administrador ativo. Só Administradores veem o controle para remover, e o banco verifica novamente essa permissão. Quando uma mensagem é removida, o texto original é substituído por um aviso fixo; ficam somente o identificador da mensagem e os metadados de autor e remoção. Não há cópia do texto apagado nem expiração automática.
+## Grupos
 
-Como todos os perfis ativos veem a mesma sala, não compartilhe senha, informação médica, dados pessoais desnecessários, documentos ou conteúdo reservado no Chat.
+Qualquer integrante ativo pode criar um grupo, escolher um nome e incluir contas ativas. O criador entra automaticamente. Integrantes do grupo e Administradores ativos podem adicionar novas contas ativas. A lista mostra apenas grupos acessíveis à conta conectada. Em cada grupo, as mensagens e o histórico só podem ser lidos pelos participantes ativos e pelos Administradores; RLS do Supabase aplica essa regra também às consultas diretas e eventos Realtime.
 
-## Antes de usar
+Mensagens da sala geral continuam no mesmo local (`group_id` nulo), sem mudar o histórico existente. Mensagens de grupo não são enviadas por e-mail.
 
-1. Publique o código atualizado no mesmo repositório/site Netlify.
-2. No Supabase que já está conectado, mantenha a migração inicial sem repetir.
-3. Se a migração `20261102133000_shared_content_permissions.sql` de Arquivos/Comunicados ainda não tiver sido aplicada, execute-a uma vez antes de continuar. Se já foi, não execute de novo.
-4. Execute uma vez a nova migração `20261102135200_team_chat.sql` em **SQL Editor → New query**. O arquivo cria a tabela, as políticas RLS, a função de remoção exclusiva para Administradores e inclui a tabela na publicação Realtime. Leia a ordem detalhada em [`INSTRUCOES_NETLIFY_SUPABASE.md`](../INSTRUCOES_NETLIFY_SUPABASE.md).
-5. Faça logout e login com um perfil ativo.
+## Migrations e deploy
 
-O Supabase requer que tabelas estejam na publicação `supabase_realtime` e que políticas de leitura permitam ao usuário receber eventos Postgres. A migração configura esses elementos para o chat. Veja [Postgres Changes — Supabase Docs](https://supabase.com/docs/guides/realtime/postgres-changes).
+1. Atualize os arquivos no mesmo repositório e faça o deploy do site.
+2. Se ainda não foi executada, aplique `20261102135200_team_chat.sql` uma vez para criar a sala geral e as políticas de Chat.
+3. Aplique `20261102161000_team_chat_groups.sql` uma única vez para adicionar grupos, associações, RLS e Realtime para grupos/membros/mensagens. Execute depois da migration da sala geral.
+4. Faça logout/login com perfis ativos e teste com duas contas: crie um grupo, convide a segunda conta e envie mensagem. Uma terceira conta ativa não convidada não deve ver o grupo nem a conversa.
 
-## Como conversar
-
-Abra **Chat**, escreva sua mensagem e clique em **Enviar**. Para ver uma conversa mais antiga, use **Carregar mensagens anteriores**. **Atualizar** busca novamente as mensagens mais recentes se o indicador de conexão estiver desconectado.
-
-Para testar a atualização ao vivo, mantenha o Chat aberto em duas sessões com perfis ativos e envie uma mensagem em uma delas. Ela deve aparecer na outra sem recarregar a página.
+Se não souber se uma migration já foi executada, pare e confira o estado em vez de tentar rodá-la novamente. Não desative RLS.
 
 ## Moderação
 
-Somente uma conta ativa com o papel **Administrador** pode remover uma mensagem, inclusive mensagem escrita por outra pessoa. O app pede uma segunda confirmação. Outros perfis não veem esse botão, e o Supabase também rejeita chamadas diretas sem permissão.
+Somente Administradores ativos podem remover mensagem, tanto na sala geral quanto em grupos. O app solicita confirmação; a função de banco valida novamente o papel e substitui o texto original pelo marcador de remoção.
 
-Use a remoção para mensagens de teste ou conteúdo enviado por engano. A operação elimina o texto original e deixa apenas o marcador de remoção e a data/conta responsável. Ela não pode ser desfeita pela tela.
-
-## Se algo não funcionar
-
-Se a aba estiver ausente, confirme que o novo deploy terminou e que a conta está com perfil `active`. Se a tela disser que o Chat ainda não foi habilitado, aplique `20261102135200_team_chat.sql` ao Supabase correto. Se as mensagens são enviadas mas não aparecem nas outras sessões, confirme que a migração concluiu e faça logout/login. Não remova políticas RLS para tentar corrigir.
-
-Apenas Administradores ativos conseguem remover. Se o controle não aparece, confira o papel da conta no perfil e entre novamente.
+Não use o Chat para senhas, documentos ou conteúdo confidencial. A sala Equipe é comum a todos os perfis ativos; os grupos têm visibilidade restrita aos participantes e Administradores.

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { CalendarDays, ClipboardList, Folder, Megaphone, MessageCircle, type LucideIcon } from 'lucide-react';
 import {
   activityTypeLabels,
   addDays,
@@ -76,6 +77,13 @@ type ActivityFormState = {
 };
 type WeeklyDraft = { status: WeeklyStatus; justification: string };
 type WorkspaceTab = 'week' | 'activities' | 'files' | 'announcements' | 'chat';
+const workspaceTabs: { id: WorkspaceTab; label: string; icon: LucideIcon }[] = [
+  { id: 'chat', label: 'Chat', icon: MessageCircle },
+  { id: 'announcements', label: 'Comunicados', icon: Megaphone },
+  { id: 'week', label: 'Semana', icon: CalendarDays },
+  { id: 'activities', label: 'Atividades', icon: ClipboardList },
+  { id: 'files', label: 'Arquivos', icon: Folder },
+];
 
 const defaultFilters: FilterState = {
   search: '', responsible: '', nucleus: '', area: '', type: '', status: '', from: '', to: '',
@@ -511,21 +519,12 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
         <aside className="workspace-sidebar" aria-label="Navegação do espaço da equipe">
           <p className="workspace-sidebar-label">ROTINA DA EQUIPE</p>
           <nav className="workspace-nav">
-            <button type="button" className={tab === 'week' ? 'is-active' : ''} onClick={() => setTab('week')} aria-current={tab === 'week' ? 'page' : undefined}>
-              <span>01</span> Semana
-            </button>
-            <button type="button" className={tab === 'activities' ? 'is-active' : ''} onClick={() => setTab('activities')} aria-current={tab === 'activities' ? 'page' : undefined}>
-              <span>02</span> Atividades
-            </button>
-            <button type="button" className={tab === 'files' ? 'is-active' : ''} onClick={() => setTab('files')} aria-current={tab === 'files' ? 'page' : undefined}>
-              <span>03</span> Arquivos
-            </button>
-            <button type="button" className={tab === 'announcements' ? 'is-active' : ''} onClick={() => setTab('announcements')} aria-current={tab === 'announcements' ? 'page' : undefined}>
-              <span>04</span> Comunicados
-            </button>
-            <button type="button" className={tab === 'chat' ? 'is-active' : ''} onClick={() => setTab('chat')} aria-current={tab === 'chat' ? 'page' : undefined}>
-              <span>05</span> Chat
-            </button>
+            {workspaceTabs.map(({ id, label, icon: Icon }) => (
+              <button key={id} type="button" className={tab === id ? 'is-active' : ''} onClick={() => setTab(id)} aria-current={tab === id ? 'page' : undefined}>
+                <span className="workspace-nav-icon"><Icon aria-hidden="true" /></span>
+                <span className="workspace-nav-label">{label}</span>
+              </button>
+            ))}
           </nav>
           <div className="workspace-side-card">
             <span className="workspace-side-mark" aria-hidden="true">↗</span>

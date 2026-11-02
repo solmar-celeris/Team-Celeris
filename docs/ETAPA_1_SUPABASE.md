@@ -39,9 +39,9 @@ O esperado é **58 atividades**, **8 áreas**, **2 núcleos**, início **2026-11
 
 ## Importante
 
-- Não habilite cadastro público. O banco cria cada novo perfil como `pending`; a etapa seguinte implementará convite, aprovação e login.
+- Não habilite cadastro público durante a configuração inicial. A ativação automática só entra em vigor depois de executar a migration incremental `20261102160000_auto_activate_new_signups.sql`.
 - Não envie a senha do banco, a chave `service_role` ou tokens. Nunca coloque a `service_role` no navegador.
-- Por decisão posterior da equipe, o cadastro por e-mail/senha fica aberto; cada perfil novo começa `pending` e só vê os dados após aprovação. Veja o [guia de login/aprovação](./ETAPA_2_LOGIN.md).
+- Decisão atual da equipe: novos cadastros públicos por e-mail/senha ficam ativos automaticamente como Integrante depois da migration. Qualquer pessoa que conseguir se cadastrar poderá acessar os dados compartilhados permitidos pela RLS. A confirmação de e-mail do Supabase, se ativada, permanece independente. Veja o [guia de login](./ETAPA_2_LOGIN.md).
 - A URL do projeto e a chave **publishable** são valores públicos destinados ao cliente web. No Netlify/Vercel, configure-as como variáveis de build `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`; nunca use uma chave secreta no front-end.
 
 ## Fontes oficiais consultadas em 01/11/2026

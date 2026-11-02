@@ -243,7 +243,7 @@ export default function AuthPanel() {
         }
       } else {
         setMode('login');
-        setNotice('Se o cadastro puder ser concluído, enviaremos uma confirmação para esse endereço. Depois da confirmação, o acesso aos dados ainda dependerá da aprovação do administrador.');
+          setNotice('Se o cadastro puder ser concluído, enviaremos uma confirmação para esse endereço. Após confirmar o e-mail, o acesso será liberado automaticamente.');
       }
     } catch (error) {
       setErrorMessage(getAuthError(error instanceof Error ? error.message : ''));
@@ -414,11 +414,11 @@ export default function AuthPanel() {
         <p className="eyebrow">SESSÃO ATIVA</p>
         <h2 id="auth-title">Olá, {displayName}</h2>
         {profileLoading ? (
-          <p className="state-copy" role="status">Conferindo se seu perfil foi aprovado…</p>
+          <p className="state-copy" role="status">Conferindo se seu perfil está ativo…</p>
         ) : accessState === 'pending' ? (
           <div className="access-message access-message-warning" role="status">
-            <strong>Cadastro aguardando aprovação</strong>
-            <p>Sua conta ainda não tem acesso aos dados da equipe. Peça ao administrador para aprovar seu perfil.</p>
+            <strong>Perfil pendente</strong>
+            <p>Este perfil já existia antes da ativação automática ou ainda precisa ser conferido após uma atualização. Nenhum dado da equipe é carregado enquanto o perfil estiver pendente; fale com um Administrador.</p>
           </div>
         ) : accessState === 'suspended' ? (
           <div className="access-message access-message-warning" role="status">
@@ -513,7 +513,7 @@ export default function AuthPanel() {
               {submitting ? 'Verificando…' : 'Entrar'} <span aria-hidden="true">→</span>
             </button>
           </form>
-          <p className="auth-footnote">Cadastros novos precisam de aprovação antes de acessar os dados da equipe.</p>
+          <p className="auth-footnote">Novos cadastros são ativados como Integrante. Se a confirmação de e-mail estiver habilitada, confirme o endereço para entrar.</p>
         </>
       )}
 
@@ -521,7 +521,7 @@ export default function AuthPanel() {
         <>
           <p className="eyebrow">FAÇA PARTE DA EQUIPE</p>
           <h2 id="auth-title">Crie seu cadastro.</h2>
-          <p className="form-intro">Depois de confirmar o e-mail, seu perfil ainda precisa ser aprovado pelo administrador.</p>
+          <p className="form-intro">Novos cadastros são ativados automaticamente como Integrante. Se a confirmação de e-mail estiver habilitada, confirme o endereço recebido.</p>
           <form className="login-form" onSubmit={(event) => void handleSignup(event)}>
             <label htmlFor="full-name">Nome</label>
             <input
@@ -572,7 +572,7 @@ export default function AuthPanel() {
               {submitting ? 'Criando cadastro…' : 'Criar cadastro'} <span aria-hidden="true">→</span>
             </button>
           </form>
-          <p className="auth-footnote">Seu perfil começa como pendente; nenhum dado da equipe fica visível até a aprovação.</p>
+          <p className="auth-footnote">A inscrição é aberta: qualquer pessoa que criar uma conta poderá acessar os dados compartilhados permitidos pela equipe. Use somente se for integrante.</p>
         </>
       )}
 

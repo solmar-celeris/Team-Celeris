@@ -4,9 +4,11 @@
 
 ## O que esta versão acrescenta
 
-Após entrar com um perfil `active`, o menu mostra **Semana**, **Atividades**, **Arquivos**, **Comunicados** e **Chat**. Login e cabeçalho usam a logo original `public/assets/celeris-logo.png`; a imagem não foi editada nem substituída.
+Após entrar com um perfil `active`, o menu mostra ícones na ordem **Chat**, **Comunicados**, **Semana**, **Atividades** e **Arquivos**. Login e cabeçalho usam a logo original `public/assets/celeris-logo.png`; a imagem não foi editada nem substituída.
 
-O Chat é uma sala coletiva de texto, compartilhada por todos os perfis ativos e atualizada em tempo real. Cada mensagem mostra autor e horário atribuídos pela sessão e pelo banco. Mensagens podem ter até 2.000 caracteres. Não há mensagens privadas, anexos nem edição de mensagem. Elas permanecem salvas até um Administrador ativo removê-las. Ao remover, o texto é substituído por um aviso e o banco conserva apenas os metadados da remoção. Perfis visitantes, `pending` e `suspended` não têm acesso ao chat.
+O Chat preserva a sala **Equipe** para todos os perfis ativos e permite criar grupos, selecionar integrantes ativos e adicionar mais pessoas depois. O criador já entra no grupo. Somente participantes ativos e Administradores ativos veem grupos; o Supabase RLS também impõe esse limite. Mensagens chegam em tempo real. Elas podem ter até 2.000 caracteres, não aceitam anexos e ficam salvas até um Administrador ativo removê-las. Ao remover, o texto é substituído por um aviso. Mensagens de Chat não enviam e-mail.
+
+Novos cadastros são ativados automaticamente como `member` depois da migration indicada abaixo; como a inscrição é pública, qualquer pessoa que conseguir se cadastrar poderá acessar os dados compartilhados permitidos pela RLS. Contas anteriores que já estavam `pending` não são alteradas. A confirmação de e-mail do Supabase, se habilitada, continua ativa e é independente.
 
 Nas abas Arquivos e Comunicados, as permissões previamente escolhidas continuam valendo: todo perfil ativo pode ver e gerenciar qualquer pasta e comunicado, inclusive de outra área. O app não acessa o conteúdo das pastas do Google Drive.
 
@@ -15,7 +17,7 @@ Nas abas Arquivos e Comunicados, as permissões previamente escolhidas continuam
 1. Baixe e extraia `SolMar_Celeris_Netlify_Atualizado.zip`.
 2. Abra no GitHub Desktop o mesmo repositório local que está ligado ao seu site Netlify. Faça uma cópia de segurança da pasta antes de substituir os arquivos.
 3. Copie o conteúdo de dentro do ZIP para a pasta do repositório e aceite substituir os arquivos com o mesmo caminho. **Não apague nem substitua `.git`.**
-4. Em **Changes**, confirme que aparecem os arquivos do Chat e Perfil, incluindo `TeamChat.tsx`, `ProfileMenu.tsx`, `src/lib/notifications.ts`, `supabase/functions/notify-activity/index.ts` e a migration `20261102152500_profile_email_notifications.sql`.
+4. Em **Changes**, confirme que aparecem os arquivos de navegação e grupos, incluindo `TeamChat.tsx`, `ChatGroupDialog.tsx` e `supabase/migrations/20261102161000_team_chat_groups.sql`, além de Perfil/notificações.
 5. Não envie `.env.local`, `.env.production.local`, `node_modules/` nem `dist/`. O ZIP não contém esses arquivos.
 6. No campo **Summary**, escreva `Adicionar perfil e notificações da equipe`. Clique em **Commit to main** (ou na branch principal que o Netlify acompanha) e depois em **Push origin**.
 7. O Netlify deve iniciar o deploy ao receber o push. Abra o site existente → **Deploys** e aguarde o deploy mais recente terminar com sucesso. Não crie outro site.
@@ -31,18 +33,20 @@ As migrações incrementais são arquivos separados:
 - Se você ainda **não** executou `20261102133000_shared_content_permissions.sql`, aplique-a uma única vez para habilitar a gravação de Arquivos e Comunicados. Se já executou essa migração antes, pule-a — não a repita.
 - Se ainda não executou `20261102135200_team_chat.sql`, aplique-a uma única vez para criar a tabela do Chat, as regras de acesso e habilitar as atualizações em tempo real. Se já executou, pule-a.
 - Aplique `20261102152500_profile_email_notifications.sql` uma única vez para habilitar a edição do próprio nome/foto, o bucket privado e os metadados mínimos de notificação. Se já a executou, pule-a; não repita.
+- Aplique `20261102160000_auto_activate_new_signups.sql` uma única vez para ativar automaticamente **novos** cadastros como `member`. Não promove contas antigas `pending` e não modifica a confirmação de e-mail.
+- Se a migration do Chat ainda não foi executada, primeiro aplique `20261102135200_team_chat.sql`; em seguida aplique `20261102161000_team_chat_groups.sql` uma única vez para criar grupos, membros, regras RLS e Realtime. Se já executou a migration de grupos, pule-a.
 
 Para cada arquivo que ainda precisa ser aplicado: abra o mesmo projeto Supabase usado pelo Netlify, vá a **SQL Editor → New query**, copie o conteúdo integral daquele único arquivo do pacote, confira o projeto selecionado e clique em **Run**. Espere a confirmação de sucesso antes de aplicar o próximo arquivo. O SQL do Chat usa a publicação `supabase_realtime`; ele não pede que você desative RLS nem use uma chave privilegiada.
 
-O Realtime do Supabase envia alterações Postgres para clientes inscritos quando a tabela está na publicação apropriada e há política de leitura autorizando o usuário. O pacote configura isso para `team_chat_messages` e restringe a leitura a perfis ativos. Consulte a [documentação oficial do Supabase Realtime](https://supabase.com/docs/guides/realtime/postgres-changes).
+O Realtime do Supabase envia alterações Postgres para clientes inscritos quando a tabela está na publicação apropriada e há política de leitura autorizando o usuário. O pacote configura isso para mensagens, grupos e membros, com políticas de leitura diferentes para sala geral e grupos. Consulte a [documentação oficial do Supabase Realtime](https://supabase.com/docs/guides/realtime/postgres-changes).
 
 Se você não sabe se a migração antiga de Arquivos/Comunicados já foi executada, **não a repita por tentativa**; pergunte antes para conferir o estado do projeto. A migração inicial e os dados existentes não devem ser apagados.
 
 ## 3. Entrar e testar o Chat
 
-Depois do deploy e da migração, saia do site e entre novamente com um perfil ativo. Abra a aba **Chat**. Envie uma mensagem curta de teste. Para verificar a atualização ao vivo, abra o mesmo site em outra sessão com outro perfil ativo; a mensagem nova deve aparecer sem recarregar a página.
+Depois do deploy e das migrations, saia do site e entre novamente com duas contas ativas. Abra **Chat → Equipe**, envie uma mensagem curta e confirme que ela aparece na outra sessão sem recarregar. Em seguida, crie um grupo com a primeira conta, inclua a segunda e envie uma mensagem: as duas devem vê-la em tempo real. Uma terceira conta ativa, que não entrou no grupo, não deve ver o grupo nem as mensagens dele. Tente também adicionar uma pessoa ativa depois da criação.
 
-Somente uma conta ativa com papel **Administrador** vê o controle de remoção. Teste-o apenas em uma mensagem de teste: confirme a remoção e verifique que ela desaparece nas outras sessões. A pessoa que enviou a mensagem não pode apagá-la se não for Administradora. Não use o Chat para conteúdo confidencial, pois todos os perfis ativos têm acesso à sala.
+Somente uma conta ativa com papel **Administrador** vê o controle de remoção. Teste-o apenas em mensagem de teste: confirme que ela desaparece nas outras sessões, inclusive no grupo. A pessoa que enviou a mensagem não pode apagá-la se não for Administradora. A sala Equipe é comum a todos os ativos; mensagens de grupo ficam restritas a participantes e Administradores. O Chat não envia e-mail.
 
 ## 4. Configurar o Perfil e a foto
 
@@ -75,8 +79,8 @@ Em **Comunicados**, publique título, mensagem e destinatário (toda equipe ou u
 ## 7. Solução de problemas
 
 - **A aba Chat não aparece:** confirme que o novo deploy foi publicado e entre com uma conta de perfil `active`; atualize com Ctrl+F5 (Windows) ou Cmd+Shift+R (Mac).
-- **O Chat avisa que ainda não foi habilitado ou erro de tabela/função ausente:** confirme se `20261102135200_team_chat.sql` foi executada no mesmo Supabase. Não rode novamente a migração inicial.
-- **A mensagem envia, mas não chega em tempo real:** use **Atualizar** no Chat e confirme que a migração do Chat concluiu sem erro e habilitou a publicação Realtime. Não desligue RLS.
+- **O Chat avisa que ainda não foi habilitado ou erro de coluna/tabela ausente:** confirme se `20261102135200_team_chat.sql` e `20261102161000_team_chat_groups.sql` foram executadas no mesmo Supabase, na ordem. Não rode novamente a migração inicial.
+- **A mensagem envia, mas não chega em tempo real:** use **Atualizar** no Chat e confirme que a migration de grupos concluiu sem erro e habilitou a publicação Realtime para mensagens, grupos e membros. Não desligue RLS.
 - **Não aparece o botão de remoção:** isso é esperado para quem não tem papel Administrador. A conta precisa estar ativa e com papel `admin` no perfil.
 - **RLS bloqueou uma ação:** confira se a conta está ativa e se as migrações necessárias foram aplicadas ao projeto certo; não contorne o erro removendo políticas.
 - **O Netlify falhou:** abra o log do deploy e confira `pnpm install --frozen-lockfile`, `pnpm build` e a saída `dist/index.html`. Não crie outro site.
@@ -85,6 +89,6 @@ Nunca envie senhas, chaves, tokens ou URLs privadas em capturas de tela ou mensa
 
 ## Segurança e limites
 
-O pacote contém código e guias, mas não a configuração local de ambiente, `dist`, `node_modules`, `.git`, credenciais de produção ou endpoints de projeto. A nova tabela do Chat revoga `UPDATE` e `DELETE` do navegador; o único caminho de remoção é uma função do banco que verifica o papel Administrador ativo, substitui o texto original e registra o ator e a data. Os demais perfis ativos podem apenas ler e enviar. Visitantes e perfis pendentes/suspensos ficam bloqueados por RLS.
+O pacote contém código e guias, mas não a configuração local de ambiente, `dist`, `node_modules`, `.git` ou credenciais de produção. A tabela do Chat revoga `UPDATE` e `DELETE` do navegador; o único caminho de remoção é uma função que verifica Administrador ativo e substitui o texto original. Todos os perfis ativos podem usar a sala geral; somente participantes ativos e Administradores leem grupos, com RLS. Pela decisão da equipe, novos cadastros públicos são ativados automaticamente como `member`; qualquer pessoa que consiga se cadastrar poderá acessar os dados compartilhados permitidos pelas políticas. Visitantes sem sessão, contas ainda pendentes e perfis suspensos continuam bloqueados.
 
 A verificação local não substitui o teste no seu Supabase e Netlify reais. Nenhum SQL, mensagem ou outra escrita foi executada pelo agente no seu banco remoto, e nenhum deploy foi feito por esta atualização.

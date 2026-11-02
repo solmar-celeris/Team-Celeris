@@ -1,32 +1,24 @@
-# Etapa 2 — login e primeiro administrador
+# Etapa 2 — login e novos cadastros
 
-O app oferece login e cadastro aberto por e-mail/senha, conforme decisão da equipe. Cada nova conta fica `pending`; confirmar o e-mail não dá acesso aos dados. Só a aprovação administrativa libera o perfil.
+A equipe escolheu **ativar automaticamente novos cadastros**. Depois que a migration `20261102160000_auto_activate_new_signups.sql` estiver aplicada, cada conta criada pela página recebe um perfil `active` com papel `member` e sem área. O Administrador não precisa abrir o Supabase para aprovar cada novo integrante.
 
-## 1. Permitir cadastro aberto sem liberar dados
+> **Atenção:** o cadastro é aberto. Qualquer pessoa que consiga criar uma conta — e confirmar o e-mail caso essa exigência esteja habilitada — poderá entrar no espaço e acessar os dados compartilhados permitidos pela RLS. Compartilhe o endereço do site somente com pessoas que devam ter acesso.
 
-1. Abra o projeto SolMar Celeris no [Supabase Dashboard](https://supabase.com/dashboard).
+## 1. Habilitar cadastro e aplicar a ativação automática
 
-1. No menu lateral, entre em **Authentication** e abra as configurações gerais de login (o rótulo pode aparecer como **Settings** ou **Sign In / Providers**).
+1. No Supabase do site, abra **Authentication → Sign In / Providers** (o rótulo pode variar) e mantenha **Allow new users to sign up** ativado.
+2. Não altere a configuração de confirmação de e-mail nesta etapa. Se ela já estiver ligada, o usuário precisa confirmar o endereço recebido; se estiver desligada, o acesso pode começar assim que o cadastro for concluído.
+3. No **SQL Editor**, execute uma única vez o arquivo `supabase/migrations/20261102160000_auto_activate_new_signups.sql`, depois de aplicar a migration inicial. Esse trigger cria somente perfis novos como `active/member`; papel ou área não são aceitos dos metadados enviados pelo navegador.
+4. Confirme a mensagem de sucesso antes de publicar o bundle atualizado pelo fluxo GitHub/Netlify descrito no manual principal.
 
-1. Localize **Allow new users to sign up** e ligue a opção para permitir que a tela crie contas.
+A migration **não altera** contas que já existiam. Perfis já `pending` continuam bloqueados e não são promovidos em lote. Não execute uma atualização sem filtro para liberar registros antigos; se precisar tratar uma conta anterior, revise a identidade individualmente com a coordenação.
 
-1. Salve. Isso permite criar contas no Supabase Auth; não libera dados da equipe. O gatilho cria cada perfil como `pending`, e a RLS bloqueia contas pendentes até a aprovação [1]. Mantenha a confirmação de e-mail ativada se o projeto já a utiliza.
+## 2. Criar o primeiro Administrador
 
-Os links de confirmação e recuperação retornam ao próprio site. Em **Authentication → URL Configuration**, defina a URL do site como `https://solmar-5wzqda5r.manus.space` e permita esse mesmo endereço como URL de redirecionamento. Se publicar também em um domínio Vercel, adicione a origem real separadamente; não use curingas amplos.
+A autoativação dá somente o papel `member`. Ela nunca cria Administradores. Para o primeiro Administrador, use uma conta que você controla e siga a instrução de bootstrap abaixo, com o UUID copiado da sua própria conta no Supabase Auth. Não compartilhe o UID, a senha ou tokens.
 
-Novas contas confirmadas continuam pendentes. Até existir uma tela administrativa segura para aprová-las, o administrador deve conferir cada usuário no Supabase e só então ativar o perfil. Nunca transforme cadastros públicos em administradores automaticamente.
-
-## 2. Criar a primeira conta administradora
-
-Faça a criação pelo painel Supabase, não pela página de login:
-
-1. Em **Authentication → Users**, clique em **Add user**.
-
-1. Crie somente a sua própria conta inicial com e-mail e senha que você controla. Se houver opção de confirmar o e-mail para esse usuário criado pelo proprietário do projeto, confirme-a.
-
-1. Copie o **User UID** mostrado para essa conta. Não copie nem compartilhe a senha.
-
-1. Abra **SQL Editor → New query** e execute a consulta abaixo, trocando apenas o texto `COLE-O-UUID-DO-ADMIN` pelo User UID copiado:
+1. Em **Authentication → Users**, crie/identifique sua própria conta inicial e copie o **User UID**.
+2. Abra **SQL Editor → New query** e substitua o único marcador `COLE-O-UUID-DO-ADMIN` pelo UID da sua própria conta:
 
 ```sql
 update public.profiles
@@ -36,46 +28,27 @@ set role = 'admin',
     approved_by = null,
     updated_at = now()
 where user_id = 'COLE-O-UUID-DO-ADMIN'::uuid
-  and status = 'pending';
+  and status in ('pending', 'active')
+  and role = 'member';
 
 select user_id, role, status, approved_at
 from public.profiles
 where user_id = 'COLE-O-UUID-DO-ADMIN'::uuid;
 ```
 
-O `update` deve afetar uma linha e a conferência deve mostrar `admin` e `active`. Se afetar zero linhas, pare e não execute o `update` retirando a condição; confirme primeiro se o UID é da conta criada e se o perfil existe.
+Confira que apenas a sua linha foi alterada e que a leitura mostra `admin` e `active`. Não retire as condições do `WHERE` se a consulta afetar zero linhas.
 
-## 3. Aprovar um novo cadastro
+## 3. Entrar e recuperar senha
 
-Ainda não há uma tela administrativa de aprovação. Confirme a pessoa em **Authentication → Users** e copie o UID dela e o UID do administrador. Para aprovar como integrante comum, execute no SQL Editor — substitua os dois marcadores, mantendo as aspas:
+Use o e-mail e a senha no site. Se a confirmação de e-mail estiver ligada, primeiro abra o link recebido; depois, o perfil novo já estará ativo. Conta antiga ainda `pending` continua bloqueada e precisa de uma revisão individual.
 
-```sql
-update public.profiles
-set status = 'active',
-    approved_by = '5e3e1d8e-eeeb-45a0-ab6d-1d3f520477ff'::uuid,
-    approved_at = now(),
-    updated_at = now()
-where user_id = '5e3e1d8e-eeeb-45a0-ab6d-1d3f520477ff'::uuid
-  and status = 'pending'
-  and role = 'member';
-```
+Em **Esqueci minha senha**, informe o e-mail e peça o link. Por privacidade, a tela não revela se o endereço está cadastrado. Abra o link no mesmo site, defina e confirme a nova senha e depois entre normalmente. Em **Authentication → URL Configuration**, permita a origem exata do site nos URLs de retorno; evite curingas amplos.
 
-Essa consulta não muda o papel padrão `member`, não promove a administrador e só altera perfil pendente. Confirme que afetou uma linha; se retornar zero, pare e confira os UIDs/status sem remover as condições.
+O SMTP padrão do Supabase tem limites de envio; a equipe já encontrou `email rate limit exceeded`. Não solicite vários links em sequência: aguarde e tente mais tarde. Um SMTP próprio pode envolver custo e não faz parte desta atualização.
 
-## 4. Entrar no app
+## Segurança e referências
 
-Use o e-mail e a senha definidos no cadastro e clique em **Entrar**. Conta aprovada mostra **Acesso aprovado**; conta nova ainda pendente mostra **Cadastro aguardando aprovação**. O painel de atividades ainda não faz parte desta etapa.
+Novos cadastros recebem o menor papel (`member`), sem área nem permissões de administração. As policies RLS continuam sendo a proteção das tabelas; nunca use `service_role` no navegador. Não envie senha, UID, token ou chave em mensagens.
 
-## 5. Redefinir senha
-
-Em **Esqueci minha senha**, informe o e-mail e peça o link. Por privacidade, a tela não revela se o endereço está cadastrado. Abra o link recebido no mesmo site, defina e confirme a nova senha e depois entre normalmente. A lista **Redirect URLs** do Supabase precisa permitir a origem real do site.
-
-O SMTP padrão do Supabase tem limites de envio; a equipe já encontrou `email rate limit exceeded`. Não solicite vários links em sequência: aguarde e tente novamente depois. SMTP próprio pode envolver custo e não será configurado sem uma decisão separada.
-
-Não envie senha, UID, token ou chave no chat. Para depurar, informe somente a mensagem sem dados pessoais e se a consulta afetou 0 ou 1 linha.
-
-## Fontes oficiais
-
-[1]: https://supabase.com/docs/guides/auth/general-configuration "General configuration"
-
-[2]: https://supabase.com/docs/guides/auth/managing-user-data "User Management"
+- [Configuração oficial de Auth](https://supabase.com/docs/guides/auth/general-configuration)
+- [Gerenciar dados dos usuários](https://supabase.com/docs/guides/auth/managing-user-data)

@@ -12,18 +12,18 @@
 ## 2. Login, convites, perfis e permissões
 - [ ] Login por e-mail e senha e/ou conta Google, em português.
 - [ ] A tela de autenticação reformulada, responsiva e em português, mantendo a identidade visual, com ações distintas para Entrar, Criar cadastro e Esqueci minha senha.
-- [ ] Cadastro aberto por e-mail e senha, solicitando nome, e-mail, senha e confirmação; todo perfil novo inicia como `pending`, mesmo após confirmação de e-mail, e não lê dados da equipe até a aprovação do administrador.
-- [ ] Cadastro apresenta uma confirmação clara: se o Supabase exigir verificação, orientar a pessoa a conferir o e-mail; deixar explícito que confirmar o endereço não libera acesso aos dados.
+- [ ] Cadastro aberto por e-mail e senha, solicitando nome, e-mail, senha e confirmação; depois da migration incremental `20261102160000_auto_activate_new_signups.sql`, todo perfil novo inicia automaticamente `active` com papel `member` e sem área, podendo acessar os dados permitidos pela RLS.
+- [ ] Cadastro apresenta uma confirmação clara: se o Supabase exigir verificação, orientar a pessoa a conferir o e-mail; após confirmar, o acesso ao perfil ativo é liberado sem aprovação no Dashboard.
 - [ ] Recuperação de senha envia link Supabase para o e-mail informado; link de recuperação abre o formulário para definir e confirmar nova senha, atualiza a senha na Auth e retorna à entrada.
 - [ ] Mensagem da recuperação não revela se o e-mail está cadastrado; falhas de rede e limites de envio são explicados sem deixar o botão travado.
-- [ ] Ninguém sem perfil ativo e aprovado vê dados da equipe; visitantes sem sessão, perfis `pending` ou `suspended` continuam bloqueados por RLS no banco.
+- [ ] Ninguém sem perfil `active` vê dados da equipe; visitantes sem sessão, perfis `pending` e `suspended` continuam bloqueados por RLS no banco. Novos cadastros tornam-se ativos automaticamente após a migration aprovada pelo usuário.
 - [ ] Administrador (coordenação/Projetos): acesso total, gerencia usuários, áreas e configurações.
 - [ ] Líder de área: edita as atividades e os status da própria área; vê o resto.
 - [ ] Membro: vê tudo e atualiza o status das atividades em que é responsável.
 - [ ] Leitor: só visualiza.
 - [ ] Aplicar permissões no banco conforme os perfis, não apenas esconder ações na interface; usuário pendente ou suspenso e visitante sem login não leem dados da equipe.
 
-**Progresso (02/11/2026):** login/cadastro com aprovação manual funcionam na versão já usada. Perfil ativo entra no espaço da equipe. Semana/Atividades, Arquivos/Comunicados, Chat e Perfil/notificações estão na fonte; cada incremento depende de aplicar a migration correspondente e publicar o bundle. O Painel avançado ainda não foi implementado. Nenhum provedor de e-mail está configurado; envio permanece desligado até habilitação explícita pelo usuário.
+**Progresso (02/11/2026):** novos cadastros passarão a ser automaticamente `active/member` conforme escolha explícita do usuário; a confirmação de e-mail, se já ativa no Supabase, permanece independente. Perfis existentes `pending` não serão promovidos por essa migration. Perfil ativo entra no espaço da equipe. Semana/Atividades, Arquivos/Comunicados, Chat e Perfil/notificações estão na fonte; cada incremento depende de aplicar migration correspondente e publicar o bundle. O Painel avançado ainda não foi implementado. Nenhum provedor de e-mail está configurado; envio permanece desligado.
 
 ## 3. Atividades e filtros
 - [x] Campos: ID automático (sigla da área + número), núcleo (automático pela área), área, nome, descrição, tipo, frequência, condição de execução, responsável, data de início, prazo final, entregável esperado, observações.
@@ -67,7 +67,7 @@
 - [ ] Cores discretas por status: verde (concluído), azul (em andamento), laranja (pendente), vermelho (atrasado), cinza (não se aplica e não iniciado), amarelo (sem atualização).
 - [ ] PWA instalável no celular; cache offline limitado à casca estática e sem persistir dados privados autenticados.
 - [ ] Passo a passo de publicação e guia curto para a equipe entrar e usar; em cada etapa, indicar o que testar e como saber que deu certo.
-- [x] Executar as etapas na ordem: (1) projeto e banco, (2) login e convites, (3) atividades e semana, (4) painel, (5) arquivos e comunicados, (6) Chat, (7) perfil/notificações, (8) publicação e PWA. Etapas 3 e 5 estão na fonte; o Chat espera migração/deploy do usuário; perfil/notificações estão em implementação e e-mail depende de provedor.
+- [x] Executar as etapas na ordem: (1) projeto e banco, (2) login, (3) atividades e semana, (4) painel, (5) arquivos e comunicados, (6) Chat, (7) perfil/notificações, (8) publicação e PWA. Etapas 3, 5, 6 e 7 estão no código; Painel avançado e PWA completos continuam pendentes; migrations/deploy dependem do usuário; e-mail depende de provedor.
 - [ ] Perguntar antes de decidir algo que mude custo, segurança ou privacidade dos dados (LGPD: guardar só o necessário).
 
 ## 10. Identificação no rodapé
@@ -92,7 +92,7 @@
 
 **Evidência:** o pacote anterior extraído em pasta limpa passou em `pnpm install --frozen-lockfile`, `pnpm typecheck` e `pnpm build`; os novos módulos de Chat, perfil e e-mail serão revalidados no pacote desta etapa. ZIPs excluem `.env.local`, `node_modules`, `dist`, `.git`, endpoints pessoais e chaves reais.
 
-**Observação:** o guia Netlify/Supabase segue no ZIP e como arquivo separado; somente a cópia do guia administrativo incluída no ZIP substitui identificadores pessoais por placeholders.
+**Observação:** os guias Netlify/Supabase seguem no ZIP e como arquivos separados; exemplos administrativos usam placeholders e não incluem identificadores pessoais.
 
 ## 13. Etapa 3 — Semana e Atividades
 - [x] Implementar o espaço pós-login com abas Semana e Atividades no mesmo site, conectadas ao Supabase, sem criar outro projeto nem trocar o banco.
@@ -111,16 +111,16 @@
 - [x] Preparar migração incremental `20261102133000_shared_content_permissions.sql`, sem repetir a inicial nem executar SQL remoto; atualizar guias e pacote.
 - [ ] Depois que o usuário aplicar a migração e publicar, verificar no site real leitura/gravação de perfil ativo e bloqueio de pendentes/suspensos.
 
-## 15. Etapa 6 — Chat coletivo
-- [x] Incluir a quinta aba Chat com uma sala única de texto, mantendo as quatro abas atuais; sem mensagens privadas, anexos ou edição nesta etapa.
-- [x] Permitir leitura/envio apenas a perfis ativos; visitante, pendente e suspenso não acessam; todos os perfis ativos participam da mesma sala.
+## 15. Etapa 6 — Chat geral e grupos
+- [x] Preservar a sala geral compartilhada e estendê-la com grupos nomeados, sem anexos ou edição.
+- [x] Permitir leitura/envio da sala geral a perfis ativos; grupos ficam limitados aos participantes ativos e Administradores ativos; visitante, pendente e suspenso não acessam.
 - [x] Exibir autor/horário derivados da sessão e do banco e limitar a mensagem a 2.000 caracteres após remover espaços externos.
 - [x] Usar Supabase Realtime/Postgres Changes com RLS e tabela na publicação `supabase_realtime`.
 - [x] Só Administrador ativo remove qualquer mensagem; demais não veem o controle e chamada direta sem autorização é negada.
 - [x] Remoção troca o texto por marcador fixo, grava ator/hora, não mantém cópia do texto e não expira mensagens automaticamente.
 - [x] Login e workspace referenciam a logo original compartilhada `celeris-logo.png`; manter o arquivo original intacto e não criar nem substituir assets de marca.
 - [x] Código e migração incremental `20261102135200_team_chat.sql` estão no pacote; não executar SQL remoto nem publicar pelo agente.
-- [ ] Depois que o usuário aplicar a migração e publicar, verificar Chat em duas sessões ativas, moderação admin e bloqueio de perfil pendente/suspenso. SQL, sozinho, não publica a interface.
+- [ ] Depois que o usuário aplicar as migrations e publicar, verificar sala geral em duas sessões, criação/convite de grupo, bloqueio de não participantes, moderação Admin e bloqueio de perfil pendente/suspenso. SQL, sozinho, não publica a interface.
 
 ## 16. Etapa 7 — Perfil, foto e avisos de atividade
 - [x] Reutilizar `public.profiles` como cadastro e `activities.responsible_user_id` para vincular tarefas à conta. O seletor atual já oferece os perfis ativos; não criar banco/lista de usuários duplicada.
@@ -137,3 +137,26 @@
 - [ ] Depois que o usuário configurar e publicar, verificar perfil/foto em duas contas e entrega a envolvidos/Admins; não deve sair e-mail de Chat.
 
 **Navegação:** o README aponta para o guia principal na raiz do projeto; o mesmo arquivo acompanha o ZIP.
+
+
+## 17. Navegação com ícones
+- [x] Cada aba tem um ícone acessível e coerente: Chat = balão de conversa; Comunicados = megafone; Semana = calendário; Atividades = lista/checklist; Arquivos = pasta.
+- [x] A ordem é exatamente: **Chat, Comunicados, Semana, Atividades, Arquivos**, em computador e celular; manter nomes escritos e indicar visualmente a aba atual.
+- [x] Usar a biblioteca de ícones já instalada; não trocar nem editar a logo original.
+
+## 18. Grupos no Chat
+- [x] Preservar a sala geral atual e permitir que perfis ativos criem um grupo com nome e selecionem pessoas ativas; o criador entra automaticamente no grupo.
+- [x] Permitir que integrantes do grupo adicionem outras contas ativas depois da criação; mostrar apenas grupos dos quais a pessoa participa. Administradores podem moderar mensagens conforme a regra existente.
+- [x] Integrantes do grupo enviam e recebem mensagens em tempo real; o canal geral continua visível para todos os perfis ativos.
+- [x] RLS no Supabase limita a leitura e envio no grupo a participantes ativos e Administradores; visitantes, pendentes, suspensos e não participantes não leem as mensagens privadas do grupo.
+- [x] Somente Administradores ativos podem remover mensagens, inclusive nas conversas de grupo; manter autoria/horário, limite de 2.000 caracteres e sem anexos ou e-mail de Chat.
+- [x] Criar migration SQL incremental para grupos/membros e associação das mensagens, sem executar SQL remoto nem repetir migrations aplicadas.
+- [ ] Depois do deploy e das migrations, verificar com três contas que pessoa não convidada não vê grupo/histórico e que as mensagens chegam em tempo real.
+
+## 19. Ativação automática de novos cadastros — escolha confirmada
+- [x] O usuário escolheu “B — Ativar automaticamente todo cadastro”; novos perfis criados após a migration ficam `active` automaticamente, sem o Administrador precisar abrir o Supabase para aprovar cada um.
+- [x] Criar trigger/migration incremental que atribui somente `status='active'` e `role='member'` a novos perfis; nunca aceitar `role`, `status` ou área privilegiada enviados no metadata público.
+- [x] Manter a confirmação de e-mail se ela já estiver habilitada no Supabase; ativação do perfil e confirmação de endereço são controles distintos; não desativar o provedor de confirmação sem autorização.
+- [x] A migration não promove automaticamente perfis antigos que já estavam `pending` antes da aplicação; manter essa diferença explícita e preservada.
+- [x] Deixar claro na tela de cadastro que novas contas serão ativadas automaticamente e terão acesso aos dados compartilhados permitidos pela RLS; qualquer pessoa que consiga se cadastrar poderá acessar o espaço.
+- [ ] Depois que a migration e o deploy forem aplicados, confirmar no site se novo cadastro entra imediatamente ou após confirmar o e-mail, conforme a configuração Auth existente.
