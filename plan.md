@@ -18,11 +18,11 @@ Converter o protótipo recebido (`SolMar_Celeris_App.html`, com 58 atividades) e
 3. `activities`: código automático, núcleo/área, nome, descrição, tipo, frequência, condição, responsável, início, prazo, entregável, observações e autoria/datas. O status geral é derivado dos registros semanais e regras de prazo.
 4. `weekly_updates`: atividade, início da semana, status, justificativa, autor e data/hora; unicidade por atividade/semana. Justificativa obrigatória se `Pendente`. `Não se aplica` é um registro explícito, excluído dos cálculos de conclusão e cobrança.
 5. `team_settings`: início do ciclo, padrão `2026-11-09`, duração 60 semanas e opções necessárias.
-6. `drive_folders`: nome, URL validada, área opcional (nulo = Geral), indicação da pasta principal, autoria, remoção e confirmação.
-7. `announcements`: título, mensagem, audiência (equipe/área), autor, data/hora, fixação e remoção.
+6. `drive_folders`: nome, URL validada, área opcional (nulo = Geral), indicação da pasta principal, autoria, remoção lógica e confirmação.
+7. `announcements`: título, mensagem, audiência (equipe/área), autor, data/hora, fixação e remoção lógica.
 8. `audit_log`: tipo e ID do registro, ator, horário, ação e diff mínimo de campos relevantes; sem guardar tokens, senhas ou conteúdo integral de arquivos do Drive.
 
-Todas as tabelas privadas terão RLS `default-deny`. Políticas distinguem pessoa ativa, administrador, líder da área e membro responsável. A função de convite/aprovação verifica o papel no servidor; políticas impedem promoção de papel pelo cliente. As permissões de comunicados e pastas, não detalhadas no pedido, serão fechadas com o usuário antes da implementação dessas ações. O período de retenção dos diffs de auditoria também será confirmado antes de configurá-lo.
+Todas as tabelas privadas terão RLS `default-deny`. Políticas distinguem pessoa ativa, administrador, líder da área e membro responsável. A função de convite/aprovação verifica o papel no servidor; políticas impedem promoção de papel pelo cliente. Decisão expressa do usuário para Arquivos e Comunicados: qualquer perfil ativo (Administrador, Líder, Membro ou Leitor) pode ver, adicionar/remover pastas, escolher a pasta principal, ver todos os comunicados e publicar, fixar/desafixar ou remover qualquer comunicado, inclusive de outra área ou Geral; visitantes e perfis `pending`/`suspended` permanecem sem acesso. A remoção é lógica, preserva o histórico e é auditada. A implementação virá numa migração incremental, preparada para aplicação manual pelo usuário; não será executada pelo agente no banco remoto. O período de retenção dos diffs de auditoria permanece sem alteração.
 
 ## Regras do domínio
 
@@ -36,7 +36,7 @@ Atividade esperada por semana: semanal todas; quinzenal em semanas alternadas de
 - `src/features/weekly/`: calendário de 60 semanas, edição de status/justificativa e alertas de atualização.
 - `src/features/activities/`: formulários, regras/validações, filtros e detalhes de atividades.
 - `src/features/dashboard/`: métricas e gráficos por núcleo, área e semana.
-- `src/features/files/` e `src/features/announcements/`: links do Drive, pastas e comunicados.
+- `src/features/workspace/SharedContentWorkspace.tsx` e `shared-content.css`: navegação de Arquivos/Comunicados, links do Drive e mural, com a mesma identidade visual.
 - `src/features/team/`: usuários, convites e administração, protegidos por papel.
 - `src/lib/`: cliente Supabase, autorização de interface, datas, exportação/importação e validação.
 - `src/styles/`: tokens de cor, modo claro/escuro, tipografia e responsividade.
@@ -51,7 +51,7 @@ Atividade esperada por semana: semanal todas; quinzenal em semanas alternadas de
 2. Login/cadastro/recuperação/perfis: e-mail/senha, cadastro aberto com estado pendente, link de recuperação e atualização de senha, aprovação e controle de acesso; login Google opcional quando credenciais e configuração forem fornecidas.
 3. Atividades/semana: 58 atividades, validações e regras de acompanhamento. A implementação aprovada nesta etapa mostrará as abas operacionais Semana e Atividades após login ativo, consultará o Supabase configurado via URL e chave publishable, respeitará RLS e os papéis existentes, oferecerá leitura, filtros, cadastro/edição autorizados e gravação do status semanal com justificativa obrigatória para Pendente. Não executar migrações, seed, nem escritas de teste no banco remoto.
 4. Painel: indicadores e gráficos.
-5. Arquivos/comunicados: somente links Drive e regras de permissão aprovadas.
+5. Arquivos/comunicados: a aba Arquivos lista pastas visuais, com nome, link `drive.google.com` validado, área ou Geral; clique abre o link em nova aba sem ler arquivos. A pasta principal é destacada; integrantes ativos podem marcar a principal, adicionar pastas e removê-las com confirmação em dois passos. A aba Comunicados publica título, mensagem, destinatário equipe/área e autor automático; fixa/desafixa no topo; ordena por fixação e data mais recente; remove com confirmação em dois passos. Qualquer perfil ativo gerencia qualquer item; a RLS mantém perfis sem acesso bloqueados. A migração incremental está no pacote com instruções para aplicação manual pelo usuário; não será executada pelo agente no banco remoto.
 6. Publicação/PWA: build estático na Vercel ou no Netlify (pacote Netlify separado), Supabase remoto, manifest/service worker sem cache de dados privados, passo a passo da hospedagem selecionada e guia curto de uso. Para o site Netlify publicado pelo usuário, entregar uma cópia-fonte atualizada e instruções para substituir os arquivos do repositório existente; não criar outro site, banco ou repositório e não executar deploy no lugar do usuário.
 
 ## Direção visual

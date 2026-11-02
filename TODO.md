@@ -51,14 +51,14 @@
 - [ ] Gráficos por núcleo e por área; execução semanal das últimas 12 semanas.
 
 ## 6. Pastas e links do Drive
-- [ ] Uma pasta principal do Drive em destaque, como ícone de pasta grande clicável que abre o link.
-- [ ] Botão “Adicionar pasta”: nome da pasta + link do Drive + área (ou “Geral”). Cada pasta aparece como um ícone de pasta clicável que abre o link.
-- [ ] Botão “Remover pasta” em cada uma, com confirmação em dois passos.
-- [ ] Integração por link (abrir no Drive), sem ler o conteúdo das pastas.
+- [x] Uma pasta principal do Drive em destaque, como ícone de pasta grande clicável que abre o link.
+- [x] Botão “Adicionar pasta”: nome da pasta + link do Drive + área (ou “Geral”). Cada pasta aparece como um ícone de pasta clicável que abre o link.
+- [x] Botão “Remover pasta” em cada uma, com confirmação em dois passos.
+- [x] Integração por link (abrir no Drive), sem ler o conteúdo das pastas.
 
 ## 7. Comunicados
-- [ ] Publicar com título, mensagem, destinatário (toda a equipe ou uma área) e autor automático (quem está logado).
-- [ ] Fixar e desafixar no topo, remover com confirmação. Mais recentes primeiro.
+- [x] Publicar com título, mensagem, destinatário (toda a equipe ou uma área) e autor automático (quem está logado).
+- [x] Fixar e desafixar no topo, remover com confirmação. Mais recentes primeiro.
 - [ ] Opcional: aviso de comunicado novo (selo na aba e/ou e-mail).
 
 ## 8. Importação, exportação e alertas opcionais
@@ -71,7 +71,7 @@
 - [ ] Cores discretas por status: verde (concluído), azul (em andamento), laranja (pendente), vermelho (atrasado), cinza (não se aplica e não iniciado), amarelo (sem atualização).
 - [ ] PWA instalável no celular; cache offline limitado à casca estática e sem persistir dados privados autenticados.
 - [x] Passo a passo de atualização Netlify e guia curto para a equipe entrar e usar; explicar como saber que o build terminou sem erro.
-- [x] Executar as etapas na ordem: (1) projeto e banco, (2) login e convites, (3) atividades e semana, (4) painel, (5) arquivos e comunicados, (6) publicação e PWA. Etapa 3 implementada; as etapas seguintes permanecem abertas.
+- [x] Executar as etapas na ordem: (1) projeto e banco, (2) login e convites, (3) atividades e semana, (4) painel, (5) arquivos e comunicados, (6) publicação e PWA. Etapas 3 e 5 implementadas na fonte; painel e etapas seguintes permanecem abertas.
 - [x] Perguntar antes de decidir algo que mude custo, segurança ou privacidade dos dados (LGPD: guardar só o necessário).
 
 ## 10. Identificação no rodapé
@@ -92,7 +92,7 @@
 - [x] Incluir passo a passo de Netlify, variáveis de build públicas, URLs de retorno/Auth, migração SQL, acesso e limites funcionais atuais, com fontes oficiais.
 - [x] Entregar o ZIP e os guias `.md` também como arquivos separados.
 
-**Evidência:** o pacote anterior extraído em pasta limpa passou em `pnpm install --frozen-lockfile`, `pnpm typecheck` e `pnpm build`; o ZIP atualizado foi novamente conferido quanto a arquivos de ambiente, segredos e endpoints específicos.
+**Evidência:** o ZIP final (37 arquivos) foi extraído em pasta limpa e passou em `pnpm install --frozen-lockfile`, `pnpm typecheck` e `pnpm build`; a migração PostgreSQL foi parseada e o pacote foi conferido quanto a arquivos locais, endpoints e chaves específicas.
 
 ## 13. Etapa 3 — abas operacionais Atividades e Semana (escopo aprovado em 02/11/2026)
 - [x] Após login com perfil `active`, mostrar o espaço da equipe em vez de deixar a pessoa na confirmação de aprovação; incluir navegação funcional entre **Semana** e **Atividades**, e manter os estados pendente/suspenso/sem sessão bloqueados.
@@ -110,4 +110,19 @@
 - [x] Validar código, tipagem, build estático e pacote exportado. Gerar novo ZIP-fonte genérico com a implementação, `.env.example` em placeholders, sem arquivos `.env` locais, chaves, `dist`, `node_modules` ou `.git`; incluir instruções para o usuário atualizar o mesmo repositório GitHub e o mesmo site Netlify.
 - [ ] Após o usuário enviar o commit e o Netlify publicar, confirmar no site real que o perfil aprovado abre as abas, que as atividades esperadas aparecem e que um status é salvo com as permissões corretas do Supabase.
 
-**Fora desta entrega:** painel avançado e gráficos, Arquivos/Drive, Comunicados, gestão administrativa dentro do app, importação/exportação e PWA completo. Não apresentar a prévia demo com dados fictícios como painel conectado.
+**Fora desta entrega:** painel avançado e gráficos, gestão administrativa dentro do app, importação/exportação e PWA completo. Não apresentar a prévia demo com dados fictícios como painel conectado.
+
+## 14. Etapa 5 — Arquivos e Comunicados (permissões confirmadas em 02/11/2026)
+
+- [x] Acrescentar as abas funcionais **Arquivos** e **Comunicados** ao mesmo espaço da equipe e ao menu responsivo, mantendo Semana e Atividades.
+- [x] Arquivos consulta `drive_folders` e mostra todas as pastas não removidas como cards/ícones visíveis. Cada card mostra nome e área ou “Geral”; ao clicar, abre o link do Drive em nova aba e não lê nem sincroniza conteúdo da pasta.
+- [x] Disponibilizar **Adicionar pasta** com nome obrigatório, link HTTPS do host `drive.google.com` validado (sem usuário/senha embutidos nem porta personalizada) e área opcional (vazia significa “Geral”). A tela e o banco validam o link; a criação registra automaticamente a conta conectada. Quando ainda não houver pasta principal, a primeira adicionada pode ser destacada como principal.
+- [x] Disponibilizar remoção lógica de cada pasta com dois passos explícitos de confirmação; manter histórico e preencher conta/data da remoção. Não apagar fisicamente o registro nem o conteúdo no Drive.
+- [x] Comunicados consulta `announcements` e exibe para toda pessoa ativa os comunicados ativos destinados à equipe ou a uma área, incluindo outras áreas. Ordenar fixados primeiro e, dentro de cada grupo, mais recentes primeiro.
+- [x] Disponibilizar formulário de publicação com título, mensagem e destinatário (toda a equipe ou uma área). Preencher autor automaticamente com a conta conectada; a pessoa não escolhe nem forja o autor.
+- [x] Permitir fixar/desafixar comunicados existentes e removê-los com dois passos explícitos de confirmação; usar remoção lógica auditada, sem apagar fisicamente os registros.
+- [x] Permissão escolhida pelo usuário: **qualquer perfil ativo** — Administrador, Líder de área, Membro ou Leitor — pode ver, adicionar/remover pastas, definir a pasta principal, ver todos os comunicados, publicar para toda a equipe ou qualquer área, fixar/desafixar e remover qualquer comunicado, inclusive de outra área.
+- [x] A migração complementar mantém leitura/escrita negadas a visitante sem login e perfil `pending`/`suspended`; não inclui `service_role` ou chave privilegiada no cliente; autoria/remoção são atribuídas pelo banco e mantêm auditoria.
+- [x] Criar migração SQL **incremental** para grants, políticas RLS e atribuição segura de autoria/remoção; não modificar nem repetir a migração inicial e não executar SQL no projeto Supabase remoto. Instruir o usuário a aplicar a migração incremental no SQL Editor antes de usar os botões de escrita.
+- [x] Atualizar guia de uso, README e instruções para o mesmo GitHub/Netlify; preparar migração incremental e ZIP sanitizado sem ambientes locais, build, dependências, Git, endpoints específicos ou chaves.
+- [ ] Depois que o usuário aplicar a migração incremental e publicar o commit, confirmar no site real leitura/escrita para perfil ativo e bloqueio de perfis pendentes/suspensos. Nenhuma alteração SQL/deploy foi feita pelo agente.

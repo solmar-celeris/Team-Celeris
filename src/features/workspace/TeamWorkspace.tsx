@@ -21,6 +21,7 @@ import {
   type WeeklyUpdate,
   weeklyStatusLabels,
 } from './domain';
+import SharedContentWorkspace from './SharedContentWorkspace';
 import './workspace.css';
 
 type TeamWorkspaceProps = {
@@ -71,7 +72,7 @@ type ActivityFormState = {
   notes: string;
 };
 type WeeklyDraft = { status: WeeklyStatus; justification: string };
-type WorkspaceTab = 'week' | 'activities';
+type WorkspaceTab = 'week' | 'activities' | 'files' | 'announcements';
 
 const defaultFilters: FilterState = {
   search: '', responsible: '', nucleus: '', area: '', type: '', status: '', from: '', to: '',
@@ -464,6 +465,12 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
             <button type="button" className={tab === 'activities' ? 'is-active' : ''} onClick={() => setTab('activities')} aria-current={tab === 'activities' ? 'page' : undefined}>
               <span>02</span> Atividades
             </button>
+            <button type="button" className={tab === 'files' ? 'is-active' : ''} onClick={() => setTab('files')} aria-current={tab === 'files' ? 'page' : undefined}>
+              <span>03</span> Arquivos
+            </button>
+            <button type="button" className={tab === 'announcements' ? 'is-active' : ''} onClick={() => setTab('announcements')} aria-current={tab === 'announcements' ? 'page' : undefined}>
+              <span>04</span> Comunicados
+            </button>
           </nav>
           <div className="workspace-side-card">
             <span className="workspace-side-mark" aria-hidden="true">↗</span>
@@ -475,17 +482,21 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
         <main className="workspace-main" id="workspace">
           <div className="workspace-page-heading">
             <div>
-              <p className="workspace-kicker">{tab === 'week' ? 'ACOMPANHAMENTO SEMANAL' : 'CADASTRO DA EQUIPE'}</p>
-              <h1>{tab === 'week' ? 'Semana em movimento.' : 'Atividades da equipe.'}</h1>
+              <p className="workspace-kicker">{tab === 'week' ? 'ACOMPANHAMENTO SEMANAL' : tab === 'activities' ? 'CADASTRO DA EQUIPE' : tab === 'files' ? 'LINKS COMPARTILHADOS' : 'MURAL DA EQUIPE'}</p>
+              <h1>{tab === 'week' ? 'Semana em movimento.' : tab === 'activities' ? 'Atividades da equipe.' : tab === 'files' ? 'Arquivos da equipe.' : 'Comunicados da equipe.'}</h1>
               <p className="workspace-subtitle">{tab === 'week'
                 ? 'Registre o que avançou e sinalize o que precisa de atenção.'
-                : 'Consulte, filtre e mantenha as atividades do ciclo atualizadas.'}</p>
+                : tab === 'activities'
+                  ? 'Consulte, filtre e mantenha as atividades do ciclo atualizadas.'
+                  : tab === 'files'
+                    ? 'Acesse atalhos visuais para as pastas compartilhadas.'
+                    : 'Compartilhe avisos com toda a equipe ou com uma área.'}</p>
             </div>
             <div className="workspace-heading-actions">
-              <span className="workspace-cycle-chip">CICLO · {cycleWeeksCount} SEMANAS</span>
-              <button className="workspace-refresh" type="button" onClick={() => void loadData(true)} disabled={loading || refreshing}>
+              {(tab === 'week' || tab === 'activities') && <span className="workspace-cycle-chip">CICLO · {cycleWeeksCount} SEMANAS</span>}
+              {(tab === 'week' || tab === 'activities') && <button className="workspace-refresh" type="button" onClick={() => void loadData(true)} disabled={loading || refreshing}>
                 {refreshing ? 'Atualizando…' : '↻ Atualizar'}
-              </button>
+              </button>}
               {tab === 'activities' && (profile.role === 'admin' || profile.role === 'area_lead') && (
                 <button className="workspace-add-button" type="button" onClick={() => { setDialogError(''); setDialogActivity(null); }}>
                   <span aria-hidden="true">+</span> Nova atividade
@@ -494,7 +505,7 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
             </div>
           </div>
 
-          <p className="workspace-permission-note">{permissionSummary}</p>
+          {(tab === 'week' || tab === 'activities') && <p className="workspace-permission-note">{permissionSummary}</p>}
 
           {errorMessage && (
             <div className="workspace-alert workspace-alert-error" role="alert">
@@ -505,7 +516,7 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
           )}
           {feedback && <p className="workspace-feedback" role="status">{feedback}</p>}
 
-          <div className="workspace-filter-panel">
+          {(tab === 'week' || tab === 'activities') && <div className="workspace-filter-panel">
             <label className="workspace-search">
               <span>Buscar</span>
               <input value={filters.search} onChange={(event) => updateFilter('search', event.target.value)} placeholder="Código, nome, descrição…" />
@@ -554,7 +565,7 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
               <input type="date" value={filters.to} onChange={(event) => updateFilter('to', event.target.value)} />
             </label>
             <button className="workspace-clear-filters" type="button" onClick={() => setFilters(defaultFilters)}>Limpar filtros</button>
-          </div>
+          </div>}
 
           {tab === 'week' && (
             <section className="workspace-week-section" aria-labelledby="selected-week-title">
@@ -701,6 +712,10 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
                 </div>
               )}
             </section>
+          )}
+
+          {(tab === 'files' || tab === 'announcements') && (
+            <SharedContentWorkspace client={client} mode={tab} areas={areas} members={members} />
           )}
 
           <footer className="workspace-footer"><span>UFCI/RJ</span><i />SolMar Celeris <small>· DADOS DO SUPABASE</small></footer>

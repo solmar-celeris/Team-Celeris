@@ -186,9 +186,9 @@
   .workspace-frame { display: block; min-height: calc(100dvh - 64px); }
   .workspace-sidebar { position: sticky; z-index: 3; top: 64px; display: block; padding: 9px 12px; border-right: 0; border-bottom: 1px solid var(--line); background: var(--bg); }
   .workspace-sidebar-label, .workspace-side-card { display: none; }
-  .workspace-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; max-width: 520px; margin: 0 auto; }
-  .workspace-nav button { min-height: 40px; justify-content: center; gap: 8px; padding: 0 8px; font-size: 10px; }
-  .workspace-nav button > span { width: 22px; height: 22px; }
+  .workspace-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; max-width: 640px; margin: 0 auto; }
+  .workspace-nav button { display: grid; min-height: 52px; justify-items: center; align-content: center; gap: 3px; padding: 4px 2px; font-size: clamp(7px, 2.3vw, 9px); white-space: nowrap; }
+  .workspace-nav button > span { width: 20px; height: 20px; }
   .workspace-main { padding: 22px 13px 18px; }
   .workspace-page-heading { display: grid; align-items: start; gap: 13px; }
   .workspace-page-heading h1 { font-size: clamp(27px, 8vw, 36px); }

@@ -1,10 +1,10 @@
 # Etapa 3 — usar as abas Semana e Atividades
 
-Este guia acompanha a versão em que a conta aprovada abre a área operacional. O app consulta o Supabase configurado no Netlify; não use a demonstração visual com dados fictícios como se fosse o banco da equipe.
+Este guia descreve as abas operacionais. Para as abas acrescentadas depois, consulte o [guia Arquivos e Comunicados](./ETAPA_5_ARQUIVOS_COMUNICADOS.md). Não use a demonstração visual com dados fictícios como se fosse o banco da equipe.
 
 ## Primeiro acesso
 
-Depois que o administrador aprovar o perfil, saia e entre novamente no site atualizado. A conta precisa estar com status `active`. O app deve abrir em **Semana**; o menu permite alternar entre **Semana** e **Atividades**. Se ainda aparecer a tela de login, confira o guia [atualização Netlify/Supabase](../INSTRUCOES_NETLIFY_SUPABASE.md#6-se-continuar-vendo-somente-a-tela-de-login).
+Depois que o administrador aprovar o perfil, saia e entre novamente no site atualizado. A conta precisa estar com status `active`. O app deve abrir em **Semana**; o menu permite alternar entre **Semana**, **Atividades**, **Arquivos** e **Comunicados**. Se ainda aparecer a tela de login, confira o guia [atualização Netlify/Supabase](../INSTRUCOES_NETLIFY_SUPABASE.md).
 
 ## Registrar a semana
 
@@ -22,16 +22,16 @@ O botão **Nova atividade** e o botão **Editar atividade** aparecem apenas para
 
 Ao atribuir uma pessoa, selecione-a também em **Vincular à conta da equipe**. Digitar apenas o nome do responsável não vincula a atividade à identidade de login e, por isso, não libera a gravação semanal de um perfil Membro.
 
-## O que cada perfil pode fazer
+## O que cada perfil pode fazer nesta etapa
 
-| Perfil | Acesso nesta etapa |
+| Perfil | Acesso Semana/Atividades |
 | --- | --- |
 | Administrador | Visualiza e edita atividades e status de qualquer área. |
 | Líder de área | Visualiza a equipe; edita atividades e status somente da área associada ao perfil. |
 | Membro | Visualiza a equipe; atualiza o status de atividades atribuídas à sua conta. |
 | Leitor | Somente visualiza. |
 
-A interface reflete as permissões, mas o Supabase RLS valida todas as gravações. Se o banco negar uma ação, não tente resolver desativando RLS ou usando `service_role` no navegador.
+Essa matriz é específica às atividades. Para **Arquivos e Comunicados**, todos os perfis ativos podem ver e gerenciar todos os itens; consulte o guia da Etapa 5. Visitantes e perfis `pending`/`suspended` não acessam dados. O Supabase RLS valida as gravações; não tente resolver erro desativando RLS ou usando `service_role` no navegador.
 
 ## Regras de expectativa e situação
 
@@ -49,4 +49,4 @@ A interface reflete as permissões, mas o Supabase RLS valida todas as gravaçõ
 3. Atualize a página ou clique em **Atualizar**. Se o erro persistir, envie ao administrador o texto do erro sem incluir senha, URL/chave do Supabase ou token.
 4. Não apague registros nem rode a migração SQL novamente só por causa de uma falha de acesso. As permissões devem ser corrigidas no perfil ou na política correspondente.
 
-Painel avançado, gráficos, Drive, Comunicados, administração de usuários, importação/exportação e PWA serão tratados em etapas futuras.
+Painel avançado/gráficos, administração de usuários, importação/exportação e PWA continuam em etapas futuras. Arquivos e Comunicados estão descritos em seu guia próprio.
