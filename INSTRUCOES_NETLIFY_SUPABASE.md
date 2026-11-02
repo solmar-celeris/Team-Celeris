@@ -1,93 +1,100 @@
-# SolMar Celeris — publicar no Netlify e configurar o Supabase
+# SolMar Celeris — atualizar o site no Netlify e conectar ao Supabase
 
-**Atualizado em 02/11/2026.** Este guia acompanha o ZIP de código-fonte. Ele não cria contas, não lê dados privados do seu Supabase e não publica o site por você.
+**Revisado em 02/11/2026.** Este manual acompanha o ZIP de código-fonte. Ele não acessa sua conta, não muda o banco Supabase e não publica o site por você.
 
-## Antes de começar: o que o pacote contém
+## O que esta versão faz
 
-O ZIP contém o código atual do SolMar Celeris, os arquivos de configuração do build, a migração SQL inicial e as instruções. O front-end usa React + TypeScript + Vite; o Supabase continua sendo o serviço externo de autenticação e banco.
+Depois que uma conta tem perfil **ativo/aprovado**, o site abre as abas **Semana** e **Atividades**. Elas consultam o Supabase configurado no Netlify. A equipe pode listar e filtrar atividades, registrar status por semana e, conforme o papel e a área, cadastrar ou editar atividades. O código da atividade e o ator/data das alterações são gerados/registrados pelo banco.
 
-Já estão implementados o login por e-mail/senha, o formulário de cadastro com perfil pendente, a recuperação e a definição de nova senha. A migração cria áreas/núcleos, perfis, atividades, acompanhamento semanal, pastas, comunicados, auditoria, RLS e as 58 atividades de exemplo. A logo foi incluída como arquivo local para não depender do armazenamento da Manus.
+A versão não inclui ainda painel avançado com gráficos, pastas/links do Drive, comunicados, tela administrativa de usuários, importação/exportação nem PWA completo. A aprovação de novos perfis permanece manual. A prévia `?demo=dashboard` é uma demonstração local com dados fictícios — não é o sistema operacional e não aparece no build de produção.
 
-**O site ainda não é o sistema operacional completo.** Depois que alguém entra, o Painel funcional, a edição das atividades e dos status semanais conectada ao banco, Arquivos, Comunicados, gestão de usuários, importação/exportação e PWA ainda estão pendentes. A prévia `?demo=dashboard` contém dados fictícios, só funciona no Vite local e não é compilada para produção. Não use esses números como dados da equipe.
+## Importante: não crie outro site nem outro banco
 
-## 1. Supabase: mantenha o banco correto
+Se o Supabase que você já configurou contém as tabelas e as 58 atividades iniciais, **mantenha esse projeto**. Não execute a migração inicial novamente: ela cria tipos, tabelas, políticas, gatilhos e dados de exemplo e é destinada a um banco vazio.
 
-Se você já criou o projeto Supabase e executou a migração SQL inicial, **não execute a migração novamente**: ela é destinada a um banco novo/vazio. Confirme no SQL Editor que há 58 atividades, 8 áreas, 2 núcleos e um ciclo de 60 semanas iniciando em 09/11/2026. O guia [`docs/ETAPA_1_SUPABASE.md`](./docs/ETAPA_1_SUPABASE.md) contém a consulta de conferência.
+Também não precisa recriar o site Netlify. A atualização do código é feita no mesmo repositório GitHub ligado ao site existente; o Netlify detecta o novo commit e publica no mesmo endereço. A atualização do front-end não apaga nem recria o banco.
 
-Se for necessário criar outro projeto, use **South America (São Paulo), `sa-east-1`**. Essa foi a região escolhida para os dados da equipe; se não estiver disponível na sua conta, pare e confirme antes de escolher outra.
+## 1. Confirme o Supabase que o site deve usar
 
-O cadastro por e-mail/senha fica aberto conforme sua decisão, mas isso **não** libera acesso ao banco: cada perfil recém-criado nasce `pending`. Só depois de um administrador verificar a pessoa e aprová-la ela poderá ler os dados. A aprovação atual é manual no Supabase; a tela de administração ainda não foi implementada. Use o passo a passo atualizado [`docs/ETAPA_2_LOGIN.md`](./docs/ETAPA_2_LOGIN.md) e não conceda papel de administrador a um novo cadastro por engano.
+No Supabase, abra o projeto correto e confira em **Settings → API Keys** (ou **Connect**) o endereço do projeto e uma chave **publishable**. A tela `Atividades` precisa consultar as tabelas `activities`, `areas`, `nuclei`, `profiles`, `team_settings` e `weekly_updates` criadas pela migração inicial.
 
-A confirmação de e-mail está ativada no projeto observado. Portanto, a pessoa precisa abrir o e-mail do Auth e confirmar o endereço antes de entrar. O projeto já apresentou limite de envio de e-mail; se aparecer `email rate limit exceeded`, pare de solicitar novos links e aguarde o limite expirar. Não configure um serviço SMTP novo sem decidir antes o provedor, custo e tratamento dos endereços da equipe.
+Se a migração já foi aplicada no seu projeto, não a rode novamente. O guia [`docs/ETAPA_1_SUPABASE.md`](./docs/ETAPA_1_SUPABASE.md) tem instruções de conferência. Se as tabelas não existirem, pare antes de executar SQL: confirme primeiro se abriu o projeto Supabase correto.
 
-## 2. Chaves e variáveis de build
+## 2. Variáveis no Netlify — atenção aos cadeados
 
-No painel Supabase, abra **Connect** ou **Settings → API Keys** e copie a URL do projeto e a chave **publishable**. No Netlify, cadastre estas duas variáveis em **Project configuration → Environment variables**, incluindo o escopo **Builds**:
+No site Netlify existente, abra **Project configuration → Environment variables**. Configure as duas variáveis abaixo com os valores do Supabase que deve atender esse site:
 
 ```text
 VITE_SUPABASE_URL=https://SEU-PROJETO.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
 
-Use somente os valores do Supabase que deve atender o site publicado. Não copie para o ZIP, Git, HTML ou browser a senha do banco, `sb_secret_...`, `service_role` ou qualquer chave privilegiada. O prefixo `VITE_` faz o Vite embutir o valor no JavaScript entregue ao navegador; por isso essas variáveis só podem conter o endereço e a chave pública/publishable. A segurança dos dados depende das políticas RLS da migração, não do segredo da chave pública. Veja [chaves Supabase](https://supabase.com/docs/guides/getting-started/api-keys) e [variáveis Vite](https://vite.dev/guide/env-and-mode).
+Esses valores são **públicos por design**: o Vite os coloca no JavaScript que o navegador precisa carregar. Portanto, classifique-os como **Plain text / não secreto**, e garanta que o escopo inclua **Builds**. Não use a senha do banco, `sb_secret_...` nem `service_role` nessas variáveis. Não coloque segredos no ZIP, GitHub, HTML ou browser.
 
-As variáveis de build não substituem configuração de Auth e não atualizam um `dist` já gerado. Sempre faça um novo build/deploy depois de alterá-las.
+Se o log do Netlify informar que o secrets scanner encontrou `VITE_SUPABASE_URL` ou `VITE_SUPABASE_PUBLISHABLE_KEY` no `dist`, confira se elas foram marcadas acidentalmente como Secret. Corrija o tipo para Plain text: não desative a varredura de segredos e não omita a pasta `dist` da verificação. Após alterar variáveis, é necessário executar um novo deploy/build.
 
-## 3. Publicação recomendada: ligar o Git ao Netlify
+Referências oficiais: [chaves do Supabase](https://supabase.com/docs/guides/getting-started/api-keys), [variáveis do Vite](https://vite.dev/guide/env-and-mode) e [secret scanning do Netlify](https://docs.netlify.com/manage/security/secret-scanning/).
 
-1. Baixe e extraia `SolMar_Celeris_Netlify.zip` no computador. Não publique o ZIP diretamente.
-2. Crie um repositório Git **privado** no GitHub ou GitLab e envie a pasta extraída. Antes de enviar, confirme que `.env.local`, `.env.production.local`, `node_modules/`, `dist/` e `.git/` não foram adicionados. O ZIP já exclui credenciais e pastas geradas.
-3. No Netlify, escolha **Add new project → Import an existing project**, conecte o provedor Git e selecione esse repositório.
-4. Deixe a base do projeto na raiz. O `netlify.toml` define o comando `pnpm build`, o diretório publicado `dist`, Node 22, instalação congelada pelo lockfile e fallback para rotas do app. O `package.json` fixa `pnpm@11.25.0`; o Netlify reconhece `pnpm-lock.yaml` e usa Corepack para essa versão.
-5. Cadastre as duas variáveis da seção 2 no Netlify **antes** do primeiro build e execute o deploy. Abra o log: a instalação, `tsc` e `vite build` devem terminar sem erro; o diretório `dist` precisa conter `index.html`.
-6. Abra a URL Netlify gerada e confira a tela de login. O deploy do Netlify não altera nem migra o banco Supabase.
+## 3. Atualize o repositório GitHub que já está ligado ao Netlify
 
-O diretório `dist` contém HTML, CSS e JavaScript estáticos. A documentação do Netlify indica `dist` para Vite e permite configurar build/diretório tanto pelo painel como por `netlify.toml` [1–3].
+1. Baixe o ZIP novo `SolMar_Celeris_Netlify_Atualizado.zip` e extraia seu conteúdo no computador.
+2. Recomendado para uma substituição segura: instale/abra o **GitHub Desktop** e selecione **File → Clone repository**. Escolha o repositório GitHub que já alimenta o site Netlify e clone-o no computador. Se já tem uma cópia local desse repositório, abra-a em vez de cloná-la novamente.
+3. Faça uma cópia de segurança da pasta local do repositório. Depois, copie o conteúdo extraído do ZIP para dentro dessa pasta, permitindo substituir os arquivos de mesmo nome.
+4. **Não apague nem substitua a pasta `.git`** do clone. Não copie arquivos `.env.local`, `.env.production.local`, `node_modules` ou `dist` para o GitHub. O ZIP não precisa desses arquivos.
+5. No GitHub Desktop, confira a aba **Changes**. Deve aparecer a atualização de `AuthPanel.tsx`, os novos arquivos `src/features/workspace/` e os documentos. Escreva uma mensagem, por exemplo `Adicionar abas Semana e Atividades`, clique em **Commit to main** (ou na branch principal escolhida) e depois em **Push origin**.
+6. Abra o Netlify e selecione o mesmo site. Em **Deploys**, acompanhe o novo deploy iniciado pelo commit. Aguarde o estado publicado/success antes de abrir o endereço público.
 
-## 4. Alternativa: compilar no computador e enviar `dist`
+Você não precisa criar outro repositório, importar outro projeto Netlify nem configurar um novo domínio. A documentação oficial do GitHub explica [clonar repositórios](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) e [adicionar arquivos ao repositório](https://docs.github.com/en/repositories/working-with-files/managing-files/adding-a-file-to-a-repository).
 
-Para um deploy manual sem ligar um repositório ao Netlify, é necessário compilar antes. Use Node.js 22.12 ou superior, Corepack e pnpm 11.25.0. Na raiz extraída do projeto:
+O `netlify.toml` deste pacote define o build Vite, a pasta publicada `dist`, Node e o fallback da aplicação. As dependências estão fixadas pelo `package.json` e pelo `pnpm-lock.yaml`. Em caso de erro no novo deploy, abra o log e confira se `pnpm install --frozen-lockfile`, `pnpm build`, `tsc` e `vite build` terminam sem erro. A saída precisa conter `dist/index.html`.
 
-```bash
-corepack enable
-pnpm install --frozen-lockfile
-pnpm build
-```
+## 4. Supabase Auth: mantenha o endereço do site na lista de retorno
 
-Antes do build manual, crie localmente um arquivo `.env.production.local` com as duas variáveis públicas da seção 2. Ele é ignorado pelo Git; não o envie. Depois do build, arraste **somente a pasta `dist`** para a área de deploy manual do site Netlify. Se trocar a URL ou a chave pública, ajuste esse arquivo e compile de novo. O Netlify orienta descompactar arquivos `.zip` de projeto e, para upload pré-compilado, enviar a pasta de saída, não o ZIP de fonte [3].
+Depois do deploy, copie a URL pública exata do site (por exemplo, `https://seu-site.netlify.app`). No projeto Supabase correto, abra **Authentication → URL Configuration**:
 
-## 5. URL de confirmação e recuperação de senha
+- **Site URL:** o endereço principal publicado do Netlify.
+- **Redirect URLs:** inclua uma origem correspondente ao endereço publicado, por exemplo `https://seu-site.netlify.app/**`.
+- Se usar deploy previews, permita um padrão específico dos previews do seu site; não use um curinga aberto para qualquer domínio.
 
-Depois de criar o site, copie a URL pública final, por exemplo `https://seu-site.netlify.app`. No projeto Supabase, abra **Authentication → URL Configuration**:
+Isso permite que confirmação de e-mail e recuperação de senha retornem ao site publicado. Quando o domínio mudar, revise essas URLs. Consulte a [documentação oficial de Redirect URLs do Supabase](https://supabase.com/docs/guides/auth/redirect-urls).
 
-- Configure **Site URL** com a URL pública principal do Netlify.
-- Em **Redirect URLs**, permita essa origem exata, por exemplo `https://seu-site.netlify.app/**` (ou o padrão mais restrito que corresponda aos caminhos usados).
-- Se for testar **Deploy Previews** do Netlify, acrescente um padrão específico para os previews do seu site/equipe; não use um curinga aberto para qualquer domínio.
+## 5. Acesso e uso depois do deploy
 
-O app envia a origem atual como URL de retorno para confirmação e recuperação de senha. O Supabase exige que ela corresponda a um retorno permitido; a documentação recomenda deixar a URL oficial como `Site URL` e limitar a allowlist de produção [4]. Ao trocar de domínio ou usar domínio personalizado, atualize essa configuração.
+1. Entre no site publicado com e-mail e senha. Se ainda não houver perfil ativo, confirme o e-mail (se o Auth pedir) e aguarde a aprovação manual; confirmar o e-mail não aprova o perfil.
+2. Quando o acesso for aprovado, o site deve sair da confirmação de login e abrir **Semana**. Use **Atividades** no menu para consultar/cadastrar atividades.
+3. Em **Semana**, escolha uma das semanas do ciclo. Atividades sem registro aparecem como **Sem atualização** e **Não iniciado**. O estado só é gravado quando a pessoa escolhe e salva; a tela não cria status silenciosamente.
+4. Para registrar **Pendente**, escreva a justificativa antes de salvar. **Não se aplica** deve ser escolhido quando realmente não houver demanda; não é contado como concluído nem pendente.
+5. Em **Atividades**, busque por texto e filtre por responsável, núcleo, área, tipo, situação ou período. Administrador e líder de área autorizados podem cadastrar/editar; o banco valida as mesmas permissões.
 
-## 6. Como confirmar cadastro e acesso
+O painel de permissões é: Administrador edita atividades e status em toda a equipe; Líder de área edita somente a própria área; Membro vê tudo e pode atualizar status de atividades vinculadas à sua conta; Leitor vê sem editar. As políticas RLS do Supabase continuam sendo a barreira final — não as desative para corrigir erros da interface.
 
-1. Na tela pública, faça um cadastro de teste com um e-mail controlado pela equipe.
-2. Abra e confirme o e-mail do Supabase, se solicitado. A confirmação de endereço ainda **não** aprova o perfil.
-3. Peça a um administrador que localize o perfil `pending`, confira a identidade e o papel/área corretos, e só então aprove. Até existir a tela administrativa, siga o procedimento manual no [`docs/ETAPA_2_LOGIN.md`](./docs/ETAPA_2_LOGIN.md). Depois, teste o login normal.
-4. Para a redefinição, peça um único link, abra-o no mesmo domínio Netlify e defina a nova senha. Se a mensagem de rate limit voltar, não repita em sequência. O envio depende da configuração de e-mail do Supabase.
+A migração inicial atribui `A definir` como responsável e não vincula as 58 atividades a uma conta. Para um membro atualizar status, um administrador/líder autorizado precisa editar a atividade e selecionar a conta da pessoa em **Vincular à conta da equipe**. Sem vínculo, o banco pode bloquear a atualização do membro; isso é intencional.
 
-## 7. Limites e segurança deste estágio
+## 6. Se continuar vendo somente a tela de login
 
-- O Supabase existente não deve ser substituído nem sua migração repetida apenas porque o front-end foi para Netlify.
-- Esta interface usa apenas a chave pública Supabase; a configuração no Netlify é de **build**, não é um segredo server-side. Nunca cole uma chave secreta ou a senha do banco num campo `VITE_*`.
-- O pacote inclui o código existente, não as telas operacionais ainda pendentes. Publicar o ZIP disponibiliza somente o que foi implementado; não habilita atividades, gráficos conectados, comunicados, gestão de membros nem PWA.
-- Não inclua dados reais da equipe no modo demo. A demo só existe em desenvolvimento e não é uma via de acesso ao site publicado.
-- Netlify e Supabase podem alterar limites/planos. Confira-os nas respectivas contas antes de usar com dados reais.
+- Confira em **Deploys** se o novo commit realmente foi publicado. Uma mudança no GitHub não altera um deploy que falhou.
+- Atualize a página do site com recarregamento forçado (Ctrl+F5 no Windows; Cmd+Shift+R no Mac) ou abra em uma janela privada.
+- Confirme que as duas variáveis do Netlify apontam para o mesmo projeto Supabase onde está o seu perfil e a migração. Depois de mudar variável, faça novo deploy.
+- Confirme no Supabase que o perfil está `active`, não `pending`/`suspended`, e que as tabelas não foram recriadas ou apagadas.
+- Se a tela informar erro de consulta, copie apenas o texto do erro, sem enviar senha, URL privada, chave ou token. Erro de permissão deve ser resolvido no perfil/política correta; não torne o banco público.
+- Para confirmação ou redefinição de senha, ajuste as Redirect URLs na seção 4. Se aparecer `email rate limit exceeded`, aguarde antes de pedir outro e-mail.
 
-## Fontes oficiais consultadas em 02/11/2026
+## 7. Limites e segurança
 
-1. [Netlify — Vite on Netlify](https://docs.netlify.com/build/frameworks/framework-setup-guides/vite/) — comando de build e saída `dist`.
-2. [Netlify — Manage build dependencies](https://docs.netlify.com/build/configure-builds/manage-dependencies/) — uso de `pnpm-lock.yaml` e escolha da versão via `packageManager`/Corepack.
-3. [Netlify — Create deploys](https://docs.netlify.com/deploy/create-deploys/) e [Build configuration overview](https://docs.netlify.com/build/configure-builds/overview/) — deploy manual, extração de ZIP e configuração por `netlify.toml`.
-4. [Supabase — Redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls) — Site URL e allowlist de retornos, inclusive previews Netlify.
-5. [Supabase — API keys](https://supabase.com/docs/guides/getting-started/api-keys) — chave publishable para browser versus chave secret para servidor.
-6. [Vite — Env Variables and Modes](https://vite.dev/guide/env-and-mode) — prefixo `VITE_`, build e exposição de valores no bundle.
+- O pacote conecta ao projeto indicado pelas variáveis de build. Não inclui URL/chave do projeto específico, `.env.local`, `dist`, dependências instaladas, `.git`, senhas ou chaves administrativas.
+- `VITE_*` é sempre visível no navegador; coloque ali somente URL e chave publishable. A chave pública não substitui RLS.
+- Os formulários mostram e gravam dados conforme as tabelas da migração original; nenhum teste desta atualização gravou ou apagou dados no Supabase remoto.
+- Ainda não há painel avançado, gráficos, arquivos do Drive, comunicados, gestão administrativa interna, importação/exportação ou PWA completo.
+- Netlify e Supabase podem alterar seus limites e planos; confira as condições vigentes antes de usar com dados de equipe.
 
-7. [Netlify — Build environment variables](https://docs.netlify.com/build/configure-builds/environment-variables/) — cadastrar valores no painel e incluir o escopo Builds.
+## Fontes oficiais
+
+- [Netlify: Vite](https://docs.netlify.com/build/frameworks/framework-setup-guides/vite/)
+- [Netlify: configuração de builds](https://docs.netlify.com/build/configure-builds/overview/)
+- [Netlify: variáveis de ambiente](https://docs.netlify.com/build/configure-builds/environment-variables/)
+- [Netlify: secret scanning](https://docs.netlify.com/manage/security/secret-scanning/)
+- [GitHub: clonar um repositório](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
+- [GitHub: adicionar arquivos a um repositório](https://docs.github.com/en/repositories/working-with-files/managing-files/adding-a-file-to-a-repository)
+- [Supabase: Redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls)
+- [Supabase: chaves de API](https://supabase.com/docs/guides/getting-started/api-keys)
+- [Vite: variáveis de ambiente](https://vite.dev/guide/env-and-mode)

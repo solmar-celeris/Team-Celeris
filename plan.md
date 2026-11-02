@@ -49,10 +49,10 @@ Atividade esperada por semana: semanal todas; quinzenal em semanas alternadas de
 
 1. Preparar a aplicação e o banco: estrutura, esquema SQL revisável, RLS, dados iniciais e instruções para criação/configuração do projeto Supabase. Não executar migração em projeto externo do usuário sem que ele a aplique conscientemente.
 2. Login/cadastro/recuperação/perfis: e-mail/senha, cadastro aberto com estado pendente, link de recuperação e atualização de senha, aprovação e controle de acesso; login Google opcional quando credenciais e configuração forem fornecidas.
-3. Atividades/semana: 58 atividades, validações e regras de acompanhamento.
+3. Atividades/semana: 58 atividades, validações e regras de acompanhamento. A implementação aprovada nesta etapa mostrará as abas operacionais Semana e Atividades após login ativo, consultará o Supabase configurado via URL e chave publishable, respeitará RLS e os papéis existentes, oferecerá leitura, filtros, cadastro/edição autorizados e gravação do status semanal com justificativa obrigatória para Pendente. Não executar migrações, seed, nem escritas de teste no banco remoto.
 4. Painel: indicadores e gráficos.
 5. Arquivos/comunicados: somente links Drive e regras de permissão aprovadas.
-6. Publicação/PWA: build estático na Vercel ou no Netlify (pacote Netlify separado), Supabase remoto, manifest/service worker sem cache de dados privados, passo a passo da hospedagem selecionada e guia curto de uso.
+6. Publicação/PWA: build estático na Vercel ou no Netlify (pacote Netlify separado), Supabase remoto, manifest/service worker sem cache de dados privados, passo a passo da hospedagem selecionada e guia curto de uso. Para o site Netlify publicado pelo usuário, entregar uma cópia-fonte atualizada e instruções para substituir os arquivos do repositório existente; não criar outro site, banco ou repositório e não executar deploy no lugar do usuário.
 
 ## Direção visual
 
