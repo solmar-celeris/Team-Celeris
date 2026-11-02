@@ -186,7 +186,7 @@
   .workspace-frame { display: block; min-height: calc(100dvh - 64px); }
   .workspace-sidebar { position: sticky; z-index: 3; top: 64px; display: block; padding: 9px 12px; border-right: 0; border-bottom: 1px solid var(--line); background: var(--bg); }
   .workspace-sidebar-label, .workspace-side-card { display: none; }
-  .workspace-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; max-width: 640px; margin: 0 auto; }
+  .workspace-nav { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; max-width: 680px; margin: 0 auto; }
   .workspace-nav button { display: grid; min-height: 52px; justify-items: center; align-content: center; gap: 3px; padding: 4px 2px; font-size: clamp(7px, 2.3vw, 9px); white-space: nowrap; }
   .workspace-nav button > span { width: 20px; height: 20px; }
   .workspace-main { padding: 22px 13px 18px; }
@@ -208,6 +208,8 @@
   .workspace-dialog { max-height: calc(100dvh - 20px); padding: 17px; border-radius: 13px; }
 }
 @media (max-width: 420px) {
+  .workspace-topbar { gap: 8px; padding-right: 10px; padding-left: 10px; }
+  .workspace-brand span, .workspace-role { display: none; }
   .workspace-brand small { max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .workspace-role { gap: 5px; max-width: 98px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .workspace-page-heading h1 { max-width: 290px; }

@@ -57,8 +57,6 @@ export default function App() {
           <div className="story-rail" aria-hidden="true">
             <span className="rail-sun" />
             <span className="rail-line" />
-            <span className="rail-boat">SC</span>
-            <span className="rail-line" />
             <span className="rail-end">ROTA DA EQUIPE</span>
           </div>
           <p className="story-note">Cadastro aberto; o acesso aos dados depende da aprovação do administrador.</p>

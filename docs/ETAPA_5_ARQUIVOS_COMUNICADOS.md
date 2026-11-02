@@ -38,3 +38,5 @@ Use **Fixar** para colocar no topo; os comunicados fixados aparecem primeiro, co
 Substitua os arquivos do repositório conectado ao Netlify pelos arquivos do ZIP atualizado, mantendo a pasta `.git` (ou use GitHub Desktop como na atualização anterior). Faça commit e push e aguarde o deploy terminar. As variáveis públicas do Supabase permanecem como já configuradas; não crie novo projeto, site ou banco.
 
 Se surgir erro de RLS ou função ausente ao gravar, confirme que aplicou a migração incremental uma única vez no mesmo projeto Supabase e entrou novamente no site. Não resolva desativando RLS.
+
+Para a aba Chat, que tem permissões de remoção diferentes, consulte o [guia específico da Etapa 6](./ETAPA_6_CHAT.md) e não reaproveite as permissões amplas desta etapa.

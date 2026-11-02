@@ -21,7 +21,10 @@ import {
   type WeeklyUpdate,
   weeklyStatusLabels,
 } from './domain';
+import ProfileMenu from '../profile/ProfileMenu';
 import SharedContentWorkspace from './SharedContentWorkspace';
+import TeamChat from './TeamChat';
+import { notifyActivityChange } from '../../lib/notifications';
 import './workspace.css';
 
 type TeamWorkspaceProps = {
@@ -72,7 +75,7 @@ type ActivityFormState = {
   notes: string;
 };
 type WeeklyDraft = { status: WeeklyStatus; justification: string };
-type WorkspaceTab = 'week' | 'activities' | 'files' | 'announcements';
+type WorkspaceTab = 'week' | 'activities' | 'files' | 'announcements' | 'chat';
 
 const defaultFilters: FilterState = {
   search: '', responsible: '', nucleus: '', area: '', type: '', status: '', from: '', to: '',
@@ -152,7 +155,8 @@ function makeFormState(activity: Activity | null, firstAreaId: string): Activity
   };
 }
 
-function buildMutation(form: ActivityFormState): ActivityMutation {
+function buildMutation(form: ActivityFormState, members: ActivityMember[]): ActivityMutation {
+  const linkedMember = members.find((member) => member.user_id === form.responsible_user_id);
   return {
     area_id: form.area_id,
     name: form.name.trim(),
@@ -160,7 +164,7 @@ function buildMutation(form: ActivityFormState): ActivityMutation {
     activity_type: form.activity_type,
     frequency: form.frequency.trim(),
     execution_condition: form.execution_condition.trim(),
-    responsible_name: form.responsible_name.trim() || 'A definir',
+    responsible_name: linkedMember?.full_name || form.responsible_name.trim() || 'A definir',
     responsible_user_id: form.responsible_user_id || null,
     start_date: form.start_date || null,
     due_date: form.due_date || null,
@@ -203,6 +207,8 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
   const [areas, setAreas] = useState<Area[]>([]);
   const [nuclei, setNuclei] = useState<Nucleus[]>([]);
   const [members, setMembers] = useState<ActivityMember[]>([]);
+  const [displayName, setDisplayName] = useState(profile.full_name || 'Integrante');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [updates, setUpdates] = useState<WeeklyUpdate[]>([]);
   const [cycleStart, setCycleStart] = useState(defaultCycleStart);
   const [cycleWeeksCount, setCycleWeeksCount] = useState(defaultCycleWeeks);
@@ -259,10 +265,19 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
       const failure = activityResult.error ?? areaResult.error ?? nucleusResult.error ?? profileResult.error;
       if (failure) throw failure;
 
-      const nextActivities = (activityResult.data ?? []) as unknown as Activity[];
+      const activitiesFromDatabase = (activityResult.data ?? []) as unknown as Activity[];
       const nextAreas = (areaResult.data ?? []) as unknown as Area[];
       const nextNuclei = (nucleusResult.data ?? []) as unknown as Nucleus[];
       const nextMembers = (profileResult.data ?? []) as unknown as ActivityMember[];
+      const namesByUserId = new Map(nextMembers.map((member) => [member.user_id, member.full_name]));
+      const nextActivities = activitiesFromDatabase.map((activity) => {
+        const currentResponsibleName = activity.responsible_user_id
+          ? namesByUserId.get(activity.responsible_user_id)
+          : undefined;
+        return currentResponsibleName
+          ? { ...activity, responsible_name: currentResponsibleName }
+          : activity;
+      });
       const nextUpdates = await fetchCycleUpdates(client, nextCycleStart, cycleEnd);
 
       setCycleStart(nextCycleStart);
@@ -287,6 +302,19 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  const handleProfileUpdated = useCallback(({ fullName, photoUrl: nextPhotoUrl }: { fullName: string; photoUrl: string | null }) => {
+    setDisplayName(fullName);
+    setAvatarUrl(nextPhotoUrl);
+    setMembers((current) => current.map((member) => (
+      member.user_id === userId ? { ...member, full_name: fullName } : member
+    )));
+    setActivities((current) => current.map((activity) => (
+      activity.responsible_user_id === userId
+        ? { ...activity, responsible_name: fullName }
+        : activity
+    )));
+  }, [userId]);
 
   const weeks = useMemo(() => buildCycleWeeks(cycleStart, cycleWeeksCount), [cycleStart, cycleWeeksCount]);
   const selectedWeek = weeks.find((week) => week.start === selectedWeekStart) ?? weeks[0];
@@ -385,19 +413,31 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
     }
     setSavingActivity(true);
     setDialogError('');
-    const payload = buildMutation(form);
+    const payload = buildMutation(form, members);
+    let savedActivityId = '';
     try {
       if (dialogActivity) {
-        const { error } = await client.from('activities').update(payload).eq('id', dialogActivity.id);
+        const { data, error } = await client.from('activities')
+          .update(payload)
+          .eq('id', dialogActivity.id)
+          .select('id')
+          .single();
         if (error) throw error;
+        savedActivityId = data.id;
         setFeedback('Atividade atualizada.');
       } else {
-        const { error } = await client.from('activities').insert(payload);
+        const { data, error } = await client.from('activities').insert(payload).select('id').single();
         if (error) throw error;
+        savedActivityId = data.id;
         setFeedback('Atividade cadastrada. O código foi gerado pelo banco.');
       }
       setDialogActivity(false);
       await loadData(true);
+      void notifyActivityChange(client, 'activities', savedActivityId).then((result) => {
+        if (result.status === 'failed') {
+          setFeedback('Atividade salva, mas o aviso por e-mail não pôde ser enviado. A atividade continua salva.');
+        }
+      });
     } catch (error) {
       setDialogError(`Não foi possível salvar. Confira sua permissão e os dados: ${errorText(error)}`);
     } finally {
@@ -415,15 +455,20 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
     setSavingWeeklyId(activity.id);
     setFeedback('');
     try {
-      const { error } = await client.from('weekly_updates').upsert({
+      const { data, error } = await client.from('weekly_updates').upsert({
         activity_id: activity.id,
         week_start: selectedWeek.start,
         status: draft.status,
         justification: draft.status === 'pending' ? draft.justification.trim() : '',
-      }, { onConflict: 'activity_id,week_start' });
+      }, { onConflict: 'activity_id,week_start' }).select('id').single();
       if (error) throw error;
       setFeedback(`Status de ${activity.code} salvo para a semana ${selectedWeek.number}.`);
       await loadData(true);
+      void notifyActivityChange(client, 'weekly_updates', data.id).then((result) => {
+        if (result.status === 'failed') {
+          setFeedback('Status salvo, mas o aviso por e-mail não pôde ser enviado. O registro continua salvo.');
+        }
+      });
     } catch (error) {
       setFeedback(`Não foi possível salvar o status. O banco também verifica sua permissão: ${errorText(error)}`);
     } finally {
@@ -451,6 +496,13 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
             aria-label={theme === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'}
             title={theme === 'light' ? 'Modo escuro' : 'Modo claro'}
           >{theme === 'light' ? '☾' : '☼'}</button>
+          <ProfileMenu
+            client={client}
+            userId={userId}
+            fallbackName={displayName}
+            photoUrl={avatarUrl}
+            onUpdated={handleProfileUpdated}
+          />
           <button className="workspace-logout" type="button" onClick={onLogout}>Sair</button>
         </div>
       </header>
@@ -471,26 +523,31 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
             <button type="button" className={tab === 'announcements' ? 'is-active' : ''} onClick={() => setTab('announcements')} aria-current={tab === 'announcements' ? 'page' : undefined}>
               <span>04</span> Comunicados
             </button>
+            <button type="button" className={tab === 'chat' ? 'is-active' : ''} onClick={() => setTab('chat')} aria-current={tab === 'chat' ? 'page' : undefined}>
+              <span>05</span> Chat
+            </button>
           </nav>
           <div className="workspace-side-card">
             <span className="workspace-side-mark" aria-hidden="true">↗</span>
             <p>Uma equipe,<br /><strong>uma rota.</strong></p>
-            <small>{profile.full_name || 'Integrante'}</small>
+            <small>{displayName}</small>
           </div>
         </aside>
 
         <main className="workspace-main" id="workspace">
           <div className="workspace-page-heading">
             <div>
-              <p className="workspace-kicker">{tab === 'week' ? 'ACOMPANHAMENTO SEMANAL' : tab === 'activities' ? 'CADASTRO DA EQUIPE' : tab === 'files' ? 'LINKS COMPARTILHADOS' : 'MURAL DA EQUIPE'}</p>
-              <h1>{tab === 'week' ? 'Semana em movimento.' : tab === 'activities' ? 'Atividades da equipe.' : tab === 'files' ? 'Arquivos da equipe.' : 'Comunicados da equipe.'}</h1>
+              <p className="workspace-kicker">{tab === 'week' ? 'ACOMPANHAMENTO SEMANAL' : tab === 'activities' ? 'CADASTRO DA EQUIPE' : tab === 'files' ? 'LINKS COMPARTILHADOS' : tab === 'announcements' ? 'MURAL DA EQUIPE' : 'CONVERSA EM TEMPO REAL'}</p>
+              <h1>{tab === 'week' ? 'Semana em movimento.' : tab === 'activities' ? 'Atividades da equipe.' : tab === 'files' ? 'Arquivos da equipe.' : tab === 'announcements' ? 'Comunicados da equipe.' : 'Chat da equipe.'}</h1>
               <p className="workspace-subtitle">{tab === 'week'
                 ? 'Registre o que avançou e sinalize o que precisa de atenção.'
                 : tab === 'activities'
                   ? 'Consulte, filtre e mantenha as atividades do ciclo atualizadas.'
                   : tab === 'files'
                     ? 'Acesse atalhos visuais para as pastas compartilhadas.'
-                    : 'Compartilhe avisos com toda a equipe ou com uma área.'}</p>
+                    : tab === 'announcements'
+                      ? 'Compartilhe avisos com toda a equipe ou com uma área.'
+                      : 'Converse com todos os integrantes ativos em uma sala compartilhada.'}</p>
             </div>
             <div className="workspace-heading-actions">
               {(tab === 'week' || tab === 'activities') && <span className="workspace-cycle-chip">CICLO · {cycleWeeksCount} SEMANAS</span>}
@@ -716,6 +773,9 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
 
           {(tab === 'files' || tab === 'announcements') && (
             <SharedContentWorkspace client={client} mode={tab} areas={areas} members={members} />
+          )}
+          {tab === 'chat' && (
+            <TeamChat client={client} userId={userId} isAdmin={profile.role === 'admin'} members={members} />
           )}
 
           <footer className="workspace-footer"><span>UFCI/RJ</span><i />SolMar Celeris <small>· DADOS DO SUPABASE</small></footer>

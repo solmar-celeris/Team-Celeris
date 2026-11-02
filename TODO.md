@@ -2,7 +2,7 @@
 
 ## 1. Projeto, banco de dados e segurança
 - [ ] Estrutura do site responsiva e PWA em português, preservando paleta, modo claro/escuro e navegação do protótipo, com foco no celular e funcionamento em computador.
-- [ ] Supabase (Postgres, Auth e Realtime) como banco online compartilhado, substituindo armazenamento local; Vercel como hospedagem gratuita, sujeita aos limites dos serviços.
+- [x] Supabase (Postgres, Auth e Realtime) como banco online compartilhado, substituindo armazenamento local; Netlify como hospedagem gratuita já escolhida, sujeita aos limites do serviço.
 - [ ] Modelo de tabelas para áreas, perfis, atividades, status semanais, configurações, pastas do Drive, comunicados e histórico de auditoria; banco com RLS e negação padrão para usuários sem acesso.
 - [ ] Sem senha ou chave secreta no código do navegador; somente chave pública no cliente, com credencial privilegiada restrita a função segura de servidor.
 - [ ] Guardar apenas dados necessários; registrar ator e quando cada alteração foi feita, principalmente status, prazos, comunicados e remoções.
@@ -11,39 +11,35 @@
 
 ## 2. Login, convites, perfis e permissões
 - [ ] Login por e-mail e senha e/ou conta Google, em português.
-- [x] A tela de autenticação reformulada, responsiva e em português, mantendo a identidade visual, com ações distintas para Entrar, Criar cadastro e Esqueci minha senha.
-- [x] Cadastro aberto por e-mail e senha, solicitando nome, e-mail, senha e confirmação; todo perfil novo inicia como `pending`, mesmo após confirmação de e-mail, e não lê dados da equipe até a aprovação do administrador.
-- [x] Cadastro apresenta uma confirmação clara: se o Supabase exigir verificação, orientar a pessoa a conferir o e-mail; deixar explícito que confirmar o endereço não libera acesso aos dados.
-- [x] Recuperação de senha envia link Supabase para o e-mail informado; link de recuperação abre o formulário para definir e confirmar nova senha, atualiza a senha na Auth e retorna à entrada.
-- [x] Mensagem da recuperação não revela se o e-mail está cadastrado; falhas de rede e limites de envio são explicados sem deixar o botão travado.
-- [x] Ninguém sem perfil ativo e aprovado vê dados da equipe; visitantes sem sessão, perfis `pending` ou `suspended` continuam bloqueados por RLS no banco.
+- [ ] A tela de autenticação reformulada, responsiva e em português, mantendo a identidade visual, com ações distintas para Entrar, Criar cadastro e Esqueci minha senha.
+- [ ] Cadastro aberto por e-mail e senha, solicitando nome, e-mail, senha e confirmação; todo perfil novo inicia como `pending`, mesmo após confirmação de e-mail, e não lê dados da equipe até a aprovação do administrador.
+- [ ] Cadastro apresenta uma confirmação clara: se o Supabase exigir verificação, orientar a pessoa a conferir o e-mail; deixar explícito que confirmar o endereço não libera acesso aos dados.
+- [ ] Recuperação de senha envia link Supabase para o e-mail informado; link de recuperação abre o formulário para definir e confirmar nova senha, atualiza a senha na Auth e retorna à entrada.
+- [ ] Mensagem da recuperação não revela se o e-mail está cadastrado; falhas de rede e limites de envio são explicados sem deixar o botão travado.
+- [ ] Ninguém sem perfil ativo e aprovado vê dados da equipe; visitantes sem sessão, perfis `pending` ou `suspended` continuam bloqueados por RLS no banco.
 - [ ] Administrador (coordenação/Projetos): acesso total, gerencia usuários, áreas e configurações.
-- [x] Líder de área: edita as atividades e os status da própria área; vê o resto.
-- [x] Membro: vê tudo e atualiza o status das atividades em que é responsável.
-- [x] Leitor: só visualiza.
-- [x] Aplicar permissões no banco conforme os perfis, não apenas esconder ações na interface; usuário pendente ou suspenso e visitante sem login não leem dados da equipe.
+- [ ] Líder de área: edita as atividades e os status da própria área; vê o resto.
+- [ ] Membro: vê tudo e atualiza o status das atividades em que é responsável.
+- [ ] Leitor: só visualiza.
+- [ ] Aplicar permissões no banco conforme os perfis, não apenas esconder ações na interface; usuário pendente ou suspenso e visitante sem login não leem dados da equipe.
 
-**Progresso (02/11/2026):** a conta do usuário chegou ao estado de acesso aprovado, mas a versão publicada ainda mostrava apenas uma confirmação e não abria o espaço operacional. Esta atualização conecta o perfil ativo às abas Semana e Atividades; nenhum login, consulta de conta ou envio de e-mail foi executado pelo agente. A aprovação de cadastros permanece manual até a implementação da tela administrativa.
+**Progresso (02/11/2026):** login/cadastro com aprovação manual funcionam na versão já usada. Perfil ativo entra no espaço da equipe. Semana/Atividades, Arquivos/Comunicados, Chat e Perfil/notificações estão na fonte; cada incremento depende de aplicar a migration correspondente e publicar o bundle. O Painel avançado ainda não foi implementado. Nenhum provedor de e-mail está configurado; envio permanece desligado até habilitação explícita pelo usuário.
 
 ## 3. Atividades e filtros
 - [x] Campos: ID automático (sigla da área + número), núcleo (automático pela área), área, nome, descrição, tipo, frequência, condição de execução, responsável, data de início, prazo final, entregável esperado, observações.
 - [x] Tipos: Marco (entrega importante, exige início e prazo), Pontual (exige prazo), Rotina (semanal, quinzenal ou mensal), Condicional (exige a condição de execução, ocorre só quando houver necessidade).
 - [x] Editar início, prazo e responsável de qualquer atividade; adicionar novas atividades com validação das regras acima.
 - [x] Filtros por responsável, núcleo, área, tipo, status e período.
-- [x] Carregar inicialmente as 58 atividades que estão no protótipo (45 de rotina e condicionais e 13 marcos e pontuais de exemplo, com datas ilustrativas), quando já presentes no banco Supabase.
-
-**Evidência:** a tela consulta atividades/áreas/núcleos/perfis ativos no Supabase; o código é atribuído pelo gatilho existente. A criação e edição seguem a migração e as políticas RLS. O ZIP atualizado passou em instalação congelada, typecheck e build limpo. A leitura/gravação no banco real deve ser confirmada pelo usuário após substituir o código no GitHub e aguardar o deploy Netlify.
+- [x] Carregar inicialmente as 58 atividades que estão no protótipo (45 de rotina e condicionais e 13 marcos e pontuais de exemplo, com datas ilustrativas).
 
 ## 4. Acompanhamento semanal e status geral
-- [x] Período de 60 semanas, com início configurável (padrão: segunda-feira, 09/11/2026), lido de `team_settings`.
+- [x] Período de 60 semanas, com início configurável (padrão: segunda-feira, 09/11/2026).
 - [x] Cada atividade esperada na semana recebe um status: Concluído, Em andamento, Pendente, Não se aplica ou Não iniciado. Justificativa obrigatória quando for Pendente.
 - [x] Regras de quando a atividade é esperada: Semanal toda semana; Quinzenal em semanas alternadas a partir do início; Mensal na primeira semana do mês; Marco e Pontual durante sua janela (e encerram na semana da conclusão); Condicional toda semana.
-- [x] Não se aplica não conta como conclusão nem como pendência. Para atividade financeira sem movimentação ou demanda, a pessoa pode registrar Não se aplica.
-- [x] Semana esperada sem registro aparece como alerta separado, mas não altera o status geral.
+- [x] Não se aplica nunca conta como conclusão nem como pendência. Atividades financeiras sem movimentação ou demanda ficam como Não se aplica e não são cobradas.
+- [x] Semana sem atualização: semana passada, esperada e em branco. Aparece como alerta, mas não muda o status geral.
 - [x] Marco/Pontual: Concluído se alguma semana foi concluída; Atrasado se o prazo passou sem conclusão; senão vale o último status informado.
 - [x] Rotina/Condicional: Atrasado se alguma semana passada ficou Pendente; senão vale o último status informado, ignorando Não se aplica.
-
-**Evidência:** status/justificativa são gravados em `weekly_updates` apenas após ação explícita da pessoa; o banco preenche ator e data e mantém a unicidade por atividade/semana. Nenhuma gravação de teste foi executada contra o banco do usuário.
 
 ## 5. Painel e indicadores
 - [ ] % de conclusão = concluídas ÷ (total − não se aplica). % de execução da semana = concluído ÷ (concluído + em andamento + pendente).
@@ -52,7 +48,7 @@
 
 ## 6. Pastas e links do Drive
 - [x] Uma pasta principal do Drive em destaque, como ícone de pasta grande clicável que abre o link.
-- [x] Botão “Adicionar pasta”: nome da pasta + link do Drive + área (ou “Geral”). Cada pasta aparece como um ícone de pasta clicável que abre o link.
+- [x] Botão “Adicionar pasta”: nome da pasta + link HTTPS de `drive.google.com` sem usuário/senha embutidos nem porta personalizada + área (ou “Geral”). Cada pasta é um ícone de pasta clicável.
 - [x] Botão “Remover pasta” em cada uma, com confirmação em dois passos.
 - [x] Integração por link (abrir no Drive), sem ler o conteúdo das pastas.
 
@@ -70,12 +66,13 @@
 - [ ] Site em português do Brasil, prioridade para celular, fluido em computador, com a paleta #38B6FF, #126CAD, #67B6FA, #014B89 e #E06916, #E87B27; modo claro e escuro.
 - [ ] Cores discretas por status: verde (concluído), azul (em andamento), laranja (pendente), vermelho (atrasado), cinza (não se aplica e não iniciado), amarelo (sem atualização).
 - [ ] PWA instalável no celular; cache offline limitado à casca estática e sem persistir dados privados autenticados.
-- [x] Passo a passo de atualização Netlify e guia curto para a equipe entrar e usar; explicar como saber que o build terminou sem erro.
-- [x] Executar as etapas na ordem: (1) projeto e banco, (2) login e convites, (3) atividades e semana, (4) painel, (5) arquivos e comunicados, (6) publicação e PWA. Etapas 3 e 5 implementadas na fonte; painel e etapas seguintes permanecem abertas.
-- [x] Perguntar antes de decidir algo que mude custo, segurança ou privacidade dos dados (LGPD: guardar só o necessário).
+- [ ] Passo a passo de publicação e guia curto para a equipe entrar e usar; em cada etapa, indicar o que testar e como saber que deu certo.
+- [x] Executar as etapas na ordem: (1) projeto e banco, (2) login e convites, (3) atividades e semana, (4) painel, (5) arquivos e comunicados, (6) Chat, (7) perfil/notificações, (8) publicação e PWA. Etapas 3 e 5 estão na fonte; o Chat espera migração/deploy do usuário; perfil/notificações estão em implementação e e-mail depende de provedor.
+- [ ] Perguntar antes de decidir algo que mude custo, segurança ou privacidade dos dados (LGPD: guardar só o necessário).
 
 ## 10. Identificação no rodapé
 - [x] Substituir “PROJETO UNIVERSITÁRIO · ENERGIA SOLAR” por “UFCI/RJ” no rodapé, preservando “SolMar Celeris” e dando destaque visual discreto à identificação institucional.
+
 
 ## 11. Prévia visual pós-login (somente demonstração)
 - [x] Mostrar um exemplo visual do Painel interno com dados claramente fictícios; não conectar ao Supabase nem consultar informações reais.
@@ -83,46 +80,60 @@
 
 **Evidência:** prévia capturada em desktop e celular; o build estático não contém o conteúdo demonstrativo. Nenhuma sessão, leitura nem gravação Supabase foi usada.
 
-**Limite:** essa prévia continua sendo somente uma demonstração. A nova versão implementa Semana e Atividades operacionais; o Painel com métricas/gráficos segue pendente no item 5.
+**Limite:** esta é apenas uma visualização; o Painel operacional e suas consultas reais continuam pendentes no item 5.
+
 
 ## 12. Pacote fonte para Netlify e guia Supabase
-- [x] Criar ZIP com o código e instruções necessários ao build, sem `.env.local`, chaves, arquivos gerados, `.git` ou UUID pessoal da seção administrativa.
+- [x] Criar ZIP com todo o código e instruções necessários ao build, sem `.env.local`, chaves, arquivos gerados, `.git` ou UUID pessoal da seção administrativa.
 - [x] Incluir `netlify.toml` para pnpm/Vite, publicação de `dist` e fallback de SPA.
 - [x] Tornar a logo um asset local do site, para ela funcionar fora do armazenamento da Manus.
 - [x] Incluir passo a passo de Netlify, variáveis de build públicas, URLs de retorno/Auth, migração SQL, acesso e limites funcionais atuais, com fontes oficiais.
-- [x] Entregar o ZIP e os guias `.md` também como arquivos separados.
+- [x] Entregar o ZIP e o guia `.md` também como links separados.
 
-**Evidência:** o ZIP final (37 arquivos) foi extraído em pasta limpa e passou em `pnpm install --frozen-lockfile`, `pnpm typecheck` e `pnpm build`; a migração PostgreSQL foi parseada e o pacote foi conferido quanto a arquivos locais, endpoints e chaves específicas.
+**Evidência:** o pacote anterior extraído em pasta limpa passou em `pnpm install --frozen-lockfile`, `pnpm typecheck` e `pnpm build`; os novos módulos de Chat, perfil e e-mail serão revalidados no pacote desta etapa. ZIPs excluem `.env.local`, `node_modules`, `dist`, `.git`, endpoints pessoais e chaves reais.
 
-## 13. Etapa 3 — abas operacionais Atividades e Semana (escopo aprovado em 02/11/2026)
-- [x] Após login com perfil `active`, mostrar o espaço da equipe em vez de deixar a pessoa na confirmação de aprovação; incluir navegação funcional entre **Semana** e **Atividades**, e manter os estados pendente/suspenso/sem sessão bloqueados.
-- [x] Consultar o Supabase selecionado na publicação usando somente `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`; usar as tabelas existentes `activities`, `areas`, `nuclei`, `profiles`, `team_settings` e `weekly_updates`; não embutir credenciais administrativas, não executar migração/seed de novo e não gravar dados de teste no banco remoto.
-- [x] Na aba Atividades, listar as atividades ativas e dados iniciais que existirem no banco (na instalação original são 58), mostrar código, núcleo/área, tipo, frequência/condição, responsável, início, prazo, entregável, observações e situação geral calculada dos registros semanais.
-- [x] Disponibilizar filtros por responsável, núcleo, área, tipo, situação geral e período; permitir que as duas áreas sejam buscadas no celular e em computador. O filtro de período considera a sobreposição da janela inteira da atividade.
-- [x] Permitir cadastrar novas atividades e editar as existentes para administradores e líderes de área autorizados pelo banco. Campos: área; nome; descrição; tipo; frequência; condição de execução; responsável com nome e, quando selecionado, vínculo à conta; data inicial; prazo; entregável esperado; observações. Código é gerado pelo gatilho existente no banco.
-- [x] Validar no formulário: Marco exige data inicial e prazo; Pontual exige prazo; Rotina exige frequência Semanal, Quinzenal ou Mensal; Condicional exige condição; quando ambas existirem, a data inicial não pode ser posterior ao prazo.
-- [x] Respeitar os papéis já aplicados por RLS: Administrador edita atividades e status; Líder de área edita somente atividades e status da própria área; Membro vê tudo e atualiza o status somente de atividade atribuída à própria conta; Leitor somente visualiza. Não contornar bloqueios do banco no cliente.
-- [x] Na aba Semana, selecionar uma das 60 semanas do ciclo, usando `team_settings.cycle_start` e `cycle_weeks` (padrão segunda-feira, 09/11/2026, por 60 semanas), listar as atividades esperadas para aquela semana e mostrar o estado já salvo; atividade esperada sem registro permanece indicada como Não iniciado/sem atualização sem criar um registro silenciosamente.
-- [x] Exibir os estados Concluído, Em andamento, Pendente, Não se aplica e Não iniciado; exigir justificativa não vazia quando Pendente; salvar status/justificativa em `weekly_updates`, com a data da segunda-feira (`week_start`) e o ator preenchido pelo trigger do banco; permitir que pessoas autorizadas atualizem o próprio estado semanal.
-- [x] Aplicar regras de expectativa: Semanal em todas as semanas; Quinzenal em semanas alternadas desde o início; Mensal na primeira semana de cada mês; Marco e Pontual durante a janela de datas, deixando de aparecer nas semanas posteriores à semana em que foram concluídas; Condicional em todas as semanas dentro de sua janela.
-- [x] Calcular situação geral: Marco/Pontual Concluído se qualquer atualização semanal foi concluída; senão Atrasado quando o prazo passou; senão usar o último estado registrado. Rotina/Condicional Atrasado se alguma semana anterior ficou Pendente; senão usar o último estado registrado ignorando Não se aplica. Não se aplica não conta como conclusão nem pendência.
-- [x] Mostrar carregamento, salvamento, confirmação e erros de acesso/conexão de forma clara; permitir recarregar dados do Supabase sem recarregar a aplicação. Não armazenar em cache local dados autenticados.
-- [x] Validar código, tipagem, build estático e pacote exportado. Gerar novo ZIP-fonte genérico com a implementação, `.env.example` em placeholders, sem arquivos `.env` locais, chaves, `dist`, `node_modules` ou `.git`; incluir instruções para o usuário atualizar o mesmo repositório GitHub e o mesmo site Netlify.
-- [ ] Após o usuário enviar o commit e o Netlify publicar, confirmar no site real que o perfil aprovado abre as abas, que as atividades esperadas aparecem e que um status é salvo com as permissões corretas do Supabase.
+**Observação:** o guia Netlify/Supabase segue no ZIP e como arquivo separado; somente a cópia do guia administrativo incluída no ZIP substitui identificadores pessoais por placeholders.
 
-**Fora desta entrega:** painel avançado e gráficos, gestão administrativa dentro do app, importação/exportação e PWA completo. Não apresentar a prévia demo com dados fictícios como painel conectado.
+## 13. Etapa 3 — Semana e Atividades
+- [x] Implementar o espaço pós-login com abas Semana e Atividades no mesmo site, conectadas ao Supabase, sem criar outro projeto nem trocar o banco.
+- [x] Implementar consultas, filtros, formulários, responsável e status semanal conforme os critérios completos das seções 3 e 4; respeitar autorização RLS.
+- [x] Atualizar o manual Netlify/Supabase, guia de uso e ZIP do mesmo site, sem incluir credenciais nem build/dependências.
+**Evidência:** TypeScript e build passaram; o ZIP anterior foi validado em extração limpa. A confirmação do Supabase remoto depende do usuário.
 
 ## 14. Etapa 5 — Arquivos e Comunicados (permissões confirmadas em 02/11/2026)
+- [x] Acrescentar Arquivos e Comunicados ao menu responsivo, mantendo Semana e Atividades.
+- [x] Arquivos consulta `drive_folders` e mostra pastas não removidas como cartões/ícones clicáveis. Exibe nome e área ou “Geral”, abre o link em nova aba e não lê/sincroniza conteúdo.
+- [x] Adicionar pasta com nome obrigatório, link HTTPS de `drive.google.com` sem usuário/senha embutidos nem porta personalizada, área opcional; a primeira pode ser marcada principal quando ainda não houver principal.
+- [x] Remover pasta em dois passos por remoção lógica; manter histórico e ator/data, sem apagar o conteúdo no Drive.
+- [x] Qualquer perfil ativo vê todos os comunicados (incluindo os destinados a outra área), fixados primeiro e depois mais recentes; pode publicar com título, mensagem e audiência para toda a equipe ou qualquer área.
+- [x] Autor de comunicado é atribuído no banco; qualquer perfil ativo pode fixar/desafixar e remover com confirmação em dois passos; o corpo publicado não pode ser editado nesta etapa.
+- [x] Permissão confirmada pelo usuário: qualquer perfil ativo — Administrador, Líder, Membro ou Leitor — pode ver e gerenciar todas as pastas e comunicados, inclusive de outras áreas.
+- [x] Preparar migração incremental `20261102133000_shared_content_permissions.sql`, sem repetir a inicial nem executar SQL remoto; atualizar guias e pacote.
+- [ ] Depois que o usuário aplicar a migração e publicar, verificar no site real leitura/gravação de perfil ativo e bloqueio de pendentes/suspensos.
 
-- [x] Acrescentar as abas funcionais **Arquivos** e **Comunicados** ao mesmo espaço da equipe e ao menu responsivo, mantendo Semana e Atividades.
-- [x] Arquivos consulta `drive_folders` e mostra todas as pastas não removidas como cards/ícones visíveis. Cada card mostra nome e área ou “Geral”; ao clicar, abre o link do Drive em nova aba e não lê nem sincroniza conteúdo da pasta.
-- [x] Disponibilizar **Adicionar pasta** com nome obrigatório, link HTTPS do host `drive.google.com` validado (sem usuário/senha embutidos nem porta personalizada) e área opcional (vazia significa “Geral”). A tela e o banco validam o link; a criação registra automaticamente a conta conectada. Quando ainda não houver pasta principal, a primeira adicionada pode ser destacada como principal.
-- [x] Disponibilizar remoção lógica de cada pasta com dois passos explícitos de confirmação; manter histórico e preencher conta/data da remoção. Não apagar fisicamente o registro nem o conteúdo no Drive.
-- [x] Comunicados consulta `announcements` e exibe para toda pessoa ativa os comunicados ativos destinados à equipe ou a uma área, incluindo outras áreas. Ordenar fixados primeiro e, dentro de cada grupo, mais recentes primeiro.
-- [x] Disponibilizar formulário de publicação com título, mensagem e destinatário (toda a equipe ou uma área). Preencher autor automaticamente com a conta conectada; a pessoa não escolhe nem forja o autor.
-- [x] Permitir fixar/desafixar comunicados existentes e removê-los com dois passos explícitos de confirmação; usar remoção lógica auditada, sem apagar fisicamente os registros.
-- [x] Permissão escolhida pelo usuário: **qualquer perfil ativo** — Administrador, Líder de área, Membro ou Leitor — pode ver, adicionar/remover pastas, definir a pasta principal, ver todos os comunicados, publicar para toda a equipe ou qualquer área, fixar/desafixar e remover qualquer comunicado, inclusive de outra área.
-- [x] A migração complementar mantém leitura/escrita negadas a visitante sem login e perfil `pending`/`suspended`; não inclui `service_role` ou chave privilegiada no cliente; autoria/remoção são atribuídas pelo banco e mantêm auditoria.
-- [x] Criar migração SQL **incremental** para grants, políticas RLS e atribuição segura de autoria/remoção; não modificar nem repetir a migração inicial e não executar SQL no projeto Supabase remoto. Instruir o usuário a aplicar a migração incremental no SQL Editor antes de usar os botões de escrita.
-- [x] Atualizar guia de uso, README e instruções para o mesmo GitHub/Netlify; preparar migração incremental e ZIP sanitizado sem ambientes locais, build, dependências, Git, endpoints específicos ou chaves.
-- [ ] Depois que o usuário aplicar a migração incremental e publicar o commit, confirmar no site real leitura/escrita para perfil ativo e bloqueio de perfis pendentes/suspensos. Nenhuma alteração SQL/deploy foi feita pelo agente.
+## 15. Etapa 6 — Chat coletivo
+- [x] Incluir a quinta aba Chat com uma sala única de texto, mantendo as quatro abas atuais; sem mensagens privadas, anexos ou edição nesta etapa.
+- [x] Permitir leitura/envio apenas a perfis ativos; visitante, pendente e suspenso não acessam; todos os perfis ativos participam da mesma sala.
+- [x] Exibir autor/horário derivados da sessão e do banco e limitar a mensagem a 2.000 caracteres após remover espaços externos.
+- [x] Usar Supabase Realtime/Postgres Changes com RLS e tabela na publicação `supabase_realtime`.
+- [x] Só Administrador ativo remove qualquer mensagem; demais não veem o controle e chamada direta sem autorização é negada.
+- [x] Remoção troca o texto por marcador fixo, grava ator/hora, não mantém cópia do texto e não expira mensagens automaticamente.
+- [x] Login e workspace referenciam a logo original compartilhada `celeris-logo.png`; manter o arquivo original intacto e não criar nem substituir assets de marca.
+- [x] Código e migração incremental `20261102135200_team_chat.sql` estão no pacote; não executar SQL remoto nem publicar pelo agente.
+- [ ] Depois que o usuário aplicar a migração e publicar, verificar Chat em duas sessões ativas, moderação admin e bloqueio de perfil pendente/suspenso. SQL, sozinho, não publica a interface.
+
+## 16. Etapa 7 — Perfil, foto e avisos de atividade
+- [x] Reutilizar `public.profiles` como cadastro e `activities.responsible_user_id` para vincular tarefas à conta. O seletor atual já oferece os perfis ativos; não criar banco/lista de usuários duplicada.
+- [x] Exibir no canto do cabeçalho o nome/foto da sessão. Sem foto, usar a inicial do nome.
+- [x] Configurações permite editar apenas o próprio nome de exibição e a própria foto; não permite editar e-mail, papel, área, status nem o perfil de outra pessoa.
+- [x] Guardar somente `avatar_path` no perfil e a imagem em bucket privado; somente pessoas ativas visualizam fotos. Aceitar JPEG/PNG/WebP de até 2 MiB; remover foto retorna à inicial.
+- [x] Após gravação de atividade ou status semanal pelo site, invocar aviso somente ao responsável atualmente vinculado quando houver e a Administradores ativos, excluindo quem fez a alteração. Sem responsável: apenas Administradores. A entrega real depende de configurar e publicar a função/provedor.
+- [x] Não enviar e-mail por mensagem do Chat; conversa continua em tempo real no site. Esta etapa não envia e-mail por foto/perfil, pasta ou comunicado.
+- [x] Invocar Edge Function após gravação autenticada, manter validação JWT ligada, revalidar ator/perfil/permissão no servidor e usar service key apenas na função. Registrar metadados mínimos e deduplicar o mesmo evento; não incluir descrição/observações/justificativa nos e-mails.
+- [x] Sem provedor ou domínio remetente configurados. Preparar função Resend, mas manter envio desativado até usuário configurar `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, domínio verificado e `VITE_ACTIVITY_EMAILS_ENABLED=true`; nunca gravar chave em código/Netlify/Git.
+- [x] Criar migração incremental de `avatar_path`, RLS de autoedição, bucket privado, autoria de alteração e log de notificações; não repetir migrações aplicadas nem executar SQL/deploy remoto pelo agente.
+- [x] Atualizar guia de perfil/e-mail, manual Supabase/Netlify e ZIP sanitizado para o mesmo repositório. Incluir referências oficiais Supabase/Resend consultadas.
+- [x] Validar TypeScript/build e pacote limpo, sem `.env` local, chaves, `dist`, `node_modules` ou `.git`.
+- [ ] Depois que o usuário configurar e publicar, verificar perfil/foto em duas contas e entrega a envolvidos/Admins; não deve sair e-mail de Chat.
+
+**Navegação:** o README aponta para o guia principal na raiz do projeto; o mesmo arquivo acompanha o ZIP.

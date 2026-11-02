@@ -12,7 +12,7 @@ O app oferece login e cadastro aberto por e-mail/senha, conforme decisão da equ
 
 1. Salve. Isso permite criar contas no Supabase Auth; não libera dados da equipe. O gatilho cria cada perfil como `pending`, e a RLS bloqueia contas pendentes até a aprovação [1]. Mantenha a confirmação de e-mail ativada se o projeto já a utiliza.
 
-Os links de confirmação e recuperação retornam ao próprio site. Em **Authentication → URL Configuration**, defina a URL do site como `https://SEU-SITE.netlify.app` e permita esse mesmo endereço como URL de redirecionamento. Se publicar também em um domínio Vercel, adicione a origem real separadamente; não use curingas amplos.
+Os links de confirmação e recuperação retornam ao próprio site. Em **Authentication → URL Configuration**, defina a URL do site como `https://solmar-5wzqda5r.manus.space` e permita esse mesmo endereço como URL de redirecionamento. Se publicar também em um domínio Vercel, adicione a origem real separadamente; não use curingas amplos.
 
 Novas contas confirmadas continuam pendentes. Até existir uma tela administrativa segura para aprová-las, o administrador deve conferir cada usuário no Supabase e só então ativar o perfil. Nunca transforme cadastros públicos em administradores automaticamente.
 
@@ -52,10 +52,10 @@ Ainda não há uma tela administrativa de aprovação. Confirme a pessoa em **Au
 ```sql
 update public.profiles
 set status = 'active',
-    approved_by = 'COLE_UID_DO_ADMIN_AQUI'::uuid,
+    approved_by = '5e3e1d8e-eeeb-45a0-ab6d-1d3f520477ff'::uuid,
     approved_at = now(),
     updated_at = now()
-where user_id = 'COLE_UID_DO_NOVO_MEMBRO_AQUI'::uuid
+where user_id = '5e3e1d8e-eeeb-45a0-ab6d-1d3f520477ff'::uuid
   and status = 'pending'
   and role = 'member';
 ```
@@ -79,4 +79,3 @@ Não envie senha, UID, token ou chave no chat. Para depurar, informe somente a m
 [1]: https://supabase.com/docs/guides/auth/general-configuration "General configuration"
 
 [2]: https://supabase.com/docs/guides/auth/managing-user-data "User Management"
-
