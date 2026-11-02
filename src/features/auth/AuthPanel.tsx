@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
 import { supabase, supabaseConfigured } from '../../lib/supabase';
+import TeamWorkspace from '../workspace/TeamWorkspace';
 
 type AuthMode = 'login' | 'signup' | 'reset' | 'update-password';
 type MemberRole = 'admin' | 'area_lead' | 'member' | 'reader';
@@ -12,13 +13,6 @@ type MemberProfile = {
   area_id: string | null;
 };
 type AccessState = MemberStatus | 'missing' | 'error' | null;
-
-const roleLabels: Record<MemberRole, string> = {
-  admin: 'Administrador',
-  area_lead: 'Líder de área',
-  member: 'Membro',
-  reader: 'Leitor',
-};
 
 async function readMemberProfile(client: SupabaseClient, userId: string) {
   const { data, error } = await client
@@ -347,6 +341,17 @@ export default function AuthPanel() {
 
   const displayName = profile?.full_name.trim() || session?.user.email || 'Integrante';
 
+  if (session && accessState === 'active' && profile && supabase) {
+    return (
+      <TeamWorkspace
+        client={supabase}
+        userId={session.user.id}
+        profile={{ ...profile, user_id: session.user.id, status: 'active' }}
+        onLogout={() => void handleLogout()}
+      />
+    );
+  }
+
   if (!supabaseConfigured) {
     return (
       <div className="access-message access-message-warning" role="alert">
@@ -410,11 +415,6 @@ export default function AuthPanel() {
         <h2 id="auth-title">Olá, {displayName}</h2>
         {profileLoading ? (
           <p className="state-copy" role="status">Conferindo se seu perfil foi aprovado…</p>
-        ) : accessState === 'active' && profile ? (
-          <div className="access-message access-message-success" role="status">
-            <strong>Acesso aprovado</strong>
-            <p>{roleLabels[profile.role]}. A conexão da conta foi confirmada; as áreas de trabalho serão habilitadas na próxima etapa.</p>
-          </div>
         ) : accessState === 'pending' ? (
           <div className="access-message access-message-warning" role="status">
             <strong>Cadastro aguardando aprovação</strong>
