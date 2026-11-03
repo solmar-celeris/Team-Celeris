@@ -1,10 +1,10 @@
 # SolMar Celeris — atualizar no GitHub/Netlify e habilitar no Supabase
 
-**Revisado em 03/11/2026.** Este manual acompanha o pacote-fonte atualizado, com fontes menores ampliadas e suporte a notificações Web Push em navegadores desktop. O projeto continua usando o mesmo site Netlify e o mesmo Supabase. Este guia não publica por você nem executa SQL no seu banco.
+**Revisado em 03/11/2026.** Este manual acompanha o pacote-fonte atualizado. O projeto continua usando o mesmo site Netlify e o mesmo Supabase. Este guia não publica por você nem executa SQL no seu banco.
 
 ## O que esta versão acrescenta
 
-Após entrar com um perfil `active`, o menu mostra ícones na ordem **Chat**, **Comunicados**, **Semana**, **Atividades**, **Arquivos** e **Manual de funções**. As fontes pequenas de apoio e metadados foram ampliadas. Login e cabeçalho usam a logo original `public/assets/celeris-logo.png`; a imagem não foi editada nem substituída.
+Após entrar com um perfil `active`, o menu mostra ícones na ordem **Chat**, **Comunicados**, **Semana**, **Atividades** e **Arquivos**. Login e cabeçalho usam a logo original `public/assets/celeris-logo.png`; a imagem não foi editada nem substituída.
 
 O Chat preserva a sala **Equipe** para todos os perfis ativos e permite criar grupos, selecionar integrantes ativos e adicionar mais pessoas depois. O criador já entra no grupo. Somente participantes ativos e Administradores ativos veem grupos; o Supabase RLS também impõe esse limite. Mensagens chegam em tempo real. Elas podem ter até 2.000 caracteres, não aceitam anexos e ficam salvas até um Administrador ativo removê-las. Ao remover, o texto é substituído por um aviso. Mensagens de Chat não enviam e-mail.
 
@@ -14,15 +14,15 @@ Nas abas Arquivos e Comunicados, as permissões previamente escolhidas continuam
 
 ## 1. Atualizar o repositório que já alimenta o Netlify
 
-1. Baixe e extraia o ZIP atualizado que acompanha esta versão.
+1. Baixe e extraia `SolMar_Celeris_Netlify_Atualizado.zip`.
 2. Abra no GitHub Desktop o mesmo repositório local que está ligado ao seu site Netlify. Faça uma cópia de segurança da pasta antes de substituir os arquivos.
 3. Copie o conteúdo de dentro do ZIP para a pasta do repositório e aceite substituir os arquivos com o mesmo caminho. **Não apague nem substitua `.git`.**
-4. Em **Changes**, confirme que aparecem os arquivos de navegação, grupos e manual de funções, incluindo `ManualFunctions.tsx`, `TeamChat.tsx`, `ChatGroupDialog.tsx`, os componentes de identidade Median/OneSignal, `desktopNotifications.ts`, `public/push/onesignal/OneSignalSDKWorker.js`, as funções `notify-chat-push` e `notify-workspace-push`, e as migrations de push, além de Perfil/notificações.
+4. Em **Changes**, confirme que aparecem os arquivos de navegação e grupos, incluindo `TeamChat.tsx`, `ChatGroupDialog.tsx`, os componentes de identidade Median/OneSignal, as funções `notify-chat-push` e `notify-workspace-push`, e as migrations de push, além de Perfil/notificações.
 5. Não envie `.env.local`, `.env.production.local`, `node_modules/` nem `dist/`. O ZIP não contém esses arquivos.
 6. No campo **Summary**, escreva `Adicionar perfil e notificações da equipe`. Clique em **Commit to main** (ou na branch principal que o Netlify acompanha) e depois em **Push origin**.
 7. O Netlify deve iniciar o deploy ao receber o push. Abra o site existente → **Deploys** e aguarde o deploy mais recente terminar com sucesso. Não crie outro site.
 
-Mantenha as variáveis públicas já cadastradas no Netlify. Para habilitar Web Push, adicione `VITE_ONESIGNAL_APP_ID` como valor público do **mesmo app OneSignal** usado pelo Median, com escopo de build, e publique um novo deploy. O build continua usando `pnpm build` e a pasta de saída `dist`. Use somente App ID público e as chaves publishable públicas em variáveis `VITE_*`. Nunca coloque senha de banco, `sb_secret_...`, `service_role` ou `ONESIGNAL_REST_API_KEY` em uma variável `VITE_*`.
+Mantenha as variáveis públicas já cadastradas no Netlify. O build continua usando `pnpm build` e a pasta de saída `dist`. Configure `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` e `VITE_ONESIGNAL_APP_ID` como Plain text/não secretas e com escopo de build. O App ID OneSignal é público. Nunca coloque senha de banco, `sb_secret_...`, `service_role` ou `ONESIGNAL_REST_API_KEY` em uma variável `VITE_*`.
 
 ## 2. Aplicar somente as migrações que ainda faltam
 
@@ -98,7 +98,7 @@ A verificação local não substitui o teste no seu Supabase e Netlify reais. Ne
 
 ## 8. Ativar push nativo pelo Median/OneSignal
 
-Este pacote mantém os avisos nativos do Chat, de comunicados e de atribuições no APK Median e acrescenta Web Push para navegadores desktop. Não altera nem regenera seu APK. O site associa o UUID Supabase ao mesmo OneSignal tanto no navegador quanto na ponte nativa; a pessoa ativa a permissão do navegador no menu do perfil. Para Web Push, confira a plataforma Web e o App ID no guia `docs/ETAPA_10_PUSH_CHAT_ONESIGNAL.md`.
+Este pacote prepara avisos do Chat, de comunicados e de atribuições para o APK Median e para o Web Push descrito na seção 9. Não altera nem regenera seu APK; se ele já contém o plugin OneSignal conectado ao mesmo app, basta atualizar o site. No APK, a ponte Median associa o UUID da conta Supabase ao OneSignal; no navegador, a integração Web faz o mesmo usando o SDK Web.
 
 1. Aplique `20261102210500_chat_push_notifications.sql` uma vez, depois das migrations de Chat e grupos. Ela cria o registro técnico de entrega do Chat.
 2. Para avisos de comunicados e atribuições, aplique `20261103103000_workspace_push_events.sql` e, em seguida, `20261103110000_workspace_push_event_tokens.sql`, cada uma uma única vez. Pule qualquer arquivo que já tenha sido aplicado com sucesso. Não repita migrations.
@@ -108,3 +108,19 @@ Este pacote mantém os avisos nativos do Chat, de comunicados e de atribuições
 6. Teste com duas contas ativas e inscritas no OneSignal: uma mensagem na sala Equipe, um comunicado de teste e uma atribuição/reatribuição de teste. O autor não deve receber o próprio alerta; comunicado por área deve ficar restrito à área; atividade deve avisar somente o novo responsável. Confira os logs das duas Edge Functions e o histórico do OneSignal.
 
 As mensagens de push são genéricas e não incluem o texto privado da conversa, comunicado, atividade ou observações. Se a migration, secret ou function ainda não estiver pronta, o conteúdo continua sendo salvo, mas os pushes não funcionarão até concluir a configuração. Veja o passo a passo ilustrado em `docs/ETAPA_10_PUSH_CHAT_ONESIGNAL.md`.
+
+
+## 9. Ativar os mesmos pushes no desktop e no iPhone pelo Web Push
+
+As Edge Functions `notify-chat-push` e `notify-workspace-push` já enviam pelo `external_id` do OneSignal, correspondente ao UUID Supabase. O código web desta versão inicializa o OneSignal Web e associa a sessão ativa ao mesmo UUID; assim, o mesmo Chat, comunicado ou atribuição pode alcançar as inscrições Android e Web desse usuário. A pessoa precisa autorizar cada navegador/dispositivo. Se estiver inscrita no Android e no desktop, poderá receber em ambos.
+
+1. No OneSignal, abra o mesmo app usado pelo Median e vá a **Settings → Push & In-App → Web**. Ative Web Push, escolha a integração **Custom Code** e informe a origem HTTPS exata do site que está no ar, por exemplo `https://teamceleris.netlify.app` se esse for o domínio que aparece no navegador. Não inclua caminho, barra final ou domínio antigo. Se o app OneSignal já tiver Web configurado para outra origem, pare e confira a situação antes de mudar. Web Push é vinculado à origem; inscrições antigas não migram para um domínio novo.
+2. Mantenha o arquivo `public/OneSignalSDKWorker.js`, `public/manifest.json` e os ícones em `public/icons/`. O build os publica na raiz do site. O SDK React configura o worker pela inicialização Web; não ajuste os campos de caminho do worker no painel quando estiver em **Custom Code**. Não crie um segundo service worker controlando `/`.
+3. No Netlify do site novo, abra **Project configuration → Environment variables** e adicione `VITE_ONESIGNAL_APP_ID` com o App ID público do mesmo app OneSignal, escopo **Builds**. Mantenha também `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`. Não adicione `ONESIGNAL_REST_API_KEY` nem `service_role` ao Netlify. Depois salve e faça um novo deploy de produção para que a variável entre no bundle.
+4. Abra o site publicado e entre com um perfil ativo. O workspace mostra **Ativar notificações**. No computador, clique e permita as notificações no navegador. Em **Audience → Users & Subscriptions → Subscriptions**, confirme que a inscrição Web está `Subscribed` e associada ao External ID correto. Não teste em janela anônima/privada.
+5. No iPhone/iPad com iOS/iPadOS 16.4 ou posterior: abra o domínio novo no Safari, toque **Compartilhar → Adicionar à Tela de Início**, abra o app pelo ícone criado, entre na conta ativa e toque **Ativar notificações**. Permita a solicitação do iOS. Uma aba comum do Safari não consegue assinar Web Push. O site precisa ser adicionado à Tela de Início e aberto como web app.
+6. Teste com duas contas/inscrições ativas: envie uma mensagem de Chat de teste, crie um comunicado de teste e faça uma atribuição de teste. Confirme recebimento no navegador. As Edge Functions e os secrets do Supabase já configurados para push nativo são os mesmos; não crie outra chave REST e não é necessário publicar as funções de novo se elas já estão corretas.
+
+Se o domínio público mudou, confira também **Supabase → Authentication → URL Configuration** e permita o novo endereço nos redirect URLs. Isso afeta o login/recuperação de senha, não transfere nem modifica o banco. O identificador `ONESIGNAL_APP_ID` colocado em `VITE_ONESIGNAL_APP_ID` é público; a `ONESIGNAL_REST_API_KEY` permanece exclusivamente nos Secrets das Edge Functions do Supabase.
+
+Web Push exige HTTPS, permissão concedida e uma inscrição por navegador/dispositivo. Na Apple, notificações Web no iPhone funcionam somente quando a pessoa abriu pelo ícone da Tela de Início; confira `display: standalone` e os ícones do manifesto se a tela não oferecer a permissão. Consulte a documentação oficial do [OneSignal Web Push](https://documentation.onesignal.com/docs/en/web-push-setup), [React](https://documentation.onesignal.com/docs/en/react-js-setup) e [iOS Web Push](https://documentation.onesignal.com/docs/en/web-push-for-ios).

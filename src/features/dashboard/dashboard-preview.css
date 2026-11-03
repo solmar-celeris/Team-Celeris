@@ -129,7 +129,7 @@
 :root[data-theme="dark"] .status-green { color: #a8e5cf; }
 .demo-table-footnote { margin: 10px 0 0; color: var(--muted); font-size: 7px; }
 .demo-footer { display: flex; align-items: center; gap: 8px; padding: 18px 1px 4px; color: var(--muted); font-size: 8px; font-weight: 750; letter-spacing: .08em; }
-.demo-footer > span { color: var(--blue); }
+.demo-footer > span { color: var(--orange); }
 .demo-footer i { width: 20px; height: 1px; background: var(--line); }
 .demo-footer small { font-size: 7px; font-weight: 650; letter-spacing: .08em; }
 

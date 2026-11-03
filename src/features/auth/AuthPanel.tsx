@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
 import { syncMedianOneSignalIdentity } from '../../lib/medianOneSignal';
-import { syncDesktopOneSignalIdentity } from '../../lib/desktopNotifications';
+import { logoutWebOneSignal, syncWebOneSignalIdentity } from '../../lib/webOneSignal';
 import { supabase, supabaseConfigured } from '../../lib/supabase';
 import TeamWorkspace from '../workspace/TeamWorkspace';
 
@@ -91,12 +91,9 @@ export default function AuthPanel() {
     const previousUserId = medianIdentityUserId.current;
     if (previousUserId === activeSessionUserId) return;
     medianIdentityUserId.current = activeSessionUserId;
-    const stopMedianSync = syncMedianOneSignalIdentity(activeSessionUserId, previousUserId !== null);
-    const stopDesktopSync = syncDesktopOneSignalIdentity(activeSessionUserId);
-    return () => {
-      stopMedianSync();
-      stopDesktopSync();
-    };
+    if (activeSessionUserId) void syncWebOneSignalIdentity(activeSessionUserId).catch(() => {});
+    else if (previousUserId) void logoutWebOneSignal();
+    return syncMedianOneSignalIdentity(activeSessionUserId, previousUserId !== null);
   }, [activeSessionUserId]);
 
   useEffect(() => {
@@ -529,6 +526,7 @@ export default function AuthPanel() {
               {submitting ? 'Verificando…' : 'Entrar'} <span aria-hidden="true">→</span>
             </button>
           </form>
+          <p className="auth-footnote">Novos cadastros são ativados como Integrante. Se a confirmação de e-mail estiver habilitada, confirme o endereço para entrar.</p>
         </>
       )}
 

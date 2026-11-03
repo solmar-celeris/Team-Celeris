@@ -5,14 +5,15 @@ Aplicação responsiva em português, construída com React, TypeScript e Vite. 
 ## Funcionalidades desta versão
 
 - Login/cadastro por e-mail e senha; após a migration de ativação, novos cadastros ficam ativos automaticamente como Integrante. A confirmação de e-mail continua conforme a configuração já existente no Supabase.
-- Navegação com ícones na ordem **Chat**, **Comunicados**, **Semana**, **Atividades**, **Arquivos** e **Manual de funções**.
+- Navegação com ícones na ordem **Chat**, **Comunicados**, **Semana**, **Atividades** e **Arquivos**.
 - Atividades e atualizações semanais ligadas ao Supabase, com filtros, permissões RLS, edição autorizada e justificativa obrigatória quando o status é Pendente.
 - Arquivos: links de pastas do Google Drive, mostrados como cartões clicáveis; o app não lê o conteúdo das pastas.
 - Comunicados: publicação para a equipe ou uma área, autoria automática, fixação/desafixação e remoção lógica auditada.
 - Chat geral e grupos de texto em tempo real; perfis ativos criam grupos e adicionam integrantes ativos, somente participantes/Admins veem cada grupo, e somente Administradores removem mensagens.
 - Configurações de perfil: editar o próprio nome e foto privada; sem foto, o cabeçalho mostra a inicial do nome.
 - Avisos de atividade/semana por e-mail preparados via Edge Function, restritos ao responsável ativo e Administradores ativos; desligados por padrão até configurar o provedor.
-- Push OneSignal/Median para Chat, comunicados e atividades atribuídas, com suporte Web Push para navegador desktop mediante `VITE_ONESIGNAL_APP_ID`, inscrição consentida no menu do perfil e service worker em escopo isolado.
+- Push nativo OneSignal/Median preparado para Chat, comunicados e atividades atribuídas; requer migrations, duas Edge Functions e secrets configurados no Supabase, conforme o guia.
+- Web Push OneSignal preparado para desktop e iPhone instalado na Tela de Início; as mesmas Edge Functions enviam para inscrições web quando vinculadas ao mesmo UUID Supabase.
 - Login e workspace usam a logo original `public/assets/celeris-logo.png`; o arquivo de imagem não foi editado nem substituído.
 - Migração SQL inicial, com áreas/núcleos e 58 atividades: [`supabase/migrations/20261101184000_initial_schema.sql`](./supabase/migrations/20261101184000_initial_schema.sql).
 - Migração incremental de permissões para conteúdo compartilhado: [`supabase/migrations/20261102133000_shared_content_permissions.sql`](./supabase/migrations/20261102133000_shared_content_permissions.sql).
@@ -38,11 +39,12 @@ Leia [`INSTRUCOES_NETLIFY_SUPABASE.md`](./INSTRUCOES_NETLIFY_SUPABASE.md) antes 
 - [Usar o Chat compartilhado](./docs/ETAPA_6_CHAT.md)
 - [Grupos de Chat e cadastro automático](./docs/ETAPA_8_CADASTRO_GRUPOS.md)
 - [Configurar Perfil, Foto e avisos de atividade](./docs/ETAPA_7_PERFIL_EMAIL.md)
-- [Ativar push OneSignal no Median — Chat, comunicados e atividades](./docs/ETAPA_10_PUSH_CHAT_ONESIGNAL.md)
+- [Ativar push OneSignal no Median e Web — Chat, comunicados e atividades](./INSTRUCOES_NETLIFY_SUPABASE.md#9-ativar-os-mesmos-pushes-no-desktop-e-no-iphone-pelo-web-push)
+- [Detalhes do push OneSignal no Median](./docs/ETAPA_10_PUSH_CHAT_ONESIGNAL.md)
 - [Banco Supabase — migração inicial](./docs/ETAPA_1_SUPABASE.md)
 - [Login, cadastro e recuperação](./docs/ETAPA_2_LOGIN.md)
 - [Critérios e progresso do projeto](./TODO.md)
 
 ## Desenvolvimento local
 
-Copie `.env.example` para `.env.local` e configure a URL e chave publishable do Supabase. Para Web Push desktop, defina também `VITE_ONESIGNAL_APP_ID` como o App ID público do app OneSignal já usado pelo projeto. Não coloque REST API Key ou service role em variáveis `VITE_*` e não compartilhe nem envie `.env.local`. Na raiz do projeto, execute `pnpm install` e `pnpm dev`. Para build: `pnpm build`.
+Copie `.env.example` para `.env.local` e use somente a URL e a chave publishable do Supabase que você escolheu. Não compartilhe nem envie `.env.local`. Na raiz do projeto, execute `pnpm install` e `pnpm dev`. Para build: `pnpm build`.

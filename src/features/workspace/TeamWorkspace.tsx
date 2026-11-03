@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { BookOpen, CalendarDays, Check, ClipboardList, Folder, Megaphone, MessageCircle, Trash2, X, type LucideIcon } from 'lucide-react';
+import { CalendarDays, Check, ClipboardList, Folder, Megaphone, MessageCircle, Trash2, X, type LucideIcon } from 'lucide-react';
 import {
   activityTypeLabels,
   addDays,
@@ -25,7 +25,7 @@ import {
 import ProfileMenu from '../profile/ProfileMenu';
 import SharedContentWorkspace from './SharedContentWorkspace';
 import TeamChat from './TeamChat';
-import ManualFunctions from './ManualFunctions';
+import WebPushControl from './WebPushControl';
 import { flushPendingWorkspacePushEvents, notifyActivityChange, notifyWorkspacePush } from '../../lib/notifications';
 import './workspace.css';
 
@@ -77,14 +77,13 @@ type ActivityFormState = {
   notes: string;
 };
 type WeeklyDraft = { status: WeeklyStatus; justification: string };
-type WorkspaceTab = 'week' | 'activities' | 'files' | 'announcements' | 'chat' | 'manual';
+type WorkspaceTab = 'week' | 'activities' | 'files' | 'announcements' | 'chat';
 const workspaceTabs: { id: WorkspaceTab; label: string; icon: LucideIcon }[] = [
   { id: 'chat', label: 'Chat', icon: MessageCircle },
   { id: 'announcements', label: 'Comunicados', icon: Megaphone },
   { id: 'week', label: 'Semana', icon: CalendarDays },
   { id: 'activities', label: 'Atividades', icon: ClipboardList },
   { id: 'files', label: 'Arquivos', icon: Folder },
-  { id: 'manual', label: 'Manual de funções', icon: BookOpen },
 ];
 
 const defaultFilters: FilterState = {
@@ -550,6 +549,8 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
         </div>
       </header>
 
+      <div className="workspace-push-banner"><WebPushControl /></div>
+
       <div className="workspace-frame">
         <aside className="workspace-sidebar" aria-label="Navegação do espaço da equipe">
           <p className="workspace-sidebar-label">ROTINA DA EQUIPE</p>
@@ -571,8 +572,8 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
         <main className="workspace-main" id="workspace">
           <div className="workspace-page-heading">
             <div>
-              <p className="workspace-kicker">{tab === 'week' ? 'ACOMPANHAMENTO SEMANAL' : tab === 'activities' ? 'CADASTRO DA EQUIPE' : tab === 'files' ? 'LINKS COMPARTILHADOS' : tab === 'announcements' ? 'MURAL DA EQUIPE' : tab === 'manual' ? 'CARGOS E CAPACITAÇÃO' : 'CONVERSA EM TEMPO REAL'}</p>
-              <h1>{tab === 'week' ? 'Semana em movimento.' : tab === 'activities' ? 'Atividades da equipe.' : tab === 'files' ? 'Arquivos da equipe.' : tab === 'announcements' ? 'Comunicados da equipe.' : tab === 'manual' ? 'Manual de funções.' : 'Chat da equipe.'}</h1>
+              <p className="workspace-kicker">{tab === 'week' ? 'ACOMPANHAMENTO SEMANAL' : tab === 'activities' ? 'CADASTRO DA EQUIPE' : tab === 'files' ? 'LINKS COMPARTILHADOS' : tab === 'announcements' ? 'MURAL DA EQUIPE' : 'CONVERSA EM TEMPO REAL'}</p>
+              <h1>{tab === 'week' ? 'Semana em movimento.' : tab === 'activities' ? 'Atividades da equipe.' : tab === 'files' ? 'Arquivos da equipe.' : tab === 'announcements' ? 'Comunicados da equipe.' : 'Chat da equipe.'}</h1>
               <p className="workspace-subtitle">{tab === 'week'
                 ? 'Registre o que avançou e sinalize o que precisa de atenção.'
                 : tab === 'activities'
@@ -581,9 +582,7 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
                     ? 'Acesse atalhos visuais para as pastas compartilhadas.'
                     : tab === 'announcements'
                       ? 'Compartilhe avisos com toda a equipe ou com uma área.'
-                      : tab === 'manual'
-                        ? 'Consulte o que cada núcleo e área deve fazer e quais competências desenvolver.'
-                        : 'Converse com todos os integrantes ativos em uma sala compartilhada.'}</p>
+                      : 'Converse com todos os integrantes ativos em uma sala compartilhada.'}</p>
             </div>
             <div className="workspace-heading-actions">
               {(tab === 'week' || tab === 'activities') && <span className="workspace-cycle-chip">CICLO · {cycleWeeksCount} SEMANAS</span>}
@@ -832,7 +831,6 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
           {tab === 'chat' && (
             <TeamChat client={client} userId={userId} isAdmin={profile.role === 'admin'} members={members} />
           )}
-          {tab === 'manual' && <ManualFunctions />}
 
           <footer className="workspace-footer"><span>UFCI/RJ</span><i />SolMar Celeris <small>· DADOS DO SUPABASE</small></footer>
         </main>
