@@ -43,8 +43,8 @@ function errorMessage(error: unknown): string {
   if (candidate.code === '42501' || /row-level security|permission denied/i.test(message)) {
     return 'O Supabase ainda está bloqueando essa ação. Confirme que a migração incremental da Etapa 5 foi aplicada no projeto certo; não desative o RLS.';
   }
-  if (candidate.code === 'PGRST202' || /function .*remove_drive_folder.*not found/i.test(message)) {
-    return 'A função segura de remoção ainda não existe neste banco. Aplique a migração incremental da Etapa 5 no Supabase.';
+  if (candidate.code === 'PGRST202' || /function .*remove_(drive_folder|announcement).*not found/i.test(message)) {
+    return 'A função segura de remoção ainda não existe neste banco. Aplique a migration incremental mais recente e publique o site atualizado.';
   }
   if (/drive_folders_single_primary|duplicate key/i.test(message)) {
     return 'Outra pessoa definiu uma pasta principal ao mesmo tempo. Atualize a lista e tente de novo.';
@@ -247,12 +247,8 @@ export default function SharedContentWorkspace({ client, mode, areas, members }:
     setSaving(true);
     setError('');
     setFeedback('');
-    const { error: updateError } = await client
-      .from('announcements')
-      .update({ removed_at: new Date().toISOString() })
-      .eq('id', item.id)
-      .is('removed_at', null);
-    if (updateError) setError(errorMessage(updateError));
+    const { error: rpcError } = await client.rpc('remove_announcement', { p_announcement_id: item.id });
+    if (rpcError) setError(errorMessage(rpcError));
     else {
       setConfirmAnnouncementId(null);
       setFeedback('Comunicado removido da lista. A alteração fica registrada no histórico.');

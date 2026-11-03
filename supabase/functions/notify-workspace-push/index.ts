@@ -133,12 +133,36 @@ async function sendOneSignalPush(
       app_id: appId,
       target_channel: 'push',
       include_aliases: { external_id: recipientIds },
-      headings: { pt: isAnnouncement ? 'Novo comunicado no SolMar' : 'Nova atividade atribuída a você' },
-      contents: { pt: isAnnouncement ? 'Abra o app para ler o aviso.' : 'Abra o SolMar para consultar a atividade.' },
+      headings: {
+        en: isAnnouncement ? 'New SolMar announcement' : 'A new activity was assigned to you',
+        pt: isAnnouncement ? 'Novo comunicado no SolMar' : 'Nova atividade atribuída a você',
+      },
+      contents: {
+        en: isAnnouncement ? 'Open the app to read the notice.' : 'Open SolMar to review the activity.',
+        pt: isAnnouncement ? 'Abra o app para ler o aviso.' : 'Abra o SolMar para consultar a atividade.',
+      },
       data: { targetUrl: APP_URL },
     }),
   });
-  if (!response.ok) throw new Error(`onesignal_http_${response.status}`);
+  if (!response.ok) {
+    const responseText = await response.text();
+    let providerMessage = 'no_provider_details';
+    try {
+      const parsed = JSON.parse(responseText) as { errors?: unknown; error?: unknown; message?: unknown };
+      const detail = parsed.errors ?? parsed.error ?? parsed.message;
+      if (typeof detail === 'string') providerMessage = detail;
+      else if (detail !== undefined) providerMessage = JSON.stringify(detail);
+    } catch {
+      // Do not log arbitrary provider response bodies.
+    }
+    providerMessage = providerMessage
+      .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/gi, '[id]')
+      .replace(/os_v2_app_[A-Za-z0-9_-]+/g, '[redacted]')
+      .replace(/Bearer\s+\S+/gi, 'Bearer [redacted]')
+      .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[email]')
+      .slice(0, 400);
+    throw new Error(`onesignal_http_${response.status}:${providerMessage}`);
+  }
   const result = await response.json().catch(() => ({})) as OneSignalResponse;
   return Boolean(result.id);
 }
@@ -227,7 +251,9 @@ Deno.serve(async (request) => {
 
     await updateEvent(admin, event.id, 'sent', recipientIds.length);
     return reply(200, { status: 'sent', recipient_count: recipientIds.length });
-  } catch {
+  } catch (error) {
+    const diagnostic = error instanceof Error ? error.message : 'unknown_error';
+    console.error('[notify-workspace-push] delivery failed:', diagnostic);
     if (claimed) {
       try { await updateEvent(admin, eventId, 'failed', 0); } catch { /* details remain server-side */ }
     }

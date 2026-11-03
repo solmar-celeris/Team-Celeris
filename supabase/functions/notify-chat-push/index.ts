@@ -43,7 +43,10 @@ async function claimMessage(admin: SupabaseClient, messageId: string, actorId: s
     attempt_count: 1,
   });
   if (!error) return true;
-  if (error.code !== '23505') throw new Error('push_log_claim_failed');
+  if (error.code !== '23505') {
+    const safeCode = typeof error.code === 'string' ? error.code.slice(0, 24) : 'unknown';
+    throw new Error(`push_log_claim_failed:${safeCode}`);
+  }
 
   const { data: prior, error: priorError } = await admin
     .from('chat_push_delivery_log')
@@ -151,12 +154,36 @@ async function sendOneSignalPush(
       app_id: appId,
       target_channel: 'push',
       include_aliases: { external_id: recipientIds },
-      headings: { pt: `Nova mensagem de ${senderName}` },
-      contents: { pt: groupName ? `No grupo “${groupName}”` : 'No Chat da equipe' },
+      headings: {
+        en: `New message from ${senderName}`,
+        pt: `Nova mensagem de ${senderName}`,
+      },
+      contents: {
+        en: groupName ? `In the “${groupName}” group` : 'In the team chat',
+        pt: groupName ? `No grupo “${groupName}”` : 'No Chat da equipe',
+      },
       data: { targetUrl: APP_URL },
     }),
   });
-  if (!response.ok) throw new Error(`onesignal_http_${response.status}`);
+  if (!response.ok) {
+    const responseText = await response.text();
+    let providerMessage = 'no_provider_details';
+    try {
+      const parsed = JSON.parse(responseText) as { errors?: unknown; error?: unknown; message?: unknown };
+      const detail = parsed.errors ?? parsed.error ?? parsed.message;
+      if (typeof detail === 'string') providerMessage = detail;
+      else if (detail !== undefined) providerMessage = JSON.stringify(detail);
+    } catch {
+      // Do not log arbitrary provider response bodies.
+    }
+    providerMessage = providerMessage
+      .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/gi, '[id]')
+      .replace(/os_v2_app_[A-Za-z0-9_-]+/g, '[redacted]')
+      .replace(/Bearer\s+\S+/gi, 'Bearer [redacted]')
+      .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[email]')
+      .slice(0, 400);
+    throw new Error(`onesignal_http_${response.status}:${providerMessage}`);
+  }
   const result = await response.json().catch(() => ({})) as OneSignalResponse;
   return Boolean(result.id);
 }
@@ -238,7 +265,9 @@ Deno.serve(async (request) => {
 
     await updateDelivery(admin, message.id, 'sent', recipientIds.length);
     return reply(200, { status: 'sent', recipient_count: recipientIds.length });
-  } catch {
+  } catch (error) {
+    const diagnostic = error instanceof Error ? error.message : 'unknown_error';
+    console.error('[notify-chat-push] delivery failed:', diagnostic);
     if (claimed) {
       try { await updateDelivery(admin, body.message_id, 'failed', 0); } catch { /* keep provider/database detail private */ }
     }
