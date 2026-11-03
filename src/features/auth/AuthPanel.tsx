@@ -529,7 +529,6 @@ export default function AuthPanel() {
               {submitting ? 'Verificando…' : 'Entrar'} <span aria-hidden="true">→</span>
             </button>
           </form>
-          <p className="auth-footnote">Novos cadastros são ativados como Integrante. Se a confirmação de e-mail estiver habilitada, confirme o endereço para entrar.</p>
         </>
       )}
 

@@ -28,12 +28,13 @@ export default function App() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <a className="brand" href="#inicio" aria-label="SolMar Celeris — início">
+        <a className="brand" href="#inicio" aria-label="Team Celeris Workspace — início">
           <img
             className="brand-logo"
             src="/assets/celeris-logo.png"
             alt="Logo SolMar Celeris"
           />
+          <span className="brand-name">Team Celeris Workspace</span>
         </a>
         <div className="top-actions">
           <span className="connection-pill"><i /> ACESSO RESTRITO</span>
@@ -54,12 +55,6 @@ export default function App() {
           <p className="eyebrow"><span>ENERGIA SOLAR</span><b /> PROJETO SOLMAR</p>
           <h1>O próximo marco começa <em>aqui.</em></h1>
           <p className="intro-copy">Um espaço compartilhado para acompanhar as entregas, as semanas e o avanço do barco solar.</p>
-          <div className="story-rail" aria-hidden="true">
-            <span className="rail-sun" />
-            <span className="rail-line" />
-            <span className="rail-end">ROTA DA EQUIPE</span>
-          </div>
-          <p className="story-note">Novos cadastros são ativados automaticamente; a confirmação de e-mail pode ser exigida.</p>
         </section>
 
         <section className="auth-panel" aria-labelledby="auth-title">
