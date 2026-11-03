@@ -51,13 +51,13 @@ button:disabled { cursor: wait; opacity: .65; }
 .brand { display: inline-flex; align-items: center; gap: 11px; color: inherit; text-decoration: none; }
 .brand-logo { display: block; width: auto; height: 68px; max-width: 132px; object-fit: contain; }
 .top-actions { display: flex; align-items: center; gap: 12px; }
-.connection-pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 11px; border: 1px solid rgba(255,255,255,.25); border-radius: 99px; background: rgba(255,255,255,.08); font-size: 10px; font-weight: 750; letter-spacing: .07em; }
+.connection-pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 11px; border: 1px solid rgba(255,255,255,.25); border-radius: 99px; background: rgba(255,255,255,.08); font-size: 11px; font-weight: 750; letter-spacing: .07em; }
 .connection-pill i { width: 7px; height: 7px; border-radius: 50%; background: #67d7ab; box-shadow: 0 0 0 3px rgba(103,215,171,.17); }
 .theme-toggle { display: grid; width: 36px; height: 36px; place-items: center; border: 1px solid rgba(255,255,255,.3); border-radius: 10px; color: #fff; background: rgba(255,255,255,.08); cursor: pointer; font-size: 18px; }
 .auth-main { display: flex; align-items: center; justify-content: space-between; gap: clamp(36px, 8vw, 105px); width: min(100% - 48px, 1120px); flex: 1; margin: 0 auto; padding: clamp(42px, 7vw, 88px) 0 54px; }
 .auth-story { position: relative; flex: 1 1 50%; min-width: 0; padding: 18px 0 24px clamp(0px, 2vw, 28px); overflow: hidden; }
 .auth-story::before { position: absolute; z-index: -1; top: 7%; left: -5%; width: min(38vw, 370px); aspect-ratio: 1; border: 1px solid var(--line); border-radius: 50%; box-shadow: 0 0 0 36px color-mix(in srgb, var(--sky) 5%, transparent), 0 0 0 75px color-mix(in srgb, var(--blue) 4%, transparent); content: ""; }
-.eyebrow { display: flex; align-items: center; gap: 10px; margin: 0 0 17px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .15em; }
+.eyebrow { display: flex; align-items: center; gap: 10px; margin: 0 0 17px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .15em; }
 .eyebrow span { color: var(--orange); }
 .eyebrow b { width: 24px; height: 1px; background: var(--line); }
 h1 { max-width: 540px; margin: 0; color: var(--ocean); font-size: clamp(42px, 6vw, 70px); font-weight: 760; letter-spacing: -.06em; line-height: .98; }
@@ -67,15 +67,15 @@ h1 em { color: var(--ink); font-style: normal; }
 .story-rail { display: flex; align-items: center; width: min(100%, 430px); margin: 46px 0 0; }
 .rail-sun { width: 13px; height: 13px; flex: 0 0 13px; border-radius: 50%; background: var(--sky); box-shadow: 0 0 0 6px color-mix(in srgb, var(--sky) 15%, transparent); }
 .rail-line { height: 1px; flex: 1; background: var(--line); }
-.rail-end { margin-left: 12px; color: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: .12em; white-space: nowrap; }
+.rail-end { margin-left: 12px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .12em; white-space: nowrap; }
 .story-note { margin: 15px 0 0; color: var(--muted); font-size: 11px; }
 .auth-panel { width: min(100%, 445px); flex: 0 0 min(100%, 445px); padding: clamp(24px, 4vw, 38px); border: 1px solid var(--line); border-radius: 20px; background: var(--card); box-shadow: var(--shadow); }
 .auth-panel-top { display: flex; align-items: center; gap: 12px; margin-bottom: 25px; }
 .auth-icon { display: grid; width: 43px; height: 43px; place-items: center; border-radius: 14px; color: var(--blue); background: var(--surface); }
 .auth-icon svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-.auth-overline { color: var(--muted); font-size: 9px; font-weight: 850; letter-spacing: .15em; }
+.auth-overline { color: var(--muted); font-size: 10px; font-weight: 850; letter-spacing: .15em; }
 .auth-panel h2 { margin: 0; color: var(--ink); font-size: clamp(22px, 3vw, 28px); letter-spacing: -.04em; line-height: 1.15; }
-.auth-panel .eyebrow { margin-bottom: 9px; color: var(--orange); font-size: 9px; }
+.auth-panel .eyebrow { margin-bottom: 9px; color: var(--orange); font-size: 10px; }
 .form-intro { margin: 12px 0 22px; color: var(--muted); font-size: 13px; line-height: 1.55; }
 .login-form { display: grid; gap: 9px; }
 .login-form label { margin-top: 4px; color: var(--ink); font-size: 11px; font-weight: 750; }
@@ -89,7 +89,7 @@ h1 em { color: var(--ink); font-style: normal; }
 .secondary-button { justify-content: center; gap: 12px; margin-top: 24px; background: var(--ocean); }
 .form-error { margin: 4px 0 0; padding: 10px 12px; border: 1px solid color-mix(in srgb, #b32929 24%, var(--line)); border-radius: 9px; color: #a52727; background: color-mix(in srgb, #e54444 7%, var(--card)); font-size: 11px; line-height: 1.5; }
 :root[data-theme="dark"] .form-error { color: #ffb1a9; }
-.no-signup-note { margin: 18px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; text-align: center; }
+.no-signup-note { margin: 18px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; text-align: center; }
 .loading-state { padding: 7px 0 12px; }
 .loading-state p, .state-copy { margin: 12px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
 .loading-dot { display: block; width: 10px; height: 10px; margin-bottom: 17px; border-radius: 50%; background: var(--sky); box-shadow: 0 0 0 6px color-mix(in srgb, var(--sky) 15%, transparent); animation: pulse 1.4s ease-in-out infinite; }
@@ -102,26 +102,26 @@ h1 em { color: var(--ink); font-style: normal; }
 .access-message-warning { color: var(--muted); background: var(--surface); }
 .access-message-warning strong { color: var(--ink); }
 .member-state > .eyebrow { margin-top: 5px; }
-.page-footer { display: flex; align-items: center; gap: 11px; width: min(100% - 48px, 1120px); margin: auto auto 0; padding: 18px 0 24px; color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: .12em; }
+.page-footer { display: flex; align-items: center; gap: 11px; width: min(100% - 48px, 1120px); margin: auto auto 0; padding: 18px 0 24px; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .12em; }
 .footer-institution { color: var(--blue); font-weight: 800; }
 .footer-line { width: 32px; height: 1px; background: var(--line); }
 
 @media (max-width: 760px) {
   .topbar { min-height: 76px; padding: 8px 16px; }
   .brand-logo { height: 54px; max-width: 100px; }
-  .connection-pill { gap: 6px; padding: 6px 8px; font-size: 8px; }
+  .connection-pill { gap: 6px; padding: 6px 8px; font-size: 9px; }
   .top-actions { gap: 7px; }
   .auth-main { flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 25px; width: min(100% - 32px, 520px); padding: 39px 0 28px; }
   .auth-story { flex: 0 0 auto; padding: 8px 0 0; }
   .auth-story::before { top: -40%; left: 50%; width: 260px; }
-  .auth-story .eyebrow { margin-bottom: 13px; font-size: 8px; }
+  .auth-story .eyebrow { margin-bottom: 13px; font-size: 9px; }
   h1 { max-width: 470px; font-size: clamp(38px, 11vw, 55px); }
   .intro-copy { max-width: 440px; margin-top: 15px; font-size: 13px; }
   .story-rail { display: none; }
-  .story-note { margin-top: 11px; font-size: 10px; }
+  .story-note { margin-top: 11px; font-size: 11px; }
   .auth-panel { width: 100%; flex-basis: auto; padding: 24px 20px; border-radius: 16px; }
   .auth-panel-top { margin-bottom: 20px; }
-  .page-footer { justify-content: center; width: min(100% - 28px, 480px); font-size: 8px; }
+  .page-footer { justify-content: center; width: min(100% - 28px, 480px); font-size: 9px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -162,12 +162,12 @@ h1 em { color: var(--ink); font-style: normal; }
   color: var(--blue);
   background: transparent;
   cursor: pointer;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 750;
 }
 .auth-back-link { margin: 0 0 19px; }
 .auth-back-link:hover, .auth-text-button:hover { text-decoration: underline; }
-.auth-footnote { margin: 14px 0 0; color: var(--muted); font-size: 10px; line-height: 1.55; }
+.auth-footnote { margin: 14px 0 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
 .form-notice {
   margin: 4px 0 0;
   padding: 10px 12px;

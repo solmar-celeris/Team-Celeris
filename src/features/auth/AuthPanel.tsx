@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
 import { syncMedianOneSignalIdentity } from '../../lib/medianOneSignal';
+import { syncDesktopOneSignalIdentity } from '../../lib/desktopNotifications';
 import { supabase, supabaseConfigured } from '../../lib/supabase';
 import TeamWorkspace from '../workspace/TeamWorkspace';
 
@@ -90,7 +91,12 @@ export default function AuthPanel() {
     const previousUserId = medianIdentityUserId.current;
     if (previousUserId === activeSessionUserId) return;
     medianIdentityUserId.current = activeSessionUserId;
-    return syncMedianOneSignalIdentity(activeSessionUserId, previousUserId !== null);
+    const stopMedianSync = syncMedianOneSignalIdentity(activeSessionUserId, previousUserId !== null);
+    const stopDesktopSync = syncDesktopOneSignalIdentity(activeSessionUserId);
+    return () => {
+      stopMedianSync();
+      stopDesktopSync();
+    };
   }, [activeSessionUserId]);
 
   useEffect(() => {

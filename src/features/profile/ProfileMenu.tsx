@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import {
+  disableDesktopNotifications,
+  enableDesktopNotifications,
+  getDesktopNotificationStatus,
+  type DesktopNotificationStatus,
+} from '../../lib/desktopNotifications';
 import './profile-menu.css';
 
 const AVATAR_BUCKET = 'solmar-profile-photos';
@@ -41,6 +47,9 @@ export default function ProfileMenu({ client, userId, fallbackName, photoUrl, on
   const [schemaReady, setSchemaReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [desktopPushStatus, setDesktopPushStatus] = useState<DesktopNotificationStatus | null>(null);
+  const [desktopPushBusy, setDesktopPushBusy] = useState(false);
+  const [desktopPushMessage, setDesktopPushMessage] = useState('');
   const [notice, setNotice] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const photoUrlRef = useRef<string | null>(null);
@@ -116,6 +125,35 @@ export default function ProfileMenu({ client, userId, fallbackName, photoUrl, on
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    let mounted = true;
+    void getDesktopNotificationStatus().then((status) => {
+      if (mounted) setDesktopPushStatus(status);
+    });
+    return () => { mounted = false; };
+  }, [open]);
+
+  async function changeDesktopNotifications(enable: boolean) {
+    setDesktopPushBusy(true);
+    setDesktopPushMessage('');
+    try {
+      const status = enable
+        ? await enableDesktopNotifications(userId)
+        : await disableDesktopNotifications();
+      setDesktopPushStatus(status);
+      if (status === 'enabled') setDesktopPushMessage('Notificações ativadas neste navegador.');
+      else if (status === 'blocked') setDesktopPushMessage('A permissão está bloqueada nas configurações do navegador. Libere notificações para este site e tente novamente.');
+      else if (status === 'permission_required') setDesktopPushMessage('O navegador não concluiu a permissão. Tente novamente pelo botão.');
+      else if (status === 'disabled') setDesktopPushMessage('Notificações desativadas neste navegador.');
+      else setDesktopPushMessage('Não foi possível ativar neste navegador. Verifique a conexão e tente novamente.');
+    } catch {
+      setDesktopPushMessage('Não foi possível configurar as notificações agora. Verifique sua conexão e tente novamente.');
+    } finally {
+      setDesktopPushBusy(false);
+    }
+  }
 
   function selectPhoto(file: File | undefined) {
     setErrorMessage('');
@@ -242,6 +280,31 @@ export default function ProfileMenu({ client, userId, fallbackName, photoUrl, on
           </div>
 
           <form onSubmit={(event) => void saveProfile(event)}>
+            <section className="profile-notification-section" aria-labelledby="profile-notification-title">
+              <div className="profile-notification-heading">
+                <div><p className="workspace-kicker">NESTE COMPUTADOR</p><h3 id="profile-notification-title">Notificações do navegador</h3></div>
+                {desktopPushStatus === 'enabled' && <span className="profile-push-on">Ativas</span>}
+              </div>
+              {desktopPushStatus === null && <p className="profile-notification-copy">Verificando suporte deste navegador…</p>}
+              {desktopPushStatus === 'not_configured' && <p className="profile-notification-copy">O administrador ainda precisa concluir a configuração do Web Push no site.</p>}
+              {desktopPushStatus === 'not_supported' && <p className="profile-notification-copy">Este navegador ou contexto não oferece suporte a notificações Web Push.</p>}
+              {desktopPushStatus === 'app_webview' && <p className="profile-notification-copy">No aplicativo móvel, as notificações são controladas pelo sistema do aparelho.</p>}
+              {desktopPushStatus === 'blocked' && <p className="profile-notification-copy">A permissão foi bloqueada pelo navegador. Altere a permissão do site nas configurações do navegador.</p>}
+              {(desktopPushStatus === 'permission_required' || desktopPushStatus === 'disabled') && <p className="profile-notification-copy">Receba avisos do SolMar mesmo quando esta aba não estiver aberta, conforme as notificações configuradas para sua conta.</p>}
+              {desktopPushStatus === 'enabled' && <p className="profile-notification-copy">Este navegador está inscrito para receber avisos do SolMar.</p>}
+              {(desktopPushStatus === 'permission_required' || desktopPushStatus === 'disabled') && (
+                <button type="button" className="profile-secondary-button profile-push-action" onClick={() => void changeDesktopNotifications(true)} disabled={desktopPushBusy}>
+                  {desktopPushBusy ? 'Aguarde…' : 'Ativar neste navegador'}
+                </button>
+              )}
+              {desktopPushStatus === 'enabled' && (
+                <button type="button" className="profile-text-button profile-push-disable" onClick={() => void changeDesktopNotifications(false)} disabled={desktopPushBusy}>
+                  {desktopPushBusy ? 'Aguarde…' : 'Desativar notificações'}
+                </button>
+              )}
+              {desktopPushMessage && <p className="profile-notification-feedback" role="status">{desktopPushMessage}</p>}
+            </section>
+
             <div className="profile-photo-row">
               <span className="profile-avatar profile-avatar-large" aria-hidden="true">
                 {shownPhoto ? <img src={shownPhoto} alt="" /> : <span>{initialFrom(shownName)}</span>}
