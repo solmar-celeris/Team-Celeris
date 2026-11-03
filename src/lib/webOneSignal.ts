@@ -40,10 +40,9 @@ export async function logoutWebOneSignal(): Promise<void> {
 
 export async function enableWebPushFromUserGesture(): Promise<'enabled' | 'unsupported' | 'denied' | 'not_configured'> {
   if (!webAppId) return 'not_configured';
-  if (typeof window === 'undefined' || !('Notification' in window) || !OneSignal.Notifications.isPushSupported()) {
-    return 'unsupported';
-  }
-  await initializeWebPush();
+  if (typeof window === 'undefined') return 'unsupported';
+  if (!(await initializeWebPush())) return 'unsupported';
+  if (!('Notification' in window) || !OneSignal.Notifications.isPushSupported()) return 'unsupported';
   const granted = await OneSignal.Notifications.requestPermission();
   if (!granted) return 'denied';
   await OneSignal.User.PushSubscription.optIn();
