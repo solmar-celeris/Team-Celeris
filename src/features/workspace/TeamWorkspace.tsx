@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { CalendarDays, ClipboardList, Folder, Megaphone, MessageCircle, type LucideIcon } from 'lucide-react';
+import { BookOpen, CalendarDays, Check, ClipboardList, Folder, Megaphone, MessageCircle, Trash2, X, type LucideIcon } from 'lucide-react';
 import {
   activityTypeLabels,
   addDays,
@@ -25,6 +25,7 @@ import {
 import ProfileMenu from '../profile/ProfileMenu';
 import SharedContentWorkspace from './SharedContentWorkspace';
 import TeamChat from './TeamChat';
+import ManualFunctions from './ManualFunctions';
 import { flushPendingWorkspacePushEvents, notifyActivityChange, notifyWorkspacePush } from '../../lib/notifications';
 import './workspace.css';
 
@@ -76,13 +77,14 @@ type ActivityFormState = {
   notes: string;
 };
 type WeeklyDraft = { status: WeeklyStatus; justification: string };
-type WorkspaceTab = 'week' | 'activities' | 'files' | 'announcements' | 'chat';
+type WorkspaceTab = 'week' | 'activities' | 'files' | 'announcements' | 'chat' | 'manual';
 const workspaceTabs: { id: WorkspaceTab; label: string; icon: LucideIcon }[] = [
   { id: 'chat', label: 'Chat', icon: MessageCircle },
   { id: 'announcements', label: 'Comunicados', icon: Megaphone },
   { id: 'week', label: 'Semana', icon: CalendarDays },
   { id: 'activities', label: 'Atividades', icon: ClipboardList },
   { id: 'files', label: 'Arquivos', icon: Folder },
+  { id: 'manual', label: 'Manual de funções', icon: BookOpen },
 ];
 
 const defaultFilters: FilterState = {
@@ -225,6 +227,8 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [savingActivity, setSavingActivity] = useState(false);
+  const [removingActivityId, setRemovingActivityId] = useState<string | null>(null);
+  const [confirmRemoveActivityId, setConfirmRemoveActivityId] = useState<string | null>(null);
   const [savingWeeklyId, setSavingWeeklyId] = useState<string | null>(null);
   const [dialogActivity, setDialogActivity] = useState<Activity | null | false>(false);
   const [drafts, setDrafts] = useState<Record<string, WeeklyDraft>>({});
@@ -467,6 +471,23 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
     }
   }
 
+  async function removeActivity(activity: Activity) {
+    setRemovingActivityId(activity.id);
+    setErrorMessage('');
+    setFeedback('');
+    try {
+      const { error } = await client.rpc('remove_activity', { p_activity_id: activity.id });
+      if (error) throw error;
+      setConfirmRemoveActivityId(null);
+      setFeedback(`Atividade ${activity.code} removida da lista. O histórico semanal foi preservado.`);
+      await loadData(true);
+    } catch (error) {
+      setErrorMessage(`Não foi possível remover a atividade: ${errorText(error)}`);
+    } finally {
+      setRemovingActivityId(null);
+    }
+  }
+
   async function saveWeekly(activity: Activity) {
     const draft = drafts[activity.id] ?? { status: 'not_started' as WeeklyStatus, justification: '' };
     if (draft.status === 'pending' && !draft.justification.trim()) {
@@ -550,8 +571,8 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
         <main className="workspace-main" id="workspace">
           <div className="workspace-page-heading">
             <div>
-              <p className="workspace-kicker">{tab === 'week' ? 'ACOMPANHAMENTO SEMANAL' : tab === 'activities' ? 'CADASTRO DA EQUIPE' : tab === 'files' ? 'LINKS COMPARTILHADOS' : tab === 'announcements' ? 'MURAL DA EQUIPE' : 'CONVERSA EM TEMPO REAL'}</p>
-              <h1>{tab === 'week' ? 'Semana em movimento.' : tab === 'activities' ? 'Atividades da equipe.' : tab === 'files' ? 'Arquivos da equipe.' : tab === 'announcements' ? 'Comunicados da equipe.' : 'Chat da equipe.'}</h1>
+              <p className="workspace-kicker">{tab === 'week' ? 'ACOMPANHAMENTO SEMANAL' : tab === 'activities' ? 'CADASTRO DA EQUIPE' : tab === 'files' ? 'LINKS COMPARTILHADOS' : tab === 'announcements' ? 'MURAL DA EQUIPE' : tab === 'manual' ? 'CARGOS E CAPACITAÇÃO' : 'CONVERSA EM TEMPO REAL'}</p>
+              <h1>{tab === 'week' ? 'Semana em movimento.' : tab === 'activities' ? 'Atividades da equipe.' : tab === 'files' ? 'Arquivos da equipe.' : tab === 'announcements' ? 'Comunicados da equipe.' : tab === 'manual' ? 'Manual de funções.' : 'Chat da equipe.'}</h1>
               <p className="workspace-subtitle">{tab === 'week'
                 ? 'Registre o que avançou e sinalize o que precisa de atenção.'
                 : tab === 'activities'
@@ -560,7 +581,9 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
                     ? 'Acesse atalhos visuais para as pastas compartilhadas.'
                     : tab === 'announcements'
                       ? 'Compartilhe avisos com toda a equipe ou com uma área.'
-                      : 'Converse com todos os integrantes ativos em uma sala compartilhada.'}</p>
+                      : tab === 'manual'
+                        ? 'Consulte o que cada núcleo e área deve fazer e quais competências desenvolver.'
+                        : 'Converse com todos os integrantes ativos em uma sala compartilhada.'}</p>
             </div>
             <div className="workspace-heading-actions">
               {(tab === 'week' || tab === 'activities') && <span className="workspace-cycle-chip">CICLO · {cycleWeeksCount} SEMANAS</span>}
@@ -774,7 +797,26 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
                         {activity.notes && <p className="workspace-activity-notes"><small>Observações</small>{activity.notes}</p>}
                         <div className="workspace-activity-card-foot">
                           <span>{canEdit ? 'Edição autorizada para seu perfil e área' : profile.role === 'reader' ? 'Perfil somente leitura' : 'Visualização; edição depende do perfil e da área'}</span>
-                          {canEdit && <button type="button" onClick={() => { setDialogError(''); setDialogActivity(activity); }}>Editar atividade</button>}
+                          {canEdit && (
+                            <div className="workspace-activity-actions">
+                              <button type="button" onClick={() => { setDialogError(''); setDialogActivity(activity); }}>Editar atividade</button>
+                              {confirmRemoveActivityId === activity.id ? (
+                                <div className="workspace-activity-remove-confirm" role="group" aria-label={`Confirmar remoção de ${activity.code}`}>
+                                  <span>Remover?</span>
+                                  <button type="button" className="workspace-activity-confirm-remove" onClick={() => void removeActivity(activity)} disabled={removingActivityId === activity.id}>
+                                    <Check size={13} aria-hidden="true" />{removingActivityId === activity.id ? 'Removendo…' : 'Confirmar'}
+                                  </button>
+                                  <button type="button" className="workspace-activity-cancel-remove" onClick={() => setConfirmRemoveActivityId(null)} disabled={removingActivityId === activity.id}>
+                                    <X size={13} aria-hidden="true" />Cancelar
+                                  </button>
+                                </div>
+                              ) : (
+                                <button type="button" className="workspace-activity-remove" onClick={() => setConfirmRemoveActivityId(activity.id)}>
+                                  <Trash2 size={13} aria-hidden="true" />Remover
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </article>
                     );
@@ -790,6 +832,7 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
           {tab === 'chat' && (
             <TeamChat client={client} userId={userId} isAdmin={profile.role === 'admin'} members={members} />
           )}
+          {tab === 'manual' && <ManualFunctions />}
 
           <footer className="workspace-footer"><span>UFCI/RJ</span><i />SolMar Celeris <small>· DADOS DO SUPABASE</small></footer>
         </main>

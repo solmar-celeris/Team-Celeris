@@ -36,6 +36,7 @@ As migrações incrementais são arquivos separados:
 - Aplique `20261102160000_auto_activate_new_signups.sql` uma única vez para ativar automaticamente **novos** cadastros como `member`. Não promove contas antigas `pending` e não modifica a confirmação de e-mail.
 - Se a migration do Chat ainda não foi executada, primeiro aplique `20261102135200_team_chat.sql`; em seguida aplique `20261102161000_team_chat_groups.sql` uma única vez para criar grupos, membros, regras RLS e Realtime. Se já executou a migration de grupos, pule-a.
 - Para remover comunicados sem depender de um PATCH direto sujeito à política de linha, aplique `20261103140000_safe_remove_announcement.sql` uma única vez. A função verifica perfil ativo, mantém a remoção lógica e preserva os triggers de auditoria; o RLS permanece ligado.
+- Para habilitar a remoção lógica de atividades por Administradores e Líderes da área, aplique `20261103150000_safe_remove_activity.sql` uma única vez. A função valida o perfil e a área, preserva atualizações semanais/auditoria e mantém o RLS ligado.
 
 Para cada arquivo que ainda precisa ser aplicado: abra o mesmo projeto Supabase usado pelo Netlify, vá a **SQL Editor → New query**, copie o conteúdo integral daquele único arquivo do pacote, confira o projeto selecionado e clique em **Run**. Espere a confirmação de sucesso antes de aplicar o próximo arquivo. O SQL do Chat usa a publicação `supabase_realtime`; ele não pede que você desative RLS nem use uma chave privilegiada.
 
@@ -75,7 +76,7 @@ Em **Arquivos**, use **Adicionar pasta** e informe um nome, link HTTPS iniciado 
 
 Em **Comunicados**, publique título, mensagem e destinatário (toda equipe ou uma área). O autor é automático. Fixados aparecem primeiro e depois vêm os mais recentes. Remover pede confirmação e mantém o registro auditável.
 
-**Semana** e **Atividades** continuam ligadas às tabelas existentes do Supabase. Não é preciso recriar o banco ou as variáveis de ambiente para atualizar essas telas.
+**Semana** e **Atividades** continuam ligadas às tabelas existentes do Supabase. O botão **Remover** aparece para Administradores e Líderes da área; ele arquiva a atividade para que saia das listas, preservando histórico semanal e auditoria. Não é uma exclusão física. A migration `20261103150000_safe_remove_activity.sql` precisa estar aplicada para o botão funcionar.
 
 ## 7. Solução de problemas
 

@@ -17,6 +17,7 @@ Aplicação responsiva em português, construída com React, TypeScript e Vite. 
 - Migração SQL inicial, com áreas/núcleos e 58 atividades: [`supabase/migrations/20261101184000_initial_schema.sql`](./supabase/migrations/20261101184000_initial_schema.sql).
 - Migração incremental de permissões para conteúdo compartilhado: [`supabase/migrations/20261102133000_shared_content_permissions.sql`](./supabase/migrations/20261102133000_shared_content_permissions.sql).
 - Migração incremental para remoção lógica segura de comunicados via RPC, com RLS ligado: [`supabase/migrations/20261103140000_safe_remove_announcement.sql`](./supabase/migrations/20261103140000_safe_remove_announcement.sql).
+- Migração incremental para remoção lógica de atividades por Administradores e Líderes da área, preservando histórico semanal: [`supabase/migrations/20261103150000_safe_remove_activity.sql`](./supabase/migrations/20261103150000_safe_remove_activity.sql).
 - Migração incremental do chat geral em tempo real: [`supabase/migrations/20261102135200_team_chat.sql`](./supabase/migrations/20261102135200_team_chat.sql).
 - Migração incremental de perfil, bucket privado e registro de avisos: [`supabase/migrations/20261102152500_profile_email_notifications.sql`](./supabase/migrations/20261102152500_profile_email_notifications.sql).
 - Migração de ativação automática para novos cadastros: [`supabase/migrations/20261102160000_auto_activate_new_signups.sql`](./supabase/migrations/20261102160000_auto_activate_new_signups.sql); perfis `pending` antigos não são alterados.
