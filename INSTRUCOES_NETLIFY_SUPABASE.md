@@ -1,6 +1,6 @@
 # SolMar Celeris — atualizar no GitHub/Netlify e habilitar no Supabase
 
-**Revisado em 02/11/2026.** Este manual acompanha o pacote-fonte atualizado. O projeto continua usando o mesmo site Netlify e o mesmo Supabase. Este guia não publica por você nem executa SQL no seu banco.
+**Revisado em 03/11/2026.** Este manual acompanha o pacote-fonte atualizado. O projeto continua usando o mesmo site Netlify e o mesmo Supabase. Este guia não publica por você nem executa SQL no seu banco.
 
 ## O que esta versão acrescenta
 
@@ -17,12 +17,12 @@ Nas abas Arquivos e Comunicados, as permissões previamente escolhidas continuam
 1. Baixe e extraia `SolMar_Celeris_Netlify_Atualizado.zip`.
 2. Abra no GitHub Desktop o mesmo repositório local que está ligado ao seu site Netlify. Faça uma cópia de segurança da pasta antes de substituir os arquivos.
 3. Copie o conteúdo de dentro do ZIP para a pasta do repositório e aceite substituir os arquivos com o mesmo caminho. **Não apague nem substitua `.git`.**
-4. Em **Changes**, confirme que aparecem os arquivos de navegação e grupos, incluindo `TeamChat.tsx`, `ChatGroupDialog.tsx` e `supabase/migrations/20261102161000_team_chat_groups.sql`, além de Perfil/notificações.
+4. Em **Changes**, confirme que aparecem os arquivos de navegação e grupos, incluindo `TeamChat.tsx`, `ChatGroupDialog.tsx`, os componentes de identidade Median/OneSignal, as funções `notify-chat-push` e `notify-workspace-push`, e as migrations de push, além de Perfil/notificações.
 5. Não envie `.env.local`, `.env.production.local`, `node_modules/` nem `dist/`. O ZIP não contém esses arquivos.
 6. No campo **Summary**, escreva `Adicionar perfil e notificações da equipe`. Clique em **Commit to main** (ou na branch principal que o Netlify acompanha) e depois em **Push origin**.
 7. O Netlify deve iniciar o deploy ao receber o push. Abra o site existente → **Deploys** e aguarde o deploy mais recente terminar com sucesso. Não crie outro site.
 
-Mantenha as variáveis públicas já cadastradas no Netlify. O build continua usando `pnpm build` e a pasta de saída `dist`. Se elas precisarem ser conferidas, use somente `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`, como Plain text/não secretas e com escopo de build. Nunca coloque senha de banco, `sb_secret_...` nem `service_role` em uma variável `VITE_*`.
+Mantenha as variáveis públicas já cadastradas no Netlify. O build continua usando `pnpm build` e a pasta de saída `dist`. Se elas precisarem ser conferidas, use somente `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`, como Plain text/não secretas e com escopo de build. Nunca coloque senha de banco, `sb_secret_...`, `service_role` ou `ONESIGNAL_REST_API_KEY` em uma variável `VITE_*`.
 
 ## 2. Aplicar somente as migrações que ainda faltam
 
@@ -92,3 +92,17 @@ Nunca envie senhas, chaves, tokens ou URLs privadas em capturas de tela ou mensa
 O pacote contém código e guias, mas não a configuração local de ambiente, `dist`, `node_modules`, `.git` ou credenciais de produção. A tabela do Chat revoga `UPDATE` e `DELETE` do navegador; o único caminho de remoção é uma função que verifica Administrador ativo e substitui o texto original. Todos os perfis ativos podem usar a sala geral; somente participantes ativos e Administradores leem grupos, com RLS. Pela decisão da equipe, novos cadastros públicos são ativados automaticamente como `member`; qualquer pessoa que consiga se cadastrar poderá acessar os dados compartilhados permitidos pelas políticas. Visitantes sem sessão, contas ainda pendentes e perfis suspensos continuam bloqueados.
 
 A verificação local não substitui o teste no seu Supabase e Netlify reais. Nenhum SQL, mensagem ou outra escrita foi executada pelo agente no seu banco remoto, e nenhum deploy foi feito por esta atualização.
+
+
+## 8. Ativar push nativo pelo Median/OneSignal
+
+Este pacote prepara avisos do Chat, de comunicados e de atribuições para o APK Median. Não altera nem regenera seu APK; se ele já contém o plugin OneSignal conectado ao mesmo app, basta atualizar o site. O site associa o UUID da conta Supabase ao OneSignal quando a pessoa entra no APK. O atalho do Chrome/Web Push é separado e não está sendo ativado por este pacote.
+
+1. Aplique `20261102210500_chat_push_notifications.sql` uma vez, depois das migrations de Chat e grupos. Ela cria o registro técnico de entrega do Chat.
+2. Para avisos de comunicados e atribuições, aplique `20261103103000_workspace_push_events.sql` e, em seguida, `20261103110000_workspace_push_event_tokens.sql`, cada uma uma única vez. Pule qualquer arquivo que já tenha sido aplicado com sucesso. Não repita migrations.
+3. Em **Supabase → Edge Functions → Secrets**, confirme `ONESIGNAL_APP_ID` (App ID do app OneSignal conectado ao Median) e `ONESIGNAL_REST_API_KEY` (App API Key privada criada no app). Se ainda não cadastrou, adicione esses nomes e valores uma vez. Não use o Key ID, JSON do Firebase, identificador `co.median.android...` do Median, nem cole a chave no ZIP/GitHub/Netlify.
+4. Publique as Edge Functions `notify-chat-push` e `notify-workspace-push` usando os respectivos `supabase/functions/<nome>/index.ts` deste pacote. Mantenha **Verify JWT** ligado nas duas. Não substitua nem desative `notify-activity`.
+5. Publique o site atualizado pelo repositório já vinculado ao Netlify, seguindo a seção 1. Não crie um novo site.
+6. Teste com duas contas ativas e inscritas no OneSignal: uma mensagem na sala Equipe, um comunicado de teste e uma atribuição/reatribuição de teste. O autor não deve receber o próprio alerta; comunicado por área deve ficar restrito à área; atividade deve avisar somente o novo responsável. Confira os logs das duas Edge Functions e o histórico do OneSignal.
+
+As mensagens de push são genéricas e não incluem o texto privado da conversa, comunicado, atividade ou observações. Se a migration, secret ou function ainda não estiver pronta, o conteúdo continua sendo salvo, mas os pushes não funcionarão até concluir a configuração. Veja o passo a passo ilustrado em `docs/ETAPA_10_PUSH_CHAT_ONESIGNAL.md`.

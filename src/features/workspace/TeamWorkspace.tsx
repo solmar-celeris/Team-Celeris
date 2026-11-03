@@ -25,7 +25,7 @@ import {
 import ProfileMenu from '../profile/ProfileMenu';
 import SharedContentWorkspace from './SharedContentWorkspace';
 import TeamChat from './TeamChat';
-import { notifyActivityChange } from '../../lib/notifications';
+import { flushPendingWorkspacePushEvents, notifyActivityChange, notifyWorkspacePush } from '../../lib/notifications';
 import './workspace.css';
 
 type TeamWorkspaceProps = {
@@ -311,6 +311,10 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
     void loadData();
   }, [loadData]);
 
+  useEffect(() => {
+    if (profile.status === 'active') void flushPendingWorkspacePushEvents(client);
+  }, [client, profile.status, userId]);
+
   const handleProfileUpdated = useCallback(({ fullName, photoUrl: nextPhotoUrl }: { fullName: string; photoUrl: string | null }) => {
     setDisplayName(fullName);
     setAvatarUrl(nextPhotoUrl);
@@ -422,6 +426,9 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
     setSavingActivity(true);
     setDialogError('');
     const payload = buildMutation(form, members);
+    const oldResponsibleUserId = dialogActivity ? dialogActivity.responsible_user_id : null;
+    const shouldNotifyAssignee = Boolean(payload.responsible_user_id)
+      && payload.responsible_user_id !== oldResponsibleUserId;
     let savedActivityId = '';
     try {
       if (dialogActivity) {
@@ -440,6 +447,13 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
         setFeedback('Atividade cadastrada. O código foi gerado pelo banco.');
       }
       setDialogActivity(false);
+      if (shouldNotifyAssignee) {
+        void notifyWorkspacePush(client, 'activity_assigned', savedActivityId).then((result) => {
+          if (result === 'failed') {
+            setFeedback('Atividade salva, mas o push da nova atribuição não foi enviado. A atividade continua salva.');
+          }
+        });
+      }
       await loadData(true);
       void notifyActivityChange(client, 'activities', savedActivityId).then((result) => {
         if (result.status === 'failed') {

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { MessageCircle, RefreshCw, Send, ShieldCheck, Trash2, UserPlus, UsersRound } from 'lucide-react';
+import { notifyChatMessagePush } from '../../lib/notifications';
 import type { MemberProfile } from './domain';
 import ChatGroupDialog from './ChatGroupDialog';
 import './team-chat.css';
@@ -291,6 +292,11 @@ export default function TeamChat({ client, userId, isAdmin, members }: TeamChatP
       setMessages((current) => mergeMessages(current, [message]));
       autoScrollRef.current = true;
       setDraft('');
+      void notifyChatMessagePush(client, message.id).then((outcome) => {
+        if (outcome === 'failed') {
+          setFeedback('Mensagem enviada. O aviso no celular não foi confirmado; confira a configuração do OneSignal.');
+        }
+      });
     } catch (sendError) {
       setError(chatError(sendError));
     } finally {

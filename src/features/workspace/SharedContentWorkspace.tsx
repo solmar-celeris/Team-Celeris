@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ArrowUpRight, Check, FolderOpen, Megaphone, Pin, PinOff, Plus, RefreshCw, Trash2, X } from 'lucide-react';
 import type { Area, MemberProfile } from './domain';
+import { notifyWorkspacePush } from '../../lib/notifications';
 import './shared-content.css';
 
 type ContentMode = 'files' | 'announcements';
@@ -203,15 +204,20 @@ export default function SharedContentWorkspace({ client, mode, areas, members }:
     setError('');
     setFeedback('');
     try {
-      const { error: insertError } = await client.from('announcements').insert({
+      const { data, error: insertError } = await client.from('announcements').insert({
         title,
         message,
         audience_area_id: announcementForm.areaId || null,
-      });
+      }).select('id').single();
       if (insertError) throw insertError;
       setAnnouncementForm(emptyAnnouncementForm);
       setAnnouncementFormOpen(false);
       setFeedback('Comunicado publicado. O autor é identificado automaticamente pela sua conta.');
+      void notifyWorkspacePush(client, 'announcement_created', data.id).then((result) => {
+        if (result === 'failed') {
+          setFeedback('Comunicado publicado, mas o push não foi enviado. O comunicado continua publicado.');
+        }
+      });
       await loadContent(false);
     } catch (saveError) {
       setError(errorMessage(saveError));

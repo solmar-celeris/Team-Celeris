@@ -59,7 +59,7 @@ export default function App() {
             <span className="rail-line" />
             <span className="rail-end">ROTA DA EQUIPE</span>
           </div>
-          <p className="story-note">Cadastro aberto; o acesso aos dados depende da aprovação do administrador.</p>
+          <p className="story-note">Novos cadastros são ativados automaticamente; a confirmação de e-mail pode ser exigida.</p>
         </section>
 
         <section className="auth-panel" aria-labelledby="auth-title">

@@ -1,5 +1,6 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
+import { syncMedianOneSignalIdentity } from '../../lib/medianOneSignal';
 import { supabase, supabaseConfigured } from '../../lib/supabase';
 import TeamWorkspace from '../workspace/TeamWorkspace';
 
@@ -82,6 +83,15 @@ export default function AuthPanel() {
   const [errorMessage, setErrorMessage] = useState('');
   const [notice, setNotice] = useState('');
   const [logoutError, setLogoutError] = useState('');
+  const medianIdentityUserId = useRef<string | null>(null);
+  const activeSessionUserId = accessState === 'active' ? session?.user.id ?? null : null;
+
+  useEffect(() => {
+    const previousUserId = medianIdentityUserId.current;
+    if (previousUserId === activeSessionUserId) return;
+    medianIdentityUserId.current = activeSessionUserId;
+    return syncMedianOneSignalIdentity(activeSessionUserId, previousUserId !== null);
+  }, [activeSessionUserId]);
 
   useEffect(() => {
     const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
