@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "SolMar Celeris",
-  "short_name": "SolMar",
-  "description": "Espaço da equipe SolMar Celeris.",
+  "name": "Team Celeris",
+  "short_name": "Team Celeris",
+  "description": "Espaço da equipe Team Celeris.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
