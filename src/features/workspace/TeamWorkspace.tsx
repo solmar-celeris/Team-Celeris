@@ -4,14 +4,16 @@ import { BookOpen, CalendarDays, Check, ClipboardList, Folder, Megaphone, Messag
 import {
   activityTypeLabels,
   addDays,
-  buildCycleWeeks,
+  buildCycleWeeksInRange,
   canManageActivity,
   canUpdateActivityWeek,
+  formatFullDate,
   formatShortDate,
   formatWeekRange,
   generalStatusLabels,
   getGeneralStatus,
   isActivityExpected,
+  parseIsoDate,
   type Activity,
   type ActivityType,
   type Area,
@@ -37,7 +39,7 @@ type TeamWorkspaceProps = {
   onLogout: () => void;
 };
 
-type TeamSettings = { cycle_start: string; cycle_weeks: number };
+type TeamSettings = { cycle_start: string; cycle_end: string | null };
 type ActivityMember = Pick<MemberProfile, 'user_id' | 'full_name' | 'area_id' | 'role' | 'status'>;
 type ActivityMutation = {
   area_id: string;
@@ -101,6 +103,7 @@ const roleLabels: Record<MemberProfile['role'], string> = {
 };
 
 const defaultCycleStart = '2026-11-09';
+const defaultCycleEnd = '2027-12-22';
 const defaultCycleWeeks = 60;
 
 function errorText(error: unknown): string {
@@ -223,7 +226,8 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [updates, setUpdates] = useState<WeeklyUpdate[]>([]);
   const [cycleStart, setCycleStart] = useState(defaultCycleStart);
-  const [cycleWeeksCount, setCycleWeeksCount] = useState(defaultCycleWeeks);
+  const [cycleEndDate, setCycleEndDate] = useState(defaultCycleEnd);
+  const [periodMigrationAvailable, setPeriodMigrationAvailable] = useState(true);
   const [selectedWeekStart, setSelectedWeekStart] = useState(defaultCycleStart);
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [loading, setLoading] = useState(true);
@@ -233,10 +237,47 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
   const [confirmRemoveActivityId, setConfirmRemoveActivityId] = useState<string | null>(null);
   const [savingWeeklyId, setSavingWeeklyId] = useState<string | null>(null);
   const [dialogActivity, setDialogActivity] = useState<Activity | null | false>(false);
+  const [periodDialogOpen, setPeriodDialogOpen] = useState(false);
+  const [savingPeriod, setSavingPeriod] = useState(false);
+  const [periodError, setPeriodError] = useState('');
   const [drafts, setDrafts] = useState<Record<string, WeeklyDraft>>({});
   const [errorMessage, setErrorMessage] = useState('');
   const [feedback, setFeedback] = useState('');
   const [dialogError, setDialogError] = useState('');
+
+  async function saveProjectPeriod(start: string, end: string) {
+    if (profile.role !== 'admin') return;
+    if (start > end) {
+      setPeriodError('A data final não pode ser anterior à data inicial.');
+      return;
+    }
+    if (parseIsoDate(start).getUTCDay() !== 1) {
+      setPeriodError('A data inicial deve ser uma segunda-feira, pois os registros são organizados por semana.');
+      return;
+    }
+    if (!periodMigrationAvailable) {
+      setPeriodError('A migration 20261104120000_workspace_project_period.sql ainda não foi aplicada no Supabase.');
+      return;
+    }
+
+    setSavingPeriod(true);
+    setPeriodError('');
+    try {
+      const { error } = await client.from('team_settings').update({
+        cycle_start: start,
+        cycle_end: end,
+        updated_by: userId,
+      }).eq('id', 1);
+      if (error) throw error;
+      setPeriodDialogOpen(false);
+      setFeedback('Período do projeto atualizado.');
+      await loadData(true);
+    } catch (error) {
+      setPeriodError(`Não foi possível salvar o período. Confira a migration e sua permissão: ${errorText(error)}`);
+    } finally {
+      setSavingPeriod(false);
+    }
+  }
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -250,14 +291,38 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
     try {
       const { data: settingsData, error: settingsError } = await client
         .from('team_settings')
-        .select('cycle_start,cycle_weeks')
+        .select('cycle_start,cycle_end')
         .eq('id', 1)
         .maybeSingle();
-      if (settingsError) throw settingsError;
-      const settings = settingsData as TeamSettings | null;
-      const nextCycleStart = settings?.cycle_start ?? defaultCycleStart;
-      const nextCount = Math.max(1, Math.min(60, settings?.cycle_weeks ?? defaultCycleWeeks));
-      const cycleEnd = addDays(nextCycleStart, nextCount * 7 - 1);
+      let nextCycleStart = defaultCycleStart;
+      let nextCycleEnd = defaultCycleEnd;
+      if (settingsError) {
+        const missingPeriodColumn = settingsError.code === '42703'
+          || settingsError.code === 'PGRST204'
+          || settingsError.message.toLocaleLowerCase('pt-BR').includes('cycle_end');
+        if (!missingPeriodColumn) throw settingsError;
+        setPeriodMigrationAvailable(false);
+        const { data: legacyData, error: legacyError } = await client
+          .from('team_settings')
+          .select('cycle_start,cycle_weeks')
+          .eq('id', 1)
+          .maybeSingle();
+        if (legacyError) throw legacyError;
+        const legacy = legacyData as { cycle_start: string; cycle_weeks: number } | null;
+        nextCycleStart = legacy?.cycle_start ?? defaultCycleStart;
+        nextCycleEnd = nextCycleStart === defaultCycleStart
+          ? defaultCycleEnd
+          : addDays(nextCycleStart, Math.max(1, Math.min(60, legacy?.cycle_weeks ?? defaultCycleWeeks)) * 7 - 1);
+      } else {
+        setPeriodMigrationAvailable(true);
+        const settings = settingsData as TeamSettings | null;
+        nextCycleStart = settings?.cycle_start ?? defaultCycleStart;
+        nextCycleEnd = settings?.cycle_end ?? (nextCycleStart === defaultCycleStart
+          ? defaultCycleEnd
+          : addDays(nextCycleStart, defaultCycleWeeks * 7 - 1));
+      }
+      const nextWeeks = buildCycleWeeksInRange(nextCycleStart, nextCycleEnd);
+      if (nextWeeks.length === 0) throw new Error('O período do projeto no Supabase tem uma data final anterior à inicial.');
 
       const [activityResult, areaResult, nucleusResult, profileResult] = await Promise.all([
         client.from('activities')
@@ -292,12 +357,12 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
           ? { ...activity, responsible_name: currentResponsibleName }
           : activity;
       });
-      const nextUpdates = await fetchCycleUpdates(client, nextCycleStart, cycleEnd);
+      const nextUpdates = await fetchCycleUpdates(client, nextCycleStart, nextCycleEnd);
 
       setCycleStart(nextCycleStart);
-      setCycleWeeksCount(nextCount);
+      setCycleEndDate(nextCycleEnd);
       setSelectedWeekStart((current) => {
-        const validStarts = new Set(buildCycleWeeks(nextCycleStart, nextCount).map((week) => week.start));
+        const validStarts = new Set(nextWeeks.map((week) => week.start));
         return validStarts.has(current) ? current : nextCycleStart;
       });
       setActivities(nextActivities);
@@ -334,9 +399,10 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
     )));
   }, [userId]);
 
-  const weeks = useMemo(() => buildCycleWeeks(cycleStart, cycleWeeksCount), [cycleStart, cycleWeeksCount]);
+  const weeks = useMemo(() => buildCycleWeeksInRange(cycleStart, cycleEndDate), [cycleEndDate, cycleStart]);
+  const cycleWeeksCount = weeks.length;
   const selectedWeek = weeks.find((week) => week.start === selectedWeekStart) ?? weeks[0];
-  const cycleEnd = weeks.at(-1)?.end ?? addDays(cycleStart, cycleWeeksCount * 7 - 1);
+  const cycleEnd = cycleEndDate;
 
   const areasById = useMemo(() => new Map(areas.map((area) => [area.id, area])), [areas]);
   const nucleiById = useMemo(() => new Map(nuclei.map((nucleus) => [nucleus.id, nucleus])), [nuclei]);
@@ -590,7 +656,8 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
                         : 'Converse com todos os integrantes ativos em uma sala compartilhada.'}</p>
             </div>
             <div className="workspace-heading-actions">
-              {(tab === 'week' || tab === 'activities') && <span className="workspace-cycle-chip">CICLO · {cycleWeeksCount} SEMANAS</span>}
+              {(tab === 'week' || tab === 'activities') && <span className="workspace-cycle-chip">PERÍODO · {formatFullDate(cycleStart)} – {formatFullDate(cycleEnd)} · {cycleWeeksCount} SEMANAS</span>}
+              {(tab === 'week' || tab === 'activities') && profile.role === 'admin' && <button className="workspace-refresh workspace-period-button" type="button" onClick={() => { setPeriodError(''); setPeriodDialogOpen(true); }}>Editar período</button>}
               {(tab === 'week' || tab === 'activities') && <button className="workspace-refresh" type="button" onClick={() => void loadData(true)} disabled={loading || refreshing}>
                 {refreshing ? 'Atualizando…' : '↻ Atualizar'}
               </button>}
@@ -854,6 +921,17 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
           onSave={(form) => void saveActivity(form)}
         />
       )}
+      {periodDialogOpen && (
+        <ProjectPeriodDialog
+          startDate={cycleStart}
+          endDate={cycleEndDate}
+          busy={savingPeriod}
+          error={periodError}
+          migrationAvailable={periodMigrationAvailable}
+          onClose={() => { if (!savingPeriod) setPeriodDialogOpen(false); }}
+          onSave={(start, end) => void saveProjectPeriod(start, end)}
+        />
+      )}
     </section>
   );
 }
@@ -864,6 +942,62 @@ function WorkspaceLoading() {
 
 function EmptyState({ title, children }: { title: string; children: string }) {
   return <div className="workspace-empty"><span aria-hidden="true">○</span><strong>{title}</strong><p>{children}</p></div>;
+}
+
+function ProjectPeriodDialog({
+  startDate,
+  endDate,
+  busy,
+  error,
+  migrationAvailable,
+  onClose,
+  onSave,
+}: {
+  startDate: string;
+  endDate: string;
+  busy: boolean;
+  error: string;
+  migrationAvailable: boolean;
+  onClose: () => void;
+  onSave: (start: string, end: string) => void;
+}) {
+  const [start, setStart] = useState(startDate);
+  const [end, setEnd] = useState(endDate);
+
+  useEffect(() => {
+    setStart(startDate);
+    setEnd(endDate);
+  }, [startDate, endDate]);
+
+  return (
+    <div className="workspace-dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <section className="workspace-dialog" role="dialog" aria-modal="true" aria-labelledby="period-dialog-title">
+        <div className="workspace-dialog-heading">
+          <div>
+            <p className="workspace-kicker">CONFIGURAÇÃO DO PROJETO</p>
+            <h2 id="period-dialog-title">Ajustar período</h2>
+          </div>
+          <button type="button" className="workspace-dialog-close" aria-label="Fechar" onClick={onClose} disabled={busy}>×</button>
+        </div>
+        <p className="workspace-dialog-note">O período define as semanas disponíveis para acompanhamento de toda a equipe. O término é inclusivo; a última semana pode ser parcial.</p>
+        {!migrationAvailable && <p className="workspace-dialog-error" role="alert">Para salvar, aplique `20261104120000_workspace_project_period.sql` no Supabase e atualize esta página.</p>}
+        <form className="workspace-activity-form" onSubmit={(event) => { event.preventDefault(); onSave(start, end); }}>
+          <label><span>Início do projeto <b>obrigatório</b></span>
+            <input type="date" required value={start} onChange={(event) => setStart(event.target.value)} />
+          </label>
+          <label><span>Fim do projeto <b>obrigatório</b></span>
+            <input type="date" required min={start} value={end} onChange={(event) => setEnd(event.target.value)} />
+          </label>
+          <p className="workspace-period-help form-span-2">A data inicial deve cair em uma segunda-feira. Padrão do projeto: 09/11/2026 a 22/12/2027.</p>
+          {error && <p className="workspace-dialog-error form-span-2" role="alert">{error}</p>}
+          <div className="workspace-dialog-actions form-span-2">
+            <button type="button" className="workspace-cancel-button" onClick={onClose} disabled={busy}>Cancelar</button>
+            <button type="submit" className="workspace-save-button" disabled={busy || !migrationAvailable}>{busy ? 'Salvando…' : 'Salvar período'}</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  );
 }
 
 function ActivityDialog({

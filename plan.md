@@ -73,3 +73,9 @@ Atividade esperada por semana: semanal todas; quinzenal em semanas alternadas de
 - **Voz:** direta, acolhedora e específica. Exemplos: “Registre o que avançou nesta semana.” / “Sem movimentação financeira? Marque ‘Não se aplica’.”
 - **Marca:** wordmark tipográfico “SolMar Celeris” acompanhado por um símbolo simples formado por horizonte, sol e proa/rota; evitar depender do logo genérico do framework.
 - **Cor de assinatura:** azul oceânico `#014B89`, com o laranja `#E06916` reservado como acento operacional.
+
+## Incremento aprovado — período, atalhos e prompts de documentação
+
+- **Período do projeto:** substituir o término derivado do contador fixo pelo intervalo inclusivo `cycle_start`–`cycle_end`. Padrão `2026-11-09` a `2027-12-22`; gerar semanas a partir de inícios de segunda-feira e limitar a última semana à data final configurada. O Administrador ativo pode editar início e fim pela interface. A migration incremental adiciona `cycle_end`; não refazer a migration inicial nem abrir permissões RLS.
+- **Aba IA:** manter o design clean e a marca original SolMar. Exibir os quatro logotipos nos endereços fornecidos pelo usuário e um atalho Canva separado. Os links abrem serviços externos; o site não armazena credenciais nem promete autenticação Google automática.
+- **Biblioteca documental:** manter em arquivos Markdown no código os dois prompts completos e as instruções comuns de identificação/armazenamento. Cada prompt pode ser lido e copiado integralmente; preservar templates oficiais, URLs, campos, regras de conteúdo, identificação, nomenclatura DOCX, destinos previstos e limites de acesso ao Drive.

@@ -1,10 +1,10 @@
 # SolMar Celeris — atualizar no GitHub/Netlify e habilitar no Supabase
 
-**Revisado em 04/11/2026.** Este manual acompanha o pacote-fonte atualizado, com respostas e reações nos comunicados, atalhos para serviços de IA, visual de chat renovado e suporte a notificações Web Push em navegadores desktop. O projeto continua usando o mesmo site Netlify e o mesmo Supabase. Este guia não publica por você nem executa SQL no seu banco.
+**Revisado em 04/11/2026.** Este manual acompanha o pacote-fonte atualizado, com respostas e reações nos comunicados, logos dos serviços de IA, biblioteca completa de prompts, atalho Canva, período do projeto editável e suporte a notificações Web Push. O projeto continua usando o mesmo site Netlify e o mesmo Supabase. Este guia não publica por você nem executa SQL no seu banco.
 
 ## O que esta versão acrescenta
 
-Após entrar com um perfil `active`, o menu mostra ícones na ordem **Chat**, **Comunicados**, **Semana**, **Atividades**, **Arquivos**, **Manual de funções** e **IA**. A nova aba IA abre atalhos externos para ChatGPT, Claude AI, Manus IA e Gemini. Login e cabeçalho usam a logo original `public/assets/celeris-logo.png`; a imagem não foi editada nem substituída.
+Após entrar com um perfil `active`, o menu mostra ícones na ordem **Chat**, **Comunicados**, **Semana**, **Atividades**, **Arquivos**, **Manual de funções** e **IA**. A aba IA abre ChatGPT, Claude AI, Gemini, Manus e Canva; também oferece os prompts completos de Registro de Atividades e POP, com botão para copiar e link do template oficial. Login e cabeçalho usam a logo original `public/assets/celeris-logo.png`; a imagem não foi editada nem substituída. O Canva só reaproveita uma sessão Google se a pessoa já estiver conectada no navegador/aparelho e autorizada no Canva; o atalho não contorna login nem armazena credenciais.
 
 O Chat preserva a sala **Equipe** para todos os perfis ativos e permite criar grupos, selecionar integrantes ativos e adicionar mais pessoas depois. O criador já entra no grupo. Somente participantes ativos e Administradores ativos veem grupos; o Supabase RLS também impõe esse limite. Mensagens chegam em tempo real; o histórico usa balões e tons azuis da identidade SolMar. Elas podem ter até 2.000 caracteres, não aceitam anexos e ficam salvas até um Administrador ativo removê-las. Ao remover, o texto é substituído por um aviso. Mensagens de Chat não enviam e-mail.
 
@@ -38,12 +38,19 @@ As migrações incrementais são arquivos separados:
 - Para remover comunicados sem depender de um PATCH direto sujeito à política de linha, aplique `20261103140000_safe_remove_announcement.sql` uma única vez. A função verifica perfil ativo, mantém a remoção lógica e preserva os triggers de auditoria; o RLS permanece ligado.
 - Para habilitar a remoção lógica de atividades por Administradores e Líderes da área, aplique `20261103150000_safe_remove_activity.sql` uma única vez. A função valida o perfil e a área, preserva atualizações semanais/auditoria e mantém o RLS ligado.
 - Para permitir respostas e reações aos comunicados, aplique `20261104101500_announcement_replies_reactions.sql` uma única vez, depois das migrations base de comunicados. Ela cria tabelas próprias, mantém RLS e habilita Realtime; veja [Respostas e reações nos comunicados](./docs/ETAPA_11_COMUNICADOS_INTERACOES.md).
+- Para ajustar o período do projeto no próprio workspace, aplique `20261104120000_workspace_project_period.sql` uma única vez. Ela adiciona `cycle_end` à tabela existente, com padrão inclusivo até 22/12/2027, e mantém a atualização protegida pela política de Administrador ativo já existente. Não reaplique a migration inicial.
 
 Para cada arquivo que ainda precisa ser aplicado: abra o mesmo projeto Supabase usado pelo Netlify, vá a **SQL Editor → New query**, copie o conteúdo integral daquele único arquivo do pacote, confira o projeto selecionado e clique em **Run**. Espere a confirmação de sucesso antes de aplicar o próximo arquivo. O SQL do Chat usa a publicação `supabase_realtime`; ele não pede que você desative RLS nem use uma chave privilegiada.
 
 O Realtime do Supabase envia alterações Postgres para clientes inscritos quando a tabela está na publicação apropriada e há política de leitura autorizando o usuário. O pacote configura isso para mensagens, grupos e membros, com políticas de leitura diferentes para sala geral e grupos. Consulte a [documentação oficial do Supabase Realtime](https://supabase.com/docs/guides/realtime/postgres-changes).
 
 Se você não sabe se a migração antiga de Arquivos/Comunicados já foi executada, **não a repita por tentativa**; pergunte antes para conferir o estado do projeto. A migração inicial e os dados existentes não devem ser apagados.
+
+### Ajustar o período do projeto
+
+Depois de aplicar `20261104120000_workspace_project_period.sql` e publicar o novo site, entre com um perfil ativo cujo papel seja **Administrador**. Nas abas **Semana** ou **Atividades**, confira o intervalo exibido e selecione **Editar período**. O padrão é **09/11/2026 a 22/12/2027**. Informe o início e o fim e salve; o início precisa ser uma segunda-feira, pois os status semanais são agrupados por semana. O fim é inclusivo e a última semana pode ser parcial. As outras áreas do site continuam usando o intervalo salvo sem que o usuário precise ajustar semana por semana.
+
+O Supabase também verifica a permissão de Administrador; esconder o botão para os demais perfis não é a única proteção. Se a tela informar que a migration ainda falta, aplique o arquivo acima no projeto Supabase ligado ao Netlify e atualize a página. Não altere a RLS para contornar o aviso.
 
 ### Conferir respostas e reações nos comunicados
 

@@ -106,6 +106,15 @@ export function formatShortDate(value: string): string {
   }).replace('.', '');
 }
 
+export function formatFullDate(value: string): string {
+  return parseIsoDate(value).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
 export function formatWeekRange(week: CycleWeek): string {
   const first = parseIsoDate(week.start);
   const last = parseIsoDate(week.end);
@@ -119,6 +128,18 @@ export function buildCycleWeeks(start: string, count: number): CycleWeek[] {
   return Array.from({ length: count }, (_, index) => {
     const weekStart = addDays(start, index * 7);
     return { start: weekStart, end: addDays(weekStart, 6), number: index + 1 };
+  });
+}
+
+export function buildCycleWeeksInRange(start: string, end: string): CycleWeek[] {
+  if (!start || !end || end < start) return [];
+  const totalDays = Math.floor((parseIsoDate(end).getTime() - parseIsoDate(start).getTime()) / DAY_MS) + 1;
+  const count = Math.ceil(totalDays / 7);
+
+  return Array.from({ length: count }, (_, index) => {
+    const weekStart = addDays(start, index * 7);
+    const daysInWeek = Math.min(7, totalDays - index * 7);
+    return { start: weekStart, end: addDays(weekStart, daysInWeek - 1), number: index + 1 };
   });
 }
 

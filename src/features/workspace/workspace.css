@@ -340,3 +340,7 @@
   .workspace-manual .manual-role-head h3 { font-size: 16px; }
   .workspace-manual .manual-section-heading > p { font-size: 12px; }
 }
+
+.workspace-period-help { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.workspace-period-button { border-color: color-mix(in srgb, var(--blue) 27%, var(--line)); color: var(--ocean); }
+:root[data-theme="dark"] .workspace-period-button { color: #b9ddff; }
