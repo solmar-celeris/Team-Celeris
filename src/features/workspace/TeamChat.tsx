@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { MessageCircle, RefreshCw, Send, ShieldCheck, Trash2, UserPlus, UsersRound, Plus, Search } from 'lucide-react';
+import { ArrowUp, MessageCircle, RefreshCw, ShieldCheck, Trash2, UserPlus, UsersRound, Plus, Search } from 'lucide-react';
 import { notifyChatMessagePush } from '../../lib/notifications';
 import type { MemberProfile } from './domain';
 import ChatGroupDialog from './ChatGroupDialog';
@@ -314,7 +314,7 @@ export default function TeamChat({ client, userId, isAdmin, members }: TeamChatP
             </div>
             <form className="team-chat-composer" onSubmit={(event) => void sendMessage(event)}>
               <textarea aria-label="Sua mensagem" id="team-chat-message" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={canWrite ? 'Escreva uma mensagem…' : 'Você não participa deste grupo.'} rows={1} maxLength={MESSAGE_LIMIT} disabled={sending || !canWrite} />
-              <div className="team-chat-compose-footer"><span>{Array.from(draft).length}/{MESSAGE_LIMIT} · {activeDirectId ? 'Conversa privada' : activeGroupId ? 'Somente participantes do grupo' : 'Visível para os integrantes ativos'}</span><button type="submit" disabled={sending || !draft.trim() || !canWrite}><Send aria-hidden="true" /> {sending ? 'Enviando…' : 'Enviar'}</button></div>
+              <div className="team-chat-compose-footer"><span>{Array.from(draft).length}/{MESSAGE_LIMIT} · {activeDirectId ? 'Conversa privada' : activeGroupId ? 'Somente participantes do grupo' : 'Visível para os integrantes ativos'}</span><button type="submit" aria-label={sending ? 'Enviando mensagem' : 'Enviar mensagem'} title={sending ? 'Enviando mensagem' : 'Enviar mensagem'} disabled={sending || !draft.trim() || !canWrite}><ArrowUp aria-hidden="true" /></button></div>
             </form>
           </div>
           <p className="team-chat-retention-note">Mensagens ficam salvas até um Administrador removê-las. As conversas privadas só podem ser lidas pelos dois participantes. Mensagens do Chat não enviam e-mail.</p>

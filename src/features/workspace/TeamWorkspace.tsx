@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { BookOpen, CalendarDays, Check, ClipboardList, Folder, Megaphone, MessageCircle, Sparkles, Trash2, X, type LucideIcon } from 'lucide-react';
+import { BookOpen, CalendarCheck2, CalendarDays, Check, ClipboardList, Folder, Megaphone, MessageCircle, Sparkles, Trash2, X, type LucideIcon } from 'lucide-react';
 import {
   activityTypeLabels,
   addDays,
@@ -82,13 +82,22 @@ type ActivityFormState = {
 };
 type WeeklyDraft = { status: WeeklyStatus; justification: string };
 type WorkspaceTab = 'week' | 'activities' | 'files' | 'announcements' | 'chat' | 'calendar' | 'manual' | 'ai';
+type WeekCalendarEvent = {
+  id: string;
+  title: string;
+  event_kind: string;
+  event_scope: 'internal' | 'external';
+  event_date: string;
+  start_time: string | null;
+  location: string;
+};
 const workspaceTabs: { id: WorkspaceTab; label: string; icon: LucideIcon }[] = [
   { id: 'chat', label: 'Chat', icon: MessageCircle },
   { id: 'announcements', label: 'Comunicados', icon: Megaphone },
-  { id: 'week', label: 'Semana', icon: CalendarDays },
+  { id: 'week', label: 'Semana', icon: CalendarCheck2 },
   { id: 'activities', label: 'Atividades', icon: ClipboardList },
   { id: 'files', label: 'Arquivos', icon: Folder },
-  { id: 'calendar', label: 'Calendário', icon: CalendarDays },
+  { id: 'calendar', label: 'Calendário de eventos', icon: CalendarDays },
   { id: 'manual', label: 'Manual de funções', icon: BookOpen },
   { id: 'ai', label: 'IA', icon: Sparkles },
 ];
@@ -221,6 +230,10 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
     document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light',
   );
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [weekCalendarEvents, setWeekCalendarEvents] = useState<WeekCalendarEvent[]>([]);
+  const [weekEventsLoading, setWeekEventsLoading] = useState(false);
+  const [weekEventsError, setWeekEventsError] = useState(false);
+  const [calendarFocusDate, setCalendarFocusDate] = useState<string | undefined>();
   const [areas, setAreas] = useState<Area[]>([]);
   const [nuclei, setNuclei] = useState<Nucleus[]>([]);
   const [members, setMembers] = useState<ActivityMember[]>([]);
@@ -401,6 +414,40 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
   const cycleWeeksCount = weeks.length;
   const selectedWeek = weeks.find((week) => week.start === selectedWeekStart) ?? weeks[0];
   const cycleEnd = cycleEndDate;
+
+  useEffect(() => {
+    if (!selectedWeek) {
+      setWeekCalendarEvents([]);
+      setWeekEventsLoading(false);
+      return;
+    }
+    let active = true;
+    const loadWeekEvents = () => {
+      void client.from('calendar_events')
+        .select('id,title,event_kind,event_scope,event_date,start_time,location')
+        .gte('event_date', selectedWeek.start)
+        .lte('event_date', addDays(selectedWeek.start, 6))
+        .order('event_date', { ascending: true })
+        .order('start_time', { ascending: true })
+        .then(({ data, error }) => {
+        if (!active) return;
+        if (error) {
+          setWeekCalendarEvents([]);
+          setWeekEventsError(true);
+        } else {
+          setWeekCalendarEvents((data ?? []) as WeekCalendarEvent[]);
+        }
+        setWeekEventsLoading(false);
+      });
+    };
+    setWeekEventsLoading(true);
+    setWeekEventsError(false);
+    loadWeekEvents();
+    const channel = client.channel(`workspace-week-calendar-${selectedWeek.start}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'calendar_events' }, loadWeekEvents)
+      .subscribe();
+    return () => { active = false; void client.removeChannel(channel); };
+  }, [client, selectedWeek?.start]);
 
   const areasById = useMemo(() => new Map(areas.map((area) => [area.id, area])), [areas]);
   const nucleiById = useMemo(() => new Map(nuclei.map((nucleus) => [nucleus.id, nucleus])), [nuclei]);
@@ -638,7 +685,7 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
           <div className="workspace-page-heading">
             <div>
               <p className="workspace-kicker">{tab === 'week' ? 'ACOMPANHAMENTO SEMANAL' : tab === 'activities' ? 'CADASTRO DA EQUIPE' : tab === 'files' ? 'LINKS COMPARTILHADOS' : tab === 'announcements' ? 'MURAL DA EQUIPE' : tab === 'calendar' ? 'AGENDA DA EQUIPE' : tab === 'manual' ? 'CARGOS E CAPACITAÇÃO' : tab === 'ai' ? 'FERRAMENTAS EXTERNAS' : 'CONVERSA EM TEMPO REAL'}</p>
-              <h1>{tab === 'week' ? 'Semana em movimento.' : tab === 'activities' ? 'Atividades da equipe.' : tab === 'files' ? 'Arquivos da equipe.' : tab === 'announcements' ? 'Comunicados da equipe.' : tab === 'calendar' ? 'Calendário da equipe.' : tab === 'manual' ? 'Manual de funções.' : tab === 'ai' ? 'Atalhos de IA.' : 'Chat da equipe.'}</h1>
+              <h1>{tab === 'week' ? 'Semana em movimento.' : tab === 'activities' ? 'Atividades da equipe.' : tab === 'files' ? 'Arquivos da equipe.' : tab === 'announcements' ? 'Comunicados da equipe.' : tab === 'calendar' ? 'Calendário de eventos.' : tab === 'manual' ? 'Manual de funções.' : tab === 'ai' ? 'Atalhos de IA.' : 'Chat da equipe.'}</h1>
               <p className="workspace-subtitle">{tab === 'week'
                 ? 'Registre o que avançou e sinalize o que precisa de atenção.'
                 : tab === 'activities'
@@ -652,7 +699,7 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
                         : tab === 'ai'
                           ? 'Acesse plataformas de inteligência artificial em poucos cliques.'
                           : tab === 'calendar'
-                            ? 'Organize reuniões, treinamentos e compromissos externos em um calendário mensal.'
+                            ? 'Organize reuniões, treinamentos e compromissos externos e acompanhe-os também na Semana.'
                             : 'Converse com todos os integrantes ativos em uma sala compartilhada ou inicie uma conversa privada.'}</p>
             </div>
             <div className="workspace-heading-actions">
@@ -737,7 +784,7 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
                 <div>
                   <p className="workspace-kicker">REGISTRO DA SEMANA</p>
                   <h2 id="selected-week-title">{selectedWeek ? formatWeekRange(selectedWeek) : 'Ciclo sem semanas'}</h2>
-                  <p>{selectedWeek ? `Semana ${selectedWeek.number} de ${cycleWeeksCount} · ${expectedActivities.length} atividade(s) esperada(s)` : 'Configure o ciclo do time no Supabase.'}</p>
+                  <p>{selectedWeek ? `Semana ${selectedWeek.number} de ${cycleWeeksCount} · ${expectedActivities.length} atividade(s) · ${weekCalendarEvents.length} evento(s)` : 'Configure o ciclo do time no Supabase.'}</p>
                 </div>
                 <label className="workspace-week-picker">
                   <span>Selecionar semana</span>
@@ -747,14 +794,16 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
                 </label>
               </div>
 
-              {loading ? <WorkspaceLoading /> : visibleActivities.length === 0 ? (
-                <EmptyState title={activities.length === 0 ? 'Nenhuma atividade foi encontrada.' : 'Nada previsto com estes filtros.'}>
-                  {activities.length === 0
-                    ? 'Confirme no SQL Editor se a migração foi aplicada no Supabase que este site está usando.'
-                    : 'Tente outra semana ou limpe os filtros. Atividades aparecem aqui de acordo com sua frequência e janela de datas.'}
-                </EmptyState>
-              ) : (
-                <div className="workspace-week-list">
+              {loading ? <WorkspaceLoading /> : (
+                <>
+                  {visibleActivities.length === 0 && weekCalendarEvents.length === 0 && !weekEventsLoading && (
+                    <EmptyState title={activities.length === 0 ? 'Nenhuma atividade foi encontrada.' : 'Nada previsto com estes filtros.'}>
+                      {activities.length === 0
+                        ? 'Confirme no SQL Editor se a migração foi aplicada no Supabase que este site está usando.'
+                        : 'Tente outra semana ou limpe os filtros. Atividades aparecem aqui de acordo com sua frequência e janela de datas.'}
+                    </EmptyState>
+                  )}
+                  {visibleActivities.length > 0 && <div className="workspace-week-list">
                   {visibleActivities.map((activity) => {
                     const saved = updatesForWeek.get(activity.id);
                     const draft = drafts[activity.id] ?? { status: 'not_started' as WeeklyStatus, justification: '' };
@@ -818,7 +867,27 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
                       </article>
                     );
                   })}
-                </div>
+                  </div>}
+                  {weekEventsError && <p className="workspace-week-events-note">Os eventos do calendário não puderam ser carregados. Confira se as migrations do Calendário estão aplicadas no Supabase.</p>}
+                  {weekEventsLoading && <p className="workspace-week-events-note">Carregando eventos da semana…</p>}
+                  {weekCalendarEvents.length > 0 && (
+                    <section className="workspace-week-events" aria-labelledby="week-events-title">
+                      <div className="workspace-week-events-heading">
+                        <div><p className="workspace-kicker">AGENDA</p><h3 id="week-events-title">Eventos desta semana</h3></div>
+                        <span>{weekCalendarEvents.length} evento(s)</span>
+                      </div>
+                      <div className="workspace-week-events-list">
+                        {weekCalendarEvents.map((event) => (
+                          <article className={`workspace-week-event is-${event.event_scope}`} key={event.id}>
+                            <div className="workspace-week-event-date"><CalendarDays aria-hidden="true" /><strong>{formatShortDate(event.event_date)}</strong>{event.start_time && <span>{event.start_time.slice(0, 5)}</span>}</div>
+                            <div className="workspace-week-event-details"><span>{event.event_scope === 'internal' ? 'EVENTO INTERNO' : 'EVENTO EXTERNO'}</span><h4>{event.title}</h4>{event.location && <p>{event.location}</p>}</div>
+                            <button type="button" onClick={() => { setCalendarFocusDate(event.event_date); setTab('calendar'); }}>Ver no Calendário de eventos</button>
+                          </article>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+                </>
               )}
             </section>
           )}
@@ -903,7 +972,7 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
           {tab === 'chat' && (
             <TeamChat client={client} userId={userId} isAdmin={profile.role === 'admin'} members={members} />
           )}
-          {tab === 'calendar' && <TeamCalendar client={client} userId={userId} isAdmin={profile.role === 'admin'} />}
+          {tab === 'calendar' && <TeamCalendar client={client} userId={userId} isAdmin={profile.role === 'admin'} initialDate={calendarFocusDate} />}
           {tab === 'manual' && <ManualFunctions />}
           {tab === 'ai' && <AIShortcuts />}
 

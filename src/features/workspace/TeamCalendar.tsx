@@ -15,7 +15,7 @@ type EventDraft = {
   title: string; event_scope: EventScope; event_kind: EventKind; event_date: string;
   start_time: string; end_time: string; location: string; description: string;
 };
-type Props = { client: SupabaseClient; userId: string; isAdmin: boolean };
+type Props = { client: SupabaseClient; userId: string; isAdmin: boolean; initialDate?: string };
 const weekdays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 const kinds: { value: EventKind; label: string; scope: EventScope }[] = [
   { value: 'meeting', label: 'Reunião', scope: 'internal' },
@@ -37,10 +37,11 @@ function eventError(error: unknown): string {
   if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') return error.message;
   return 'Não foi possível salvar o evento. Tente novamente.';
 }
-export default function TeamCalendar({ client, userId, isAdmin }: Props) {
+export default function TeamCalendar({ client, userId, isAdmin, initialDate }: Props) {
   const now = new Date();
-  const [month, setMonth] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1));
-  const [selectedDate, setSelectedDate] = useState(() => isoLocal(now));
+  const focusDate = initialDate && /^\d{4}-\d{2}-\d{2}$/.test(initialDate) ? new Date(`${initialDate}T12:00:00`) : now;
+  const [month, setMonth] = useState(() => new Date(focusDate.getFullYear(), focusDate.getMonth(), 1));
+  const [selectedDate, setSelectedDate] = useState(() => isoLocal(focusDate));
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
