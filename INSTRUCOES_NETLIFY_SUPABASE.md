@@ -142,3 +142,14 @@ Ao criar um evento, o sistema envia um push **Novo evento no calendário** aos d
 5. Teste com duas contas ativas e inscritas no OneSignal: uma cria evento de teste e a outra deve receber “Novo evento no calendário” com o nome e a data. O criador não recebe o próprio aviso. Consulte os logs da função se o evento for salvo, mas o push não for confirmado.
 
 Se já aplicou a migration de Calendário anterior, **não a repita**: aplique somente `20261104133000_calendar_event_push.sql`. Nenhuma migration foi executada nem Edge Function publicada automaticamente por este pacote.
+
+
+## 11. Confirmação de leitura e áudio no Chat
+A aba Chat mostra confirmação de leitura nas mensagens enviadas (tique duplo e “Lida”; em grupos, quantidade de integrantes que leram). Também permite gravar áudio pelo microfone do navegador, enviar, reproduzir e baixar o áudio. O navegador precisa ter permissão de microfone e o app deve estar em HTTPS. Os áudios ficam no bucket privado `team-chat-audio`, têm limite de 15 MB e usam links temporários assinados; somente quem consegue ler a mensagem correspondente pelas políticas RLS pode reproduzir ou baixar o arquivo. Não desligue RLS nem torne esse bucket público.
+
+1. No projeto Supabase correto, aplique uma única vez `supabase/migrations/20261104170000_chat_read_receipts_audio.sql`, depois das migrations de grupos e conversas privadas. A migration cria a tabela de recibos de leitura, acrescenta os metadados do áudio às mensagens, cria/configura o bucket privado e publica a tabela de recibos no Realtime.
+2. Publique o app atualizado no repositório ligado ao Netlify. Não é preciso alterar secrets nem variáveis de ambiente.
+3. Teste com duas contas ativas em uma conversa: envie uma mensagem e confira a confirmação “Lida” depois que a outra pessoa abrir a conversa; grave um áudio, envie, reproduza e use **Baixar**. Repita em uma conversa privada e em um grupo para confirmar que uma terceira conta não participante não consegue abrir o áudio privado.
+4. Se o microfone não iniciar, permita-o para o site nas configurações do navegador. No celular, use o site em HTTPS e confira a permissão do Safari/Chrome para o microfone.
+
+A migration precisa ser aplicada no Supabase conectado ao site; o ZIP ou o deploy do Netlify não alteram o banco. Nenhum SQL foi executado e nenhum deploy remoto foi feito por este pacote.

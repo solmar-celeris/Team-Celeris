@@ -471,29 +471,5 @@
 }
 
 .workspace-nav-icon { position: relative; }
-.workspace-nav-icon.has-badge > small {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  right: auto;
-  bottom: auto;
-  display: grid;
-  min-width: 0;
-  height: auto;
-  place-items: center;
-  padding: 1px 2px;
-  border: 0;
-  border-radius: 3px;
-  color: #014b89;
-  background: var(--surface);
-  box-shadow: 0 1px 3px rgba(0,35,65,.18);
-  font-size: 6.5px;
-  font-weight: 900;
-  line-height: 1;
-  transform: translate(-50%, -50%);
-}
 .workspace-nav button.is-active .workspace-nav-icon { box-shadow: 0 3px 7px rgba(1,75,137,.18), inset 0 1px 0 rgba(255,255,255,.72); }
 .workspace-nav-icon svg { filter: drop-shadow(0 1px 1px rgba(1,38,70,.12)); }
-@media (max-width: 760px) {
-  .workspace-nav-icon.has-badge > small { font-size: 6px; }
-}

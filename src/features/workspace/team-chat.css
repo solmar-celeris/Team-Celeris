@@ -205,3 +205,30 @@
   .team-chat-panel { height: 63dvh; min-height: 380px; }
   .team-chat-message-row { max-width: 96%; }
 }
+
+.team-chat-compose-actions { display: flex; align-items: center; gap: 8px; }
+.team-chat-compose-actions button { display: grid; width: 39px; min-width: 39px; height: 39px; place-items: center; padding: 0; }
+.team-chat-compose-actions button svg { width: 17px; height: 17px; }
+.team-chat-compose-actions .team-chat-record-button { border: 1px solid color-mix(in srgb, var(--ocean) 28%, var(--line)); color: var(--ocean); background: var(--card); box-shadow: 0 2px 5px rgba(1,60,105,.1), inset 0 1px 0 rgba(255,255,255,.7); }
+.team-chat-compose-actions .team-chat-record-button:hover:not(:disabled) { border-color: var(--ocean); background: color-mix(in srgb, var(--sky) 12%, var(--card)); }
+.team-chat-audio-state { display: flex; align-items: center; justify-content: space-between; gap: 9px; padding: 8px 10px; border: 1px solid color-mix(in srgb, var(--ocean) 20%, var(--line)); border-radius: 10px; color: var(--ocean); background: color-mix(in srgb, var(--sky) 8%, var(--card)); font-size: 11px; font-weight: 750; }
+.team-chat-audio-state button { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 0 9px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--card); cursor: pointer; font: inherit; font-size: 10px; font-weight: 750; }
+.team-chat-audio-state button svg { width: 14px; height: 14px; }
+.team-chat-audio-state.is-recording { border-color: color-mix(in srgb, #c83d32 35%, var(--line)); color: #a22f26; background: color-mix(in srgb, #ef5548 8%, var(--card)); }
+.team-chat-record-dot { width: 9px; height: 9px; flex: 0 0 auto; border-radius: 50%; background: #d64036; box-shadow: 0 0 0 4px rgba(214,64,54,.14); animation: team-chat-record-pulse 1.3s ease-in-out infinite; }
+@keyframes team-chat-record-pulse { 50% { opacity: .45; transform: scale(.86); } }
+.team-chat-audio-player { display: block; width: min(100%, 320px); min-width: 230px; height: 40px; margin: 2px 0; }
+.team-chat-audio-loading { color: var(--muted); font-size: 10px; }
+.team-chat-message-time > span.is-read { color: #1687ce; font-weight: 850; }
+.team-chat-message-time > span small { margin-left: 4px; font-size: 9px; font-weight: 750; }
+:root[data-theme="dark"] .team-chat-message-time > span.is-read { color: #68c5ff; }
+@media (max-width: 480px) {
+  .team-chat-compose-actions { gap: 6px; }
+  .team-chat-compose-actions button { width: 37px; min-width: 37px; height: 37px; }
+  .team-chat-audio-player { min-width: 190px; }
+}
+@media (prefers-reduced-motion: reduce) { .team-chat-record-dot { animation: none; } }
+.team-chat-audio-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; max-width: 100%; }
+.team-chat-audio-download { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 32px; padding: 0 9px; border: 1px solid color-mix(in srgb, var(--ocean) 23%, var(--line)); border-radius: 8px; color: var(--ocean); background: var(--card); text-decoration: none; font-size: 10px; font-weight: 750; }
+.team-chat-audio-download:hover { border-color: var(--ocean); background: color-mix(in srgb, var(--sky) 10%, var(--card)); }
+.team-chat-audio-download svg { width: 14px; height: 14px; }

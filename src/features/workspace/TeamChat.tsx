@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowUp, MessageCircle, RefreshCw, ShieldCheck, Trash2, UserPlus, UsersRound, Plus, Search } from 'lucide-react';
+import { ArrowUp, Download, Mic, MessageCircle, RefreshCw, ShieldCheck, Square, Trash2, UserPlus, UsersRound, Plus, Search, X } from 'lucide-react';
 import { notifyChatMessagePush } from '../../lib/notifications';
 import type { MemberProfile } from './domain';
 import ChatGroupDialog from './ChatGroupDialog';
@@ -8,8 +8,9 @@ import './team-chat.css';
 
 type TeamChatMessage = {
   id: string; sender_id: string | null; group_id: string | null; dm_conversation_id: string | null;
-  body: string; created_at: string; removed_at: string | null; removed_by: string | null;
+  body: string; audio_path: string | null; audio_content_type: string | null; created_at: string; removed_at: string | null; removed_by: string | null;
 };
+type TeamChatRead = { message_id: string; user_id: string; read_at: string };
 type TeamChatGroup = { id: string; name: string; created_by: string | null; created_at: string };
 type TeamChatGroupMember = { group_id: string; user_id: string };
 type DirectConversation = { id: string; user_a_id: string; user_b_id: string; created_at: string };
@@ -18,7 +19,7 @@ type ChatMember = Pick<MemberProfile, 'user_id' | 'full_name' | 'avatar_path'>;
 type TeamChatProps = { client: SupabaseClient; userId: string; isAdmin: boolean; members: ChatMember[] };
 const PAGE_SIZE = 50;
 const MESSAGE_LIMIT = 2000;
-const MESSAGE_COLUMNS = 'id,sender_id,group_id,dm_conversation_id,body,created_at,removed_at,removed_by';
+const MESSAGE_COLUMNS = 'id,sender_id,group_id,dm_conversation_id,body,audio_path,audio_content_type,created_at,removed_at,removed_by';
 function timeLabel(value: string): string { return new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(new Date(value)); }
 function dayLabel(value: string): string { return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(value)); }
 function mergeMessages(current: TeamChatMessage[], incoming: TeamChatMessage[]): TeamChatMessage[] {
@@ -29,7 +30,7 @@ function mergeMessages(current: TeamChatMessage[], incoming: TeamChatMessage[]):
 function chatError(error: unknown): string {
   if (!error || typeof error !== 'object') return 'Não foi possível concluir a operação. Tente novamente.';
   const details = error as { code?: string; message?: string };
-  if (['42P01', '42703', 'PGRST204', 'PGRST205', 'PGRST202'].includes(details.code ?? '')) return 'O Chat privado ainda não está configurado no Supabase. Aplique a migration de Chat privado e calendário incluída no ZIP e publique o site.';
+  if (['42P01', '42703', 'PGRST204', 'PGRST205', 'PGRST202'].includes(details.code ?? '')) return 'As funções recentes do Chat ainda não estão configuradas no Supabase. Aplique a migration de áudio e confirmação de leitura incluída no ZIP; se necessário, aplique também a migration de Chat privado e calendário.';
   if (details.code === '42501') return 'O Supabase bloqueou a operação pelas regras de acesso. Confirme que sua conta está ativa e pertence à conversa.';
   if (details.code === '23514') return 'Confira os dados informados e tente novamente.';
   if (details.code === '23505') return 'Essa conversa ou participante já existe. Atualize a lista de conversas.';
@@ -59,6 +60,17 @@ export default function TeamChat({ client, userId, isAdmin, members }: TeamChatP
   const [error, setError] = useState('');
   const [feedback, setFeedback] = useState('');
   const [avatarUrls, setAvatarUrls] = useState<Record<string, string>>({});
+  const [audioUrls, setAudioUrls] = useState<Record<string, string>>({});
+  const [audioDownloadUrls, setAudioDownloadUrls] = useState<Record<string, string>>({});
+  const [readByMessage, setReadByMessage] = useState<Record<string, string[]>>({});
+  const [recording, setRecording] = useState(false);
+  const [recordedAudio, setRecordedAudio] = useState<Blob | null>(null);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const recordingStreamRef = useRef<MediaStream | null>(null);
+  const recordingChunksRef = useRef<Blob[]>([]);
+  const recordingConversationRef = useRef<string | null>(null);
+  const readMarkedRef = useRef(new Set<string>());
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const autoScrollRef = useRef(false);
   const eventRevisionRef = useRef(0);
@@ -80,6 +92,8 @@ export default function TeamChat({ client, userId, isAdmin, members }: TeamChatP
   const canWrite = !activeGroupId || activeGroupMemberIds.has(userId);
   const conversationLabel = activeDirectMember?.full_name || activeGroup?.name || 'Chat da equipe';
   const activeKey = activeDirectId ?? activeGroupId ?? 'team';
+  const activeConversationRef = useRef(activeKey);
+  activeConversationRef.current = activeKey;
 
   const loadLists = useCallback(async () => {
     try {
@@ -123,6 +137,74 @@ export default function TeamChat({ client, userId, isAdmin, members }: TeamChatP
     }
   }, [activeDirectId, activeGroupId, client]);
 
+  async function startAudioRecording() {
+    if (!canWrite) return;
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      setError('Este navegador não oferece gravação de áudio. Atualize o navegador ou permita o microfone.');
+      return;
+    }
+    try {
+      setError('');
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recordingStreamRef.current = stream;
+      const supportedTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus', 'audio/ogg'];
+      const mimeType = supportedTypes.find((type) => MediaRecorder.isTypeSupported(type));
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      recordingChunksRef.current = [];
+      recordingConversationRef.current = activeKey;
+      recorder.ondataavailable = (event) => {
+        if (!event.data.size) return;
+        recordingChunksRef.current.push(event.data);
+        if (recordingChunksRef.current.reduce((sum, chunk) => sum + chunk.size, 0) > 15 * 1024 * 1024) {
+          setError('O áudio atingiu o limite de 15 MB e a gravação foi parada. Envie este trecho ou grave um áudio menor.');
+          if (recorder.state !== 'inactive') recorder.stop();
+        }
+      };
+      recorder.onerror = () => { setError('A gravação foi interrompida. Verifique a permissão do microfone e tente novamente.'); };
+      recorder.onstop = () => {
+        const actualMime = recorder.mimeType || mimeType || 'audio/webm';
+        const normalizedMime = actualMime.split(';')[0].toLowerCase();
+        const blob = new Blob(recordingChunksRef.current, { type: normalizedMime });
+        recordingChunksRef.current = [];
+        recordingStreamRef.current?.getTracks().forEach((track) => track.stop());
+        recordingStreamRef.current = null;
+        recorderRef.current = null;
+        setRecording(false);
+        if (blob.size > 0 && recordingConversationRef.current === activeConversationRef.current) setRecordedAudio(blob);
+      };
+      recorderRef.current = recorder;
+      recorder.start(300);
+      setRecordedAudio(null);
+      setRecordingSeconds(0);
+      setRecording(true);
+    } catch {
+      recordingStreamRef.current?.getTracks().forEach((track) => track.stop());
+      recordingStreamRef.current = null;
+      setError('Não foi possível acessar o microfone. Permita o uso do microfone no navegador e tente novamente.');
+    }
+  }
+
+  function stopAudioRecording() {
+    const recorder = recorderRef.current;
+    if (recorder && recorder.state !== 'inactive') recorder.stop();
+  }
+
+  function discardRecordedAudio() {
+    setRecordedAudio(null);
+    setRecordingSeconds(0);
+  }
+
+  useEffect(() => {
+    if (!recording) return;
+    const timer = window.setInterval(() => setRecordingSeconds((seconds) => seconds + 1), 1000);
+    return () => window.clearInterval(timer);
+  }, [recording]);
+
+  useEffect(() => () => {
+    if (recorderRef.current && recorderRef.current.state !== 'inactive') recorderRef.current.stop();
+    recordingStreamRef.current?.getTracks().forEach((track) => track.stop());
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     async function loadPhotos() {
@@ -138,6 +220,69 @@ export default function TeamChat({ client, userId, isAdmin, members }: TeamChatP
   }, [client, members]);
 
   useEffect(() => {
+    let cancelled = false;
+    async function resolveAudioUrls() {
+      const audioMessages = messages.filter((message) => message.audio_path);
+      if (!audioMessages.length) { setAudioUrls({}); return; }
+      const resolved = await Promise.all(audioMessages.map(async (message) => {
+        const [playback, download] = await Promise.all([
+          client.storage.from('team-chat-audio').createSignedUrl(message.audio_path!, 3600),
+          client.storage.from('team-chat-audio').createSignedUrl(message.audio_path!, 3600, { download: `audio-${message.id}.${message.audio_path!.split('.').pop() || 'webm'}` }),
+        ]);
+        return [message.id, playback.error ? '' : playback.data.signedUrl, download.error ? '' : download.data.signedUrl] as const;
+      }));
+      if (!cancelled) {
+        setAudioUrls(Object.fromEntries(resolved.filter(([, url]) => Boolean(url)).map(([id, url]) => [id, url])));
+        setAudioDownloadUrls(Object.fromEntries(resolved.filter(([, , url]) => Boolean(url)).map(([id, , url]) => [id, url])));
+      }
+    }
+    void resolveAudioUrls();
+    return () => { cancelled = true; };
+  }, [client, messages]);
+
+  useEffect(() => {
+    const visibleIds = messages.map((message) => message.id);
+    if (!visibleIds.length) return;
+    let cancelled = false;
+    async function syncReadReceipts() {
+      const { data, error: readError } = await client.from('team_chat_message_reads')
+        .select('message_id,user_id,read_at').in('message_id', visibleIds);
+      if (cancelled) return;
+      if (readError) { setError(chatError(readError)); return; }
+      const receipts = (data ?? []) as TeamChatRead[];
+      setReadByMessage((current) => {
+        const next = { ...current };
+        for (const receipt of receipts) {
+          const readers = new Set(next[receipt.message_id] ?? []);
+          readers.add(receipt.user_id);
+          next[receipt.message_id] = [...readers];
+        }
+        return next;
+      });
+      const existing = new Set(receipts.filter((receipt) => receipt.user_id === userId).map((receipt) => receipt.message_id));
+      const unread = messages.filter((message) => message.sender_id !== userId && !existing.has(message.id) && !readMarkedRef.current.has(message.id));
+      if (!unread.length) return;
+      for (const message of unread) readMarkedRef.current.add(message.id);
+      const { error: insertError } = await client.from('team_chat_message_reads').insert(unread.map((message) => ({ message_id: message.id, user_id: userId })));
+      if (cancelled) return;
+      if (insertError && insertError.code !== '23505') {
+        for (const message of unread) readMarkedRef.current.delete(message.id);
+        setError(chatError(insertError));
+        return;
+      }
+      setReadByMessage((current) => {
+        const next = { ...current };
+        for (const message of unread) next[message.id] = [...new Set([...(next[message.id] ?? []), userId])];
+        return next;
+      });
+    }
+    void syncReadReceipts();
+    return () => { cancelled = true; };
+  }, [client, messages, userId]);
+
+  useEffect(() => {
+    if (recorderRef.current && recorderRef.current.state !== 'inactive') recorderRef.current.stop();
+    setRecordedAudio(null); setRecordingSeconds(0); setReadByMessage({}); setAudioUrls({}); setAudioDownloadUrls({});
     setMessages([]); setHasOlder(false); setDraft(''); setConfirmRemoveId(null); setError(''); setFeedback('');
     eventRevisionRef.current = 0; void loadLists(); void loadLatest();
     const channel = client.channel(`team-chat-${userId}-${activeKey}`)
@@ -154,6 +299,14 @@ export default function TeamChat({ client, userId, isAdmin, members }: TeamChatP
         eventRevisionRef.current += 1;
         if (message.removed_at) { removedIdsRef.current.add(message.id); setMessages((current) => current.filter((item) => item.id !== message.id)); setConfirmRemoveId((current) => current === message.id ? null : current); return; }
         setMessages((current) => mergeMessages(current, [message]));
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_chat_message_reads' }, (payload) => {
+        const receipt = payload.new as unknown as TeamChatRead;
+        if (!receipt.message_id || !receipt.user_id) return;
+        setReadByMessage((current) => ({
+          ...current,
+          [receipt.message_id]: [...new Set([...(current[receipt.message_id] ?? []), receipt.user_id])],
+        }));
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_chat_groups' }, () => { void loadLists(); })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_chat_group_members' }, () => { void loadLists(); })
@@ -188,18 +341,31 @@ export default function TeamChat({ client, userId, isAdmin, members }: TeamChatP
   }
 
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); const body = draft.trim();
-    if (!body) { setError('Escreva uma mensagem antes de enviar.'); return; }
+    event.preventDefault(); const text = draft.trim();
+    if (!text && !recordedAudio) { setError('Escreva uma mensagem ou grave um áudio antes de enviar.'); return; }
+    const body = text || 'Mensagem de áudio';
     if (Array.from(body).length > MESSAGE_LIMIT) { setError(`A mensagem pode ter até ${MESSAGE_LIMIT} caracteres.`); return; }
     if (!canWrite) { setError('Você não participa deste grupo. Peça a um integrante para adicionar sua conta.'); return; }
     setSending(true); setError(''); setFeedback('');
     try {
+      let audioPath: string | null = null;
+      let audioContentType: string | null = null;
+      if (recordedAudio) {
+        const mime = (recordedAudio.type || 'audio/webm').split(';')[0].toLowerCase();
+        const extensions: Record<string, string> = { 'audio/webm': 'webm', 'audio/mp4': 'mp4', 'audio/ogg': 'ogg', 'audio/aac': 'aac', 'audio/wav': 'wav', 'audio/mpeg': 'mp3' };
+        const extension = extensions[mime];
+        if (!extension) throw new Error('Formato de áudio não suportado pelo Chat. Grave novamente usando o navegador atualizado.');
+        audioPath = `${userId}/${crypto.randomUUID()}.${extension}`;
+        audioContentType = mime;
+        const { error: uploadError } = await client.storage.from('team-chat-audio').upload(audioPath, recordedAudio, { contentType: mime, upsert: false });
+        if (uploadError) throw uploadError;
+      }
       const { data, error: insertError } = await client.from('team_chat_messages')
-        .insert({ body, group_id: activeDirectId ? null : activeGroupId, dm_conversation_id: activeDirectId })
+        .insert({ body, group_id: activeDirectId ? null : activeGroupId, dm_conversation_id: activeDirectId, audio_path: audioPath, audio_content_type: audioContentType })
         .select(MESSAGE_COLUMNS).single();
       if (insertError) throw insertError;
       const message = data as unknown as TeamChatMessage;
-      setMessages((current) => mergeMessages(current, [message])); autoScrollRef.current = true; setDraft('');
+      setMessages((current) => mergeMessages(current, [message])); autoScrollRef.current = true; setDraft(''); setRecordedAudio(null); setRecordingSeconds(0);
       void notifyChatMessagePush(client, message.id).then((outcome) => { if (outcome === 'failed') setFeedback('Mensagem enviada. O aviso no celular não foi confirmado; confira a configuração do OneSignal.'); });
     } catch (sendError) { setError(chatError(sendError)); }
     finally { setSending(false); }
@@ -301,12 +467,19 @@ export default function TeamChat({ client, userId, isAdmin, members }: TeamChatP
               {hasOlder && messages.length > 0 && <button className="team-chat-older" type="button" onClick={() => void loadOlder()} disabled={loadingOlder}>{loadingOlder ? 'Carregando…' : 'Carregar mensagens anteriores'}</button>}
               {loading && messages.length === 0 ? <div className="team-chat-empty" role="status">Carregando conversa…</div> : messages.length === 0 ? <div className="team-chat-empty"><MessageCircle aria-hidden="true" /><strong>A conversa começa aqui.</strong><span>Envie a primeira mensagem.</span></div> : messages.map((message, index) => {
                 const sender = getMember(message.sender_id); const senderName = message.sender_id === userId && !activeGroupId ? 'Você' : sender?.full_name || (message.sender_id === userId ? 'Você' : 'Integrante da equipe');
+                const readers = (readByMessage[message.id] ?? []).filter((readerId) => readerId !== userId);
+                const readCount = readers.length;
                 const previous = messages[index - 1]; const showDay = !previous || new Date(previous.created_at).toDateString() !== new Date(message.created_at).toDateString();
                 return <div className="team-chat-message-row-wrap" key={message.id}>{showDay && <div className="team-chat-day-divider"><span>{dayLabel(message.created_at)}</span></div>}
                   <div className={`team-chat-message-row${message.sender_id === userId ? ' is-own' : ''}`}>{!activeDirectId && avatar(message.sender_id, senderName, 'md')}
                     <article className={`team-chat-message${message.sender_id === userId ? ' is-own' : ''}`}>
                       {!activeDirectId && <div className="team-chat-message-meta"><strong>{senderName}</strong></div>}
-                      <p>{message.body}</p><div className="team-chat-message-time"><time dateTime={message.created_at}>{timeLabel(message.created_at)}</time>{message.sender_id === userId && <span aria-label="Enviada">✓</span>}</div>
+                      {message.body !== 'Mensagem de áudio' && <p>{message.body}</p>}
+                      {message.audio_path && (audioUrls[message.id]
+                        ? <div className="team-chat-audio-row"><audio className="team-chat-audio-player" controls preload="none" src={audioUrls[message.id]} aria-label={`Mensagem de áudio de ${senderName}`} />{audioDownloadUrls[message.id] && <a className="team-chat-audio-download" href={audioDownloadUrls[message.id]} aria-label="Baixar áudio" title="Baixar áudio"><Download aria-hidden="true" /><span>Baixar</span></a>}</div>
+                        : <span className="team-chat-audio-loading">Carregando áudio…</span>)}
+                      {message.body === 'Mensagem de áudio' && !message.audio_path && <p>Mensagem de áudio indisponível.</p>}
+                      <div className="team-chat-message-time"><time dateTime={message.created_at}>{timeLabel(message.created_at)}</time>{message.sender_id === userId && <span className={readCount ? 'is-read' : ''} aria-label={readCount ? (activeGroupId ? `Lida por ${readCount} integrante(s)` : 'Lida') : 'Enviada'} title={readCount ? (activeGroupId ? `Lida por ${readCount} integrante(s)` : 'Lida') : 'Enviada'}>{readCount ? '✓✓' : '✓'}{readCount > 0 && <small>{activeGroupId ? `Lida por ${readCount}` : 'Lida'}</small>}</span>}</div>
                       {isAdmin && <div className="team-chat-message-actions">{confirmRemoveId === message.id ? <><span>Remover esta mensagem?</span><button type="button" className="team-chat-confirm-remove" onClick={() => void removeMessage(message.id)} disabled={removingId === message.id}>{removingId === message.id ? 'Removendo…' : 'Confirmar remoção'}</button><button type="button" className="team-chat-cancel-remove" onClick={() => setConfirmRemoveId(null)} disabled={removingId === message.id}>Cancelar</button></> : <button type="button" className="team-chat-remove" onClick={() => setConfirmRemoveId(message.id)} aria-label={`Remover mensagem de ${senderName}`}><Trash2 aria-hidden="true" /> Remover</button>}</div>}
                     </article></div></div>;
               })}
@@ -314,7 +487,9 @@ export default function TeamChat({ client, userId, isAdmin, members }: TeamChatP
             </div>
             <form className="team-chat-composer" onSubmit={(event) => void sendMessage(event)}>
               <textarea aria-label="Sua mensagem" id="team-chat-message" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={canWrite ? 'Escreva uma mensagem…' : 'Você não participa deste grupo.'} rows={1} maxLength={MESSAGE_LIMIT} disabled={sending || !canWrite} />
-              <div className="team-chat-compose-footer"><span>{Array.from(draft).length}/{MESSAGE_LIMIT} · {activeDirectId ? 'Conversa privada' : activeGroupId ? 'Somente participantes do grupo' : 'Visível para os integrantes ativos'}</span><button type="submit" aria-label={sending ? 'Enviando mensagem' : 'Enviar mensagem'} title={sending ? 'Enviando mensagem' : 'Enviar mensagem'} disabled={sending || !draft.trim() || !canWrite}><ArrowUp aria-hidden="true" /></button></div>
+              {recording && <div className="team-chat-audio-state is-recording"><span className="team-chat-record-dot" aria-hidden="true" />Gravando áudio · {Math.floor(recordingSeconds / 60)}:{String(recordingSeconds % 60).padStart(2, '0')}<button type="button" onClick={stopAudioRecording} aria-label="Parar gravação"><Square aria-hidden="true" /> Parar</button></div>}
+              {recordedAudio && !recording && <div className="team-chat-audio-state"><span>Áudio gravado · {Math.floor(recordingSeconds / 60)}:{String(recordingSeconds % 60).padStart(2, '0')}</span><button type="button" onClick={discardRecordedAudio} aria-label="Descartar áudio gravado"><X aria-hidden="true" /> Descartar</button></div>}
+              <div className="team-chat-compose-footer"><span>{Array.from(draft).length}/{MESSAGE_LIMIT} · {activeDirectId ? 'Conversa privada' : activeGroupId ? 'Somente participantes do grupo' : 'Visível para os integrantes ativos'}</span><div className="team-chat-compose-actions"><button className="team-chat-record-button" type="button" onClick={() => void startAudioRecording()} aria-label="Gravar áudio" title="Gravar áudio" disabled={sending || recording || !canWrite}><Mic aria-hidden="true" /></button><button type="submit" aria-label={sending ? 'Enviando mensagem' : recordedAudio ? 'Enviar mensagem de áudio' : 'Enviar mensagem'} title={sending ? 'Enviando…' : recordedAudio ? 'Enviar mensagem de áudio' : 'Enviar mensagem'} disabled={sending || (!draft.trim() && !recordedAudio) || !canWrite}><ArrowUp aria-hidden="true" /></button></div></div>
             </form>
           </div>
           <p className="team-chat-retention-note">Mensagens ficam salvas até um Administrador removê-las. As conversas privadas só podem ser lidas pelos dois participantes. Mensagens do Chat não enviam e-mail.</p>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { BookOpen, CalendarDays, Check, ClipboardList, Folder, Megaphone, MessageCircle, RefreshCw, Sparkles, Trash2, X, type LucideIcon } from 'lucide-react';
+import { BookOpen, CalendarDays, Check, ClipboardList, Clock3, Folder, Megaphone, MessageCircle, Sparkles, Trash2, X, type LucideIcon } from 'lucide-react';
 import {
   activityTypeLabels,
   addDays,
@@ -91,10 +91,10 @@ type WeekCalendarEvent = {
   start_time: string | null;
   location: string;
 };
-const workspaceTabs: { id: WorkspaceTab; label: string; icon: LucideIcon; badge?: string }[] = [
+const workspaceTabs: { id: WorkspaceTab; label: string; icon: LucideIcon }[] = [
   { id: 'chat', label: 'Chat', icon: MessageCircle },
   { id: 'announcements', label: 'Comunicados', icon: Megaphone },
-  { id: 'week', label: 'Semana', icon: RefreshCw, badge: '24h' },
+  { id: 'week', label: 'Semana', icon: Clock3 },
   { id: 'activities', label: 'Atividades', icon: ClipboardList },
   { id: 'files', label: 'Arquivos', icon: Folder },
   { id: 'calendar', label: 'Calendário de eventos', icon: CalendarDays },
@@ -667,9 +667,9 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
         <aside className="workspace-sidebar" aria-label="Navegação do espaço da equipe">
           <p className="workspace-sidebar-label">ROTINA DA EQUIPE</p>
           <nav className="workspace-nav">
-            {workspaceTabs.map(({ id, label, icon: Icon, badge }) => (
+            {workspaceTabs.map(({ id, label, icon: Icon }) => (
               <button key={id} type="button" title={label} aria-label={label} className={tab === id ? 'is-active' : ''} onClick={() => setTab(id)} aria-current={tab === id ? 'page' : undefined}>
-                <span className={`workspace-nav-icon${badge ? ' has-badge' : ''}`}><Icon aria-hidden="true" />{badge && <small>{badge}</small>}</span>
+                <span className="workspace-nav-icon"><Icon aria-hidden="true" /></span>
                 <span className="workspace-nav-label">{label}</span>
               </button>
             ))}

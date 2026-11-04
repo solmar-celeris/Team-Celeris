@@ -109,7 +109,7 @@
   content: "";
   pointer-events: none;
 }
-.team-calendar-month-nav h2 { color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,.2); }
+.team-calendar-month-nav h2 { color: #fff !important; text-shadow: 0 2px 8px rgba(0,0,0,.2); }
 .team-calendar-month-nav button, .team-calendar-today {
   border-color: rgba(255,255,255,.25);
   color: #fff;
