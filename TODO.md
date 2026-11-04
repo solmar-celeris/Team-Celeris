@@ -55,6 +55,7 @@
 ## 7. Comunicados
 - [x] Publicar com título, mensagem, destinatário (toda a equipe ou uma área) e autor automático (quem está logado).
 - [x] Fixar e desafixar no topo, remover com confirmação. Mais recentes primeiro.
+- [ ] Permitir que qualquer perfil ativo responda e reaja aos comunicados; mostrar respostas/reactions em tempo real; permitir que autor remova a própria resposta e Administrador ativo modere; requer aplicar `20261104101500_announcement_replies_reactions.sql` e publicar o site.
 - [ ] Opcional: aviso de comunicado novo (selo na aba e/ou e-mail).
 
 ## 8. Importação, exportação e alertas opcionais
@@ -98,6 +99,11 @@
 - [x] Implementar o espaço pós-login com abas Semana e Atividades no mesmo site, conectadas ao Supabase, sem criar outro projeto nem trocar o banco.
 - [x] Implementar consultas, filtros, formulários, responsável e status semanal conforme os critérios completos das seções 3 e 4; respeitar autorização RLS.
 - [x] Atualizar o manual Netlify/Supabase, guia de uso e ZIP do mesmo site, sem incluir credenciais nem build/dependências.
+
+## 14. Atualizações de interface — comunicados, IA e Chat
+- [x] Incluir no menu uma aba **IA** com atalhos externos para ChatGPT, Claude AI, Manus IA e Gemini, abrindo cada serviço em nova aba.
+- [x] Atualizar a apresentação visual do Chat com balões e organização inspirada em mensageiros, preservando cores e identidade SolMar, recursos atuais, tema escuro, grupos e comportamento responsivo.
+- [x] Manter respostas e reações disponíveis para perfis `active` conforme migration incremental; não abrir acesso a visitantes, perfis pendentes ou suspensos.
 **Evidência:** TypeScript e build passaram; o ZIP anterior foi validado em extração limpa. A confirmação do Supabase remoto depende do usuário.
 
 ## 14. Etapa 5 — Arquivos e Comunicados (permissões confirmadas em 02/11/2026)

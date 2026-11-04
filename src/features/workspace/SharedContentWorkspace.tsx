@@ -4,11 +4,14 @@ import { ArrowUpRight, Check, FolderOpen, Megaphone, Pin, PinOff, Plus, RefreshC
 import type { Area, MemberProfile } from './domain';
 import { notifyWorkspacePush } from '../../lib/notifications';
 import './shared-content.css';
+import './announcement-interactions.css';
 
 type ContentMode = 'files' | 'announcements';
 type SharedContentWorkspaceProps = {
   client: SupabaseClient;
   mode: ContentMode;
+  userId: string;
+  isAdmin: boolean;
   areas: Pick<Area, 'id' | 'name'>[];
   members: Pick<MemberProfile, 'user_id' | 'full_name'>[];
 };
@@ -30,11 +33,25 @@ type Announcement = {
   pinned_at: string | null;
   created_at: string;
 };
+type AnnouncementReply = {
+  id: string;
+  announcement_id: string;
+  author_id: string | null;
+  body: string;
+  created_at: string;
+};
+type AnnouncementReaction = {
+  id: string;
+  announcement_id: string;
+  user_id: string;
+  emoji: string;
+};
 type FolderForm = { name: string; driveUrl: string; areaId: string };
 type AnnouncementForm = { title: string; message: string; areaId: string };
 
 const emptyFolderForm: FolderForm = { name: '', driveUrl: '', areaId: '' };
 const emptyAnnouncementForm: AnnouncementForm = { title: '', message: '', areaId: '' };
+const ANNOUNCEMENT_REACTIONS = ['👍', '❤️', '😂', '👏', '🔥'];
 
 function errorMessage(error: unknown): string {
   if (!error || typeof error !== 'object') return 'Ocorreu um erro inesperado. Confira a conexão e tente novamente.';
@@ -43,6 +60,10 @@ function errorMessage(error: unknown): string {
   if (candidate.code === '42501' || /row-level security|permission denied/i.test(message)) {
     return 'O Supabase ainda está bloqueando essa ação. Confirme que a migração incremental da Etapa 5 foi aplicada no projeto certo; não desative o RLS.';
   }
+  if (['42P01', 'PGRST200', 'PGRST204', 'PGRST205'].includes(candidate.code ?? '') || /announcement_(replies|reactions).*not found/i.test(message)) {
+    return 'As respostas e reações ainda não foram habilitadas neste banco. Aplique uma única vez a migration 20261104101500_announcement_replies_reactions.sql.';
+  }
+  if (candidate.code === '23505') return 'Essa reação já foi registrada. Atualize o comunicado para ver a contagem mais recente.';
   if (candidate.code === 'PGRST202' || /function .*remove_(drive_folder|announcement).*not found/i.test(message)) {
     return 'A função segura de remoção ainda não existe neste banco. Aplique a migration incremental mais recente e publique o site atualizado.';
   }
@@ -56,7 +77,7 @@ function formatDate(value: string): string {
   return new Date(value).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-export default function SharedContentWorkspace({ client, mode, areas, members }: SharedContentWorkspaceProps) {
+export default function SharedContentWorkspace({ client, mode, userId, isAdmin, areas, members }: SharedContentWorkspaceProps) {
   const [folders, setFolders] = useState<DriveFolder[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,6 +93,12 @@ export default function SharedContentWorkspace({ client, mode, areas, members }:
   const [confirmAnnouncementId, setConfirmAnnouncementId] = useState<string | null>(null);
   const [pendingPrimaryId, setPendingPrimaryId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+  const [announcementReplies, setAnnouncementReplies] = useState<AnnouncementReply[]>([]);
+  const [announcementReactions, setAnnouncementReactions] = useState<AnnouncementReaction[]>([]);
+  const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
+  const [interactionError, setInteractionError] = useState('');
+  const [interactionsLoading, setInteractionsLoading] = useState(true);
+  const [interactionBusy, setInteractionBusy] = useState<string | null>(null);
 
   const loadContent = useCallback(async (initial = false) => {
     if (initial) setLoading(true);
@@ -109,6 +136,60 @@ export default function SharedContentWorkspace({ client, mode, areas, members }:
       setRefreshing(false);
     }
   }, [client, mode]);
+
+  const announcementIds = useMemo(() => announcements.map(({ id }) => id).sort().join(','), [announcements]);
+  const loadInteractions = useCallback(async (ids: string[]) => {
+    if (ids.length === 0) {
+      setAnnouncementReplies([]);
+      setAnnouncementReactions([]);
+      setInteractionError('');
+      setInteractionsLoading(false);
+      return;
+    }
+    setInteractionsLoading(true);
+    try {
+      const [replyResult, reactionResult] = await Promise.all([
+        client.from('announcement_replies')
+          .select('id,announcement_id,author_id,body,created_at')
+          .in('announcement_id', ids)
+          .is('removed_at', null)
+          .order('created_at', { ascending: true }),
+        client.from('announcement_reactions')
+          .select('id,announcement_id,user_id,emoji')
+          .in('announcement_id', ids),
+      ]);
+      if (replyResult.error) throw replyResult.error;
+      if (reactionResult.error) throw reactionResult.error;
+      setAnnouncementReplies((replyResult.data ?? []) as AnnouncementReply[]);
+      setAnnouncementReactions((reactionResult.data ?? []) as AnnouncementReaction[]);
+      setInteractionError('');
+    } finally {
+      setInteractionsLoading(false);
+    }
+  }, [client]);
+
+  useEffect(() => {
+    if (mode !== 'announcements') return;
+    const ids = announcementIds ? announcementIds.split(',') : [];
+    let mounted = true;
+    const refreshInteractions = () => {
+      void loadInteractions(ids).catch((loadError) => {
+        if (mounted) setInteractionError(errorMessage(loadError));
+      });
+    };
+    refreshInteractions();
+    if (ids.length === 0) return () => { mounted = false; };
+
+    const channel = client
+      .channel(`announcement-interactions-${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'announcement_replies' }, refreshInteractions)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'announcement_reactions' }, refreshInteractions)
+      .subscribe();
+    return () => {
+      mounted = false;
+      void client.removeChannel(channel);
+    };
+  }, [announcementIds, client, loadInteractions, mode, userId]);
 
   useEffect(() => {
     void loadContent(true);
@@ -257,6 +338,65 @@ export default function SharedContentWorkspace({ client, mode, areas, members }:
     setSaving(false);
   }
 
+  async function submitAnnouncementReply(event: FormEvent<HTMLFormElement>, announcementId: string) {
+    event.preventDefault();
+    const body = (replyDrafts[announcementId] ?? '').trim();
+    if (!body) return;
+    if (Array.from(body).length > 2000) {
+      setInteractionError('A resposta pode ter até 2.000 caracteres.');
+      return;
+    }
+    setInteractionBusy(`reply:${announcementId}`);
+    setInteractionError('');
+    try {
+      const { error: insertError } = await client.from('announcement_replies').insert({ announcement_id: announcementId, body });
+      if (insertError) throw insertError;
+      setReplyDrafts((current) => ({ ...current, [announcementId]: '' }));
+      await loadInteractions(announcementIds ? announcementIds.split(',') : []);
+    } catch (replyError) {
+      setInteractionError(errorMessage(replyError));
+    } finally {
+      setInteractionBusy(null);
+    }
+  }
+
+  async function toggleAnnouncementReaction(announcementId: string, emoji: string) {
+    const currentReaction = announcementReactions.find((reaction) =>
+      reaction.announcement_id === announcementId && reaction.user_id === userId && reaction.emoji === emoji);
+    const busyKey = `reaction:${announcementId}:${emoji}`;
+    setInteractionBusy(busyKey);
+    setInteractionError('');
+    try {
+      const result = currentReaction
+        ? await client.from('announcement_reactions').delete().eq('id', currentReaction.id).eq('user_id', userId)
+        : await client.from('announcement_reactions').insert({ announcement_id: announcementId, emoji });
+      if (result.error) throw result.error;
+      await loadInteractions(announcementIds ? announcementIds.split(',') : []);
+    } catch (reactionError) {
+      setInteractionError(errorMessage(reactionError));
+    } finally {
+      setInteractionBusy(null);
+    }
+  }
+
+  async function removeAnnouncementReply(reply: AnnouncementReply) {
+    setInteractionBusy(`remove:${reply.id}`);
+    setInteractionError('');
+    try {
+      const { error: removeError } = await client.rpc('remove_announcement_reply', { p_reply_id: reply.id });
+      if (removeError) throw removeError;
+      await loadInteractions(announcementIds ? announcementIds.split(',') : []);
+    } catch (removeError) {
+      setInteractionError(errorMessage(removeError));
+    } finally {
+      setInteractionBusy(null);
+    }
+  }
+
+  function formatReplyTime(value: string): string {
+    return new Date(value).toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  }
+
   const isFiles = mode === 'files';
   const primaryFolder = folders.find((folder) => folder.is_primary);
   const folderCount = visibleFolders.length;
@@ -270,10 +410,13 @@ export default function SharedContentWorkspace({ client, mode, areas, members }:
           <h2 id="shared-content-title">{isFiles ? 'Pastas e arquivos.' : 'Comunicados.'}</h2>
           <p>{isFiles
             ? 'Pastas visíveis para a equipe; o conteúdo continua no Google Drive.'
-            : 'Avisos para toda a equipe ou para uma área específica.'}</p>
+            : 'Avisos para toda a equipe ou para uma área específica. Todas as pessoas ativas podem responder e reagir.'}</p>
         </div>
         <div className="shared-content-actions">
-          <button className="workspace-refresh" type="button" onClick={() => void loadContent(false)} disabled={loading || refreshing}>
+          <button className="workspace-refresh" type="button" onClick={() => {
+            void loadContent(false);
+            if (mode === 'announcements') void loadInteractions(announcementIds ? announcementIds.split(',') : []).catch((loadError) => setInteractionError(errorMessage(loadError)));
+          }} disabled={loading || refreshing}>
             <RefreshCw size={14} aria-hidden="true" />{refreshing ? 'Atualizando…' : 'Atualizar'}
           </button>
           {isFiles ? (
@@ -346,6 +489,7 @@ export default function SharedContentWorkspace({ client, mode, areas, members }:
       ) : (
         <>
           <label className="shared-content-search"><span>Buscar comunicado</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Título, mensagem ou área" /></label>
+          {interactionError && <p className="shared-interaction-alert" role="alert">{interactionError}</p>}
           {loading ? <div className="workspace-loading" role="status"><span />Carregando comunicados…</div> : announcementCount === 0 ? (
             <div className="workspace-empty"><Megaphone size={25} aria-hidden="true" /><strong>{announcements.length ? 'Nenhum comunicado corresponde à busca.' : 'Ainda não há comunicados.'}</strong><p>{announcements.length ? 'Tente outra busca.' : 'Publique um aviso para compartilhar informações com a equipe.'}</p></div>
           ) : (
@@ -359,6 +503,59 @@ export default function SharedContentWorkspace({ client, mode, areas, members }:
                     <button type="button" onClick={() => void togglePin(item)} disabled={saving}>{item.pinned_at ? <PinOff size={13} aria-hidden="true" /> : <Pin size={13} aria-hidden="true" />}{item.pinned_at ? 'Desafixar' : 'Fixar'}</button>
                     {confirmAnnouncementId === item.id ? <div className="shared-confirm-actions"><span>Remover comunicado?</span><button type="button" className="is-danger" onClick={() => void removeAnnouncement(item)} disabled={saving}><Check size={13} aria-hidden="true" />Confirmar</button><button type="button" onClick={() => setConfirmAnnouncementId(null)} disabled={saving}><X size={13} aria-hidden="true" />Cancelar</button></div> : <button type="button" className="is-danger" onClick={() => setConfirmAnnouncementId(item.id)}><Trash2 size={13} aria-hidden="true" />Remover</button>}
                   </div></div>
+                  <section className="shared-announcement-interactions" aria-label={`Respostas e reações para ${item.title}`}>
+                    <div className="shared-announcement-reactions" aria-label="Reações">
+                      {ANNOUNCEMENT_REACTIONS.map((emoji) => {
+                        const matching = announcementReactions.filter((reaction) => reaction.announcement_id === item.id && reaction.emoji === emoji);
+                        const ownReaction = matching.find((reaction) => reaction.user_id === userId);
+                        return (
+                          <button
+                            type="button"
+                            key={emoji}
+                            className={ownReaction ? 'is-selected' : ''}
+                            aria-pressed={Boolean(ownReaction)}
+                            aria-label={`${ownReaction ? 'Remover' : 'Adicionar'} reação ${emoji}; ${matching.length} reações`}
+                            onClick={() => void toggleAnnouncementReaction(item.id, emoji)}
+                            disabled={Boolean(interactionError) || interactionsLoading || interactionBusy !== null || mode !== 'announcements'}
+                          >
+                            <span aria-hidden="true">{emoji}</span><span>{matching.length}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="shared-announcement-replies">
+                      <h4>Respostas <span>{announcementReplies.filter((reply) => reply.announcement_id === item.id).length}</span></h4>
+                      {announcementReplies.filter((reply) => reply.announcement_id === item.id).map((reply) => (
+                        <article className="shared-announcement-reply" key={reply.id}>
+                          <div className="shared-reply-meta">
+                            <strong>{membersById.get(reply.author_id ?? '') || 'Integrante ativo'}</strong>
+                            <time dateTime={reply.created_at}>{formatReplyTime(reply.created_at)}</time>
+                            {(reply.author_id === userId || isAdmin) && (
+                              <button type="button" onClick={() => void removeAnnouncementReply(reply)} disabled={interactionBusy !== null} aria-label={`Remover resposta de ${membersById.get(reply.author_id ?? '') || 'integrante'}`}>
+                                <Trash2 size={13} aria-hidden="true" /> Remover
+                              </button>
+                            )}
+                          </div>
+                          <p>{reply.body}</p>
+                        </article>
+                      ))}
+                      <form className="shared-announcement-reply-form" onSubmit={(event) => void submitAnnouncementReply(event, item.id)}>
+                        <label className="sr-only" htmlFor={`announcement-reply-${item.id}`}>Escreva uma resposta</label>
+                        <textarea
+                          id={`announcement-reply-${item.id}`}
+                          value={replyDrafts[item.id] ?? ''}
+                          onChange={(event) => setReplyDrafts((current) => ({ ...current, [item.id]: event.target.value }))}
+                          placeholder="Escreva uma resposta para a equipe…"
+                          rows={2}
+                          maxLength={2000}
+                          disabled={Boolean(interactionError) || interactionsLoading || interactionBusy !== null}
+                        />
+                        <button type="submit" disabled={Boolean(interactionError) || interactionsLoading || interactionBusy !== null || !(replyDrafts[item.id] ?? '').trim()}>
+                          {interactionBusy === `reply:${item.id}` ? 'Enviando…' : 'Responder'}
+                        </button>
+                      </form>
+                    </div>
+                  </section>
                 </article>
               ))}
             </div>

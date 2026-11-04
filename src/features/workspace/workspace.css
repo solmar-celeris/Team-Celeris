@@ -252,7 +252,7 @@
   .workspace-frame { display: block; min-height: calc(100dvh - 64px); }
   .workspace-sidebar { position: sticky; z-index: 3; top: 64px; display: block; padding: 9px 12px; border-right: 0; border-bottom: 1px solid var(--line); background: var(--bg); }
   .workspace-sidebar-label, .workspace-side-card { display: none; }
-  .workspace-nav { display: grid; grid-template-columns: repeat(6, minmax(56px, 1fr)); gap: 4px; max-width: 680px; margin: 0 auto; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+  .workspace-nav { display: grid; grid-template-columns: repeat(7, minmax(56px, 1fr)); gap: 4px; max-width: 680px; margin: 0 auto; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
   .workspace-nav::-webkit-scrollbar { display: none; }
   .workspace-nav button { display: grid; min-height: 52px; justify-items: center; align-content: center; gap: 3px; padding: 4px 2px; font-size: clamp(8px, 2.8vw, 10px); white-space: nowrap; }
   .workspace-nav-icon { width: 20px; height: 20px; flex-basis: 20px; }

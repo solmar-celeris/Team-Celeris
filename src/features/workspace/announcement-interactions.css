@@ -1,0 +1,35 @@
+.shared-interaction-alert { margin: 0 0 12px; padding: 10px 12px; border: 1px solid color-mix(in srgb, #c54b3f 26%, var(--line)); border-radius: 9px; color: #8e3027; background: color-mix(in srgb, #e54444 7%, var(--card)); font-size: 12px; line-height: 1.5; }
+:root[data-theme="dark"] .shared-interaction-alert { color: #ffb1a9; }
+.shared-announcement-interactions { display: grid; gap: 14px; margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--line); }
+.shared-announcement-reactions { display: flex; flex-wrap: wrap; gap: 7px; }
+.shared-announcement-reactions button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 49px; min-height: 34px; padding: 0 9px; border: 1px solid var(--line); border-radius: 99px; color: var(--muted); background: var(--surface); cursor: pointer; font-size: 12px; transition: border-color 120ms ease, background 120ms ease, transform 120ms ease; }
+.shared-announcement-reactions button:hover:not(:disabled) { transform: translateY(-1px); border-color: var(--sky); }
+.shared-announcement-reactions button.is-selected { border-color: color-mix(in srgb, var(--blue) 45%, var(--line)); color: var(--ocean); background: color-mix(in srgb, var(--sky) 15%, var(--card)); }
+:root[data-theme="dark"] .shared-announcement-reactions button.is-selected { color: #b9ddff; }
+.shared-announcement-reactions button > span:last-child { font-size: 11px; font-weight: 800; }
+.shared-announcement-replies { display: grid; gap: 9px; }
+.shared-announcement-replies h4 { display: flex; align-items: center; gap: 7px; margin: 0; color: var(--ink); font-size: 13px; }
+.shared-announcement-replies h4 span { color: var(--muted); font-size: 11px; }
+.shared-announcement-reply { display: grid; gap: 5px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: color-mix(in srgb, var(--surface) 72%, var(--card)); }
+.shared-reply-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.shared-reply-meta strong { color: var(--ocean); font-size: 12px; }
+:root[data-theme="dark"] .shared-reply-meta strong { color: #8acbff; }
+.shared-reply-meta time { color: var(--muted); font-size: 10px; }
+.shared-reply-meta button { display: inline-flex; align-items: center; gap: 4px; min-height: 27px; margin-left: auto; padding: 0 7px; border: 1px solid transparent; border-radius: 7px; color: var(--muted); background: transparent; cursor: pointer; font-size: 10px; }
+.shared-reply-meta button:hover:not(:disabled) { border-color: color-mix(in srgb, #c54b3f 30%, var(--line)); color: #9c3026; }
+:root[data-theme="dark"] .shared-reply-meta button:hover:not(:disabled) { color: #ffb1a9; }
+.shared-announcement-reply > p { margin: 0; color: var(--ink); font-size: 13px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.shared-announcement-reply-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 8px; }
+.shared-announcement-reply-form .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.shared-announcement-reply-form textarea { width: 100%; min-height: 42px; max-height: 150px; resize: vertical; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--bg); font: inherit; font-size: 12px; line-height: 1.5; }
+.shared-announcement-reply-form textarea:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
+.shared-announcement-reply-form button { min-height: 40px; padding: 0 14px; border: 0; border-radius: 9px; color: #fff; background: var(--ocean); cursor: pointer; font-size: 12px; font-weight: 800; }
+.shared-announcement-reply-form button:hover:not(:disabled) { filter: brightness(1.1); }
+.shared-announcement-reply-form button:disabled, .shared-announcement-reactions button:disabled { cursor: wait; opacity: .55; }
+@media (max-width: 480px) {
+  .shared-announcement-reply-form { grid-template-columns: 1fr; }
+  .shared-announcement-reply-form button { justify-self: end; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shared-announcement-reactions button { transition: none; }
+}

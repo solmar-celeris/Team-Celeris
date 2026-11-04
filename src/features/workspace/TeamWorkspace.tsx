@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { BookOpen, CalendarDays, Check, ClipboardList, Folder, Megaphone, MessageCircle, Trash2, X, type LucideIcon } from 'lucide-react';
+import { BookOpen, CalendarDays, Check, ClipboardList, Folder, Megaphone, MessageCircle, Sparkles, Trash2, X, type LucideIcon } from 'lucide-react';
 import {
   activityTypeLabels,
   addDays,
@@ -26,6 +26,7 @@ import ProfileMenu from '../profile/ProfileMenu';
 import SharedContentWorkspace from './SharedContentWorkspace';
 import TeamChat from './TeamChat';
 import ManualFunctions from './ManualFunctions';
+import AIShortcuts from './AIShortcuts';
 import { flushPendingWorkspacePushEvents, notifyActivityChange, notifyWorkspacePush } from '../../lib/notifications';
 import './workspace.css';
 
@@ -77,7 +78,7 @@ type ActivityFormState = {
   notes: string;
 };
 type WeeklyDraft = { status: WeeklyStatus; justification: string };
-type WorkspaceTab = 'week' | 'activities' | 'files' | 'announcements' | 'chat' | 'manual';
+type WorkspaceTab = 'week' | 'activities' | 'files' | 'announcements' | 'chat' | 'manual' | 'ai';
 const workspaceTabs: { id: WorkspaceTab; label: string; icon: LucideIcon }[] = [
   { id: 'chat', label: 'Chat', icon: MessageCircle },
   { id: 'announcements', label: 'Comunicados', icon: Megaphone },
@@ -85,6 +86,7 @@ const workspaceTabs: { id: WorkspaceTab; label: string; icon: LucideIcon }[] = [
   { id: 'activities', label: 'Atividades', icon: ClipboardList },
   { id: 'files', label: 'Arquivos', icon: Folder },
   { id: 'manual', label: 'Manual de funções', icon: BookOpen },
+  { id: 'ai', label: 'IA', icon: Sparkles },
 ];
 
 const defaultFilters: FilterState = {
@@ -571,8 +573,8 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
         <main className="workspace-main" id="workspace">
           <div className="workspace-page-heading">
             <div>
-              <p className="workspace-kicker">{tab === 'week' ? 'ACOMPANHAMENTO SEMANAL' : tab === 'activities' ? 'CADASTRO DA EQUIPE' : tab === 'files' ? 'LINKS COMPARTILHADOS' : tab === 'announcements' ? 'MURAL DA EQUIPE' : tab === 'manual' ? 'CARGOS E CAPACITAÇÃO' : 'CONVERSA EM TEMPO REAL'}</p>
-              <h1>{tab === 'week' ? 'Semana em movimento.' : tab === 'activities' ? 'Atividades da equipe.' : tab === 'files' ? 'Arquivos da equipe.' : tab === 'announcements' ? 'Comunicados da equipe.' : tab === 'manual' ? 'Manual de funções.' : 'Chat da equipe.'}</h1>
+              <p className="workspace-kicker">{tab === 'week' ? 'ACOMPANHAMENTO SEMANAL' : tab === 'activities' ? 'CADASTRO DA EQUIPE' : tab === 'files' ? 'LINKS COMPARTILHADOS' : tab === 'announcements' ? 'MURAL DA EQUIPE' : tab === 'manual' ? 'CARGOS E CAPACITAÇÃO' : tab === 'ai' ? 'FERRAMENTAS EXTERNAS' : 'CONVERSA EM TEMPO REAL'}</p>
+              <h1>{tab === 'week' ? 'Semana em movimento.' : tab === 'activities' ? 'Atividades da equipe.' : tab === 'files' ? 'Arquivos da equipe.' : tab === 'announcements' ? 'Comunicados da equipe.' : tab === 'manual' ? 'Manual de funções.' : tab === 'ai' ? 'Atalhos de IA.' : 'Chat da equipe.'}</h1>
               <p className="workspace-subtitle">{tab === 'week'
                 ? 'Registre o que avançou e sinalize o que precisa de atenção.'
                 : tab === 'activities'
@@ -583,6 +585,8 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
                       ? 'Compartilhe avisos com toda a equipe ou com uma área.'
                       : tab === 'manual'
                         ? 'Consulte o que cada núcleo e área deve fazer e quais competências desenvolver.'
+                        : tab === 'ai'
+                          ? 'Acesse plataformas de inteligência artificial em poucos cliques.'
                         : 'Converse com todos os integrantes ativos em uma sala compartilhada.'}</p>
             </div>
             <div className="workspace-heading-actions">
@@ -827,12 +831,13 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
           )}
 
           {(tab === 'files' || tab === 'announcements') && (
-            <SharedContentWorkspace client={client} mode={tab} areas={areas} members={members} />
+            <SharedContentWorkspace client={client} mode={tab} userId={userId} isAdmin={profile.role === 'admin'} areas={areas} members={members} />
           )}
           {tab === 'chat' && (
             <TeamChat client={client} userId={userId} isAdmin={profile.role === 'admin'} members={members} />
           )}
           {tab === 'manual' && <ManualFunctions />}
+          {tab === 'ai' && <AIShortcuts />}
 
           <footer className="workspace-footer"><span>UFCI/RJ</span><i />SolMar Celeris <small>· DADOS DO SUPABASE</small></footer>
         </main>
