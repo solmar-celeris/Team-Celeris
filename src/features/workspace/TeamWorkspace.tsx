@@ -27,6 +27,7 @@ import {
 import ProfileMenu from '../profile/ProfileMenu';
 import SharedContentWorkspace from './SharedContentWorkspace';
 import TeamChat from './TeamChat';
+import TeamCalendar from './TeamCalendar';
 import ManualFunctions from './ManualFunctions';
 import AIShortcuts from './AIShortcuts';
 import { flushPendingWorkspacePushEvents, notifyActivityChange, notifyWorkspacePush } from '../../lib/notifications';
@@ -40,7 +41,7 @@ type TeamWorkspaceProps = {
 };
 
 type TeamSettings = { cycle_start: string; cycle_end: string | null };
-type ActivityMember = Pick<MemberProfile, 'user_id' | 'full_name' | 'area_id' | 'role' | 'status'>;
+type ActivityMember = Pick<MemberProfile, 'user_id' | 'full_name' | 'avatar_path' | 'area_id' | 'role' | 'status'>;
 type ActivityMutation = {
   area_id: string;
   name: string;
@@ -80,13 +81,14 @@ type ActivityFormState = {
   notes: string;
 };
 type WeeklyDraft = { status: WeeklyStatus; justification: string };
-type WorkspaceTab = 'week' | 'activities' | 'files' | 'announcements' | 'chat' | 'manual' | 'ai';
+type WorkspaceTab = 'week' | 'activities' | 'files' | 'announcements' | 'chat' | 'calendar' | 'manual' | 'ai';
 const workspaceTabs: { id: WorkspaceTab; label: string; icon: LucideIcon }[] = [
   { id: 'chat', label: 'Chat', icon: MessageCircle },
   { id: 'announcements', label: 'Comunicados', icon: Megaphone },
   { id: 'week', label: 'Semana', icon: CalendarDays },
   { id: 'activities', label: 'Atividades', icon: ClipboardList },
   { id: 'files', label: 'Arquivos', icon: Folder },
+  { id: 'calendar', label: 'Calendário', icon: CalendarDays },
   { id: 'manual', label: 'Manual de funções', icon: BookOpen },
   { id: 'ai', label: 'IA', icon: Sparkles },
 ];
@@ -333,7 +335,7 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
           .select('id,name')
           .order('name', { ascending: true }),
         client.from('profiles')
-          .select('user_id,full_name,area_id,role,status')
+          .select('user_id,full_name,avatar_path,area_id,role,status')
           .eq('status', 'active')
           .order('full_name', { ascending: true }),
       ]);
@@ -635,8 +637,8 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
         <main className="workspace-main" id="workspace">
           <div className="workspace-page-heading">
             <div>
-              <p className="workspace-kicker">{tab === 'week' ? 'ACOMPANHAMENTO SEMANAL' : tab === 'activities' ? 'CADASTRO DA EQUIPE' : tab === 'files' ? 'LINKS COMPARTILHADOS' : tab === 'announcements' ? 'MURAL DA EQUIPE' : tab === 'manual' ? 'CARGOS E CAPACITAÇÃO' : tab === 'ai' ? 'FERRAMENTAS EXTERNAS' : 'CONVERSA EM TEMPO REAL'}</p>
-              <h1>{tab === 'week' ? 'Semana em movimento.' : tab === 'activities' ? 'Atividades da equipe.' : tab === 'files' ? 'Arquivos da equipe.' : tab === 'announcements' ? 'Comunicados da equipe.' : tab === 'manual' ? 'Manual de funções.' : tab === 'ai' ? 'Atalhos de IA.' : 'Chat da equipe.'}</h1>
+              <p className="workspace-kicker">{tab === 'week' ? 'ACOMPANHAMENTO SEMANAL' : tab === 'activities' ? 'CADASTRO DA EQUIPE' : tab === 'files' ? 'LINKS COMPARTILHADOS' : tab === 'announcements' ? 'MURAL DA EQUIPE' : tab === 'calendar' ? 'AGENDA DA EQUIPE' : tab === 'manual' ? 'CARGOS E CAPACITAÇÃO' : tab === 'ai' ? 'FERRAMENTAS EXTERNAS' : 'CONVERSA EM TEMPO REAL'}</p>
+              <h1>{tab === 'week' ? 'Semana em movimento.' : tab === 'activities' ? 'Atividades da equipe.' : tab === 'files' ? 'Arquivos da equipe.' : tab === 'announcements' ? 'Comunicados da equipe.' : tab === 'calendar' ? 'Calendário da equipe.' : tab === 'manual' ? 'Manual de funções.' : tab === 'ai' ? 'Atalhos de IA.' : 'Chat da equipe.'}</h1>
               <p className="workspace-subtitle">{tab === 'week'
                 ? 'Registre o que avançou e sinalize o que precisa de atenção.'
                 : tab === 'activities'
@@ -649,7 +651,9 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
                         ? 'Consulte o que cada núcleo e área deve fazer e quais competências desenvolver.'
                         : tab === 'ai'
                           ? 'Acesse plataformas de inteligência artificial em poucos cliques.'
-                        : 'Converse com todos os integrantes ativos em uma sala compartilhada.'}</p>
+                          : tab === 'calendar'
+                            ? 'Organize reuniões, treinamentos e compromissos externos em um calendário mensal.'
+                            : 'Converse com todos os integrantes ativos em uma sala compartilhada ou inicie uma conversa privada.'}</p>
             </div>
             <div className="workspace-heading-actions">
               {(tab === 'week' || tab === 'activities') && <span className="workspace-cycle-chip">PERÍODO · {formatFullDate(cycleStart)} – {formatFullDate(cycleEnd)} · {cycleWeeksCount} SEMANAS</span>}
@@ -899,6 +903,7 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
           {tab === 'chat' && (
             <TeamChat client={client} userId={userId} isAdmin={profile.role === 'admin'} members={members} />
           )}
+          {tab === 'calendar' && <TeamCalendar client={client} userId={userId} isAdmin={profile.role === 'admin'} />}
           {tab === 'manual' && <ManualFunctions />}
           {tab === 'ai' && <AIShortcuts />}
 

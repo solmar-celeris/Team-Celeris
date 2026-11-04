@@ -120,3 +120,25 @@ Este pacote mantém os avisos nativos do Chat, de comunicados e de atribuições
 6. Teste com duas contas ativas e inscritas no OneSignal: uma mensagem na sala Equipe, um comunicado de teste e uma atribuição/reatribuição de teste. O autor não deve receber o próprio alerta; comunicado por área deve ficar restrito à área; atividade deve avisar somente o novo responsável. Confira os logs das duas Edge Functions e o histórico do OneSignal.
 
 As mensagens de push são genéricas e não incluem o texto privado da conversa, comunicado, atividade ou observações. Se a migration, secret ou function ainda não estiver pronta, o conteúdo continua sendo salvo, mas os pushes não funcionarão até concluir a configuração. Veja o passo a passo ilustrado em `docs/ETAPA_10_PUSH_CHAT_ONESIGNAL.md`.
+
+## 9. Conversas privadas, fotos no chat e Calendário
+Esta versão acrescenta conversas privadas 1:1, fotos de perfil ao lado das mensagens de grupo e a aba Calendário. As conversas diretas ficam separadas dos grupos: a consulta RLS permite ler somente às duas contas participantes; Administradores fora da conversa não recebem acesso às mensagens privadas. O calendário é visível para membros ativos; cada pessoa pode editar/remover os próprios eventos, e Administradores podem administrar todos. Não desligue o RLS.
+
+1. No Supabase correto, abra **SQL Editor** e aplique uma única vez `supabase/migrations/20261104130000_private_chat_calendar.sql`. Não reaplique migrations anteriores nem execute novamente se já concluiu com sucesso.
+2. Pelo Supabase Dashboard, publique as funções `notify-chat-push` e `notify-workspace-push` com os arquivos atualizados deste pacote. A atualização do `notify-chat-push` é importante: ela faz alertas privados chegarem apenas à outra pessoa, sem notificar a equipe inteira. Mantenha **Verify JWT** ligado e preserve os secrets OneSignal existentes.
+3. Publique o código-fonte atualizado no GitHub, mantendo o repositório e a configuração Netlify atuais. O Netlify deve executar `pnpm build`; não é necessário alterar variáveis de ambiente para estas mudanças.
+4. Depois do deploy, teste com duas contas ativas: inicie uma conversa privada e confirme que uma terceira conta não enxerga a conversa; envie mensagens em um grupo e confira foto/nome; crie reuniões, treinamentos, DSB, SEPEX, visitas técnicas e PAC no Calendário.
+5. Para validar atividade atribuída, confira a notificação em português com o título **“Atividade atribuída a você”** e o prazo no formato **DD/MM/AAAA**. Se a data não estiver cadastrada, o texto informa “Prazo: não definido”.
+
+A aplicação da migration e o deploy das Edge Functions precisam ser feitos no Supabase conectado a este site; enviar os arquivos ao GitHub/Netlify, sozinho, não altera o banco nem publica as funções. Esta atualização de código não foi aplicada ao seu Supabase remoto e nenhum deploy foi executado.
+
+## 10. Notificações de novos eventos do Calendário
+Ao criar um evento, o sistema envia um push **Novo evento no calendário** aos demais integrantes ativos vinculados ao OneSignal. O criador não recebe o próprio aviso. O conteúdo usa o título do evento e a data em DD/MM/AAAA. Edições e remoções não disparam uma nova notificação.
+
+1. Depois da migration `20261104130000_private_chat_calendar.sql`, aplique uma única vez `supabase/migrations/20261104133000_calendar_event_push.sql`. Ela cria uma fila técnica mínima com status/tentativas; não grava título nem descrição do evento nessa fila.
+2. No Supabase, crie/publique a Edge Function `notify-calendar-event-push` usando `supabase/functions/notify-calendar-event-push/index.ts`. Mantenha **Verify JWT** ligado.
+3. Confirme que a função usa os secrets já configurados `ONESIGNAL_APP_ID` e `ONESIGNAL_REST_API_KEY`; não crie nem exponha chaves em GitHub, Netlify, `VITE_*` ou no navegador.
+4. Publique o app atualizado no GitHub/Netlify. O novo aviso só ocorre para eventos criados depois da migration e do deploy; editar evento existente não notifica.
+5. Teste com duas contas ativas e inscritas no OneSignal: uma cria evento de teste e a outra deve receber “Novo evento no calendário” com o nome e a data. O criador não recebe o próprio aviso. Consulte os logs da função se o evento for salvo, mas o push não for confirmado.
+
+Se já aplicou a migration de Calendário anterior, **não a repita**: aplique somente `20261104133000_calendar_event_push.sql`. Nenhuma migration foi executada nem Edge Function publicada automaticamente por este pacote.

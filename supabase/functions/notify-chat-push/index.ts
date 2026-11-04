@@ -15,6 +15,7 @@ type ChatMessage = {
   id: string;
   sender_id: string | null;
   group_id: string | null;
+  dm_conversation_id: string | null;
   created_at: string;
   removed_at: string | null;
 };
@@ -86,7 +87,23 @@ async function loadRecipients(
   admin: SupabaseClient,
   message: ChatMessage,
   actorId: string,
-): Promise<{ recipientIds: string[]; groupName: string | null }> {
+): Promise<{ recipientIds: string[]; groupName: string | null; isPrivate: boolean }> {
+  if (message.dm_conversation_id) {
+    const { data: conversation, error: conversationError } = await admin
+      .from('team_chat_direct_conversations')
+      .select('user_a_id,user_b_id')
+      .eq('id', message.dm_conversation_id)
+      .maybeSingle();
+    if (conversationError) throw new Error('direct_conversation_lookup_failed');
+    if (!conversation) throw new Error('direct_conversation_not_found');
+    const pair = conversation as { user_a_id: string; user_b_id: string };
+    if (actorId !== pair.user_a_id && actorId !== pair.user_b_id) throw new Error('actor_not_direct_conversation_member');
+    const otherUserId = actorId === pair.user_a_id ? pair.user_b_id : pair.user_a_id;
+    const { data: recipient, error: recipientError } = await admin.from('profiles')
+      .select('user_id').eq('user_id', otherUserId).eq('status', 'active').maybeSingle();
+    if (recipientError) throw new Error('direct_recipient_lookup_failed');
+    return { recipientIds: recipient ? [otherUserId] : [], groupName: null, isPrivate: true };
+  }
   if (!message.group_id) {
     const { data, error } = await admin.from('profiles').select('user_id').eq('status', 'active');
     if (error) throw new Error('recipient_lookup_failed');
@@ -94,6 +111,7 @@ async function loadRecipients(
     return {
       recipientIds: [...new Set(activeRows.map((entry) => entry.user_id))].filter((id) => id !== actorId),
       groupName: null,
+      isPrivate: false,
     };
   }
 
@@ -122,7 +140,7 @@ async function loadRecipients(
   const memberRows = (memberships ?? []) as Array<{ user_id: string }>;
   const memberIds = [...new Set(memberRows.map((entry) => entry.user_id))]
     .filter((id) => id !== actorId);
-  if (memberIds.length === 0) return { recipientIds: [], groupName: String(group.name ?? 'grupo') };
+  if (memberIds.length === 0) return { recipientIds: [], groupName: String(group.name ?? 'grupo'), isPrivate: false };
 
   const { data: activeProfiles, error: profileError } = await admin
     .from('profiles')
@@ -134,6 +152,7 @@ async function loadRecipients(
   return {
     recipientIds: [...new Set(activeRows.map((entry) => entry.user_id))],
     groupName: String(group.name ?? 'grupo').slice(0, 80),
+    isPrivate: false,
   };
 }
 
@@ -143,6 +162,7 @@ async function sendOneSignalPush(
   recipientIds: string[],
   senderName: string,
   groupName: string | null,
+  isPrivate: boolean,
 ): Promise<boolean> {
   const response = await fetch('https://api.onesignal.com/notifications', {
     method: 'POST',
@@ -159,8 +179,8 @@ async function sendOneSignalPush(
         pt: `Nova mensagem de ${senderName}`,
       },
       contents: {
-        en: groupName ? `In the “${groupName}” group` : 'In the team chat',
-        pt: groupName ? `No grupo “${groupName}”` : 'No Chat da equipe',
+        en: isPrivate ? 'In a private conversation' : groupName ? `In the “${groupName}” group` : 'In the team chat',
+        pt: isPrivate ? 'Em uma conversa privada' : groupName ? `No grupo “${groupName}”` : 'No Chat da equipe',
       },
       data: { targetUrl: APP_URL },
     }),
@@ -232,7 +252,7 @@ Deno.serve(async (request) => {
 
     const { data: messageData, error: messageError } = await admin
       .from('team_chat_messages')
-      .select('id,sender_id,group_id,created_at,removed_at')
+      .select('id,sender_id,group_id,dm_conversation_id,created_at,removed_at')
       .eq('id', body.message_id)
       .maybeSingle();
     if (messageError) throw new Error('message_lookup_failed');
@@ -246,7 +266,7 @@ Deno.serve(async (request) => {
     const restApiKey = Deno.env.get('ONESIGNAL_REST_API_KEY');
     if (!appId || !restApiKey) return reply(200, { status: 'disabled', recipient_count: 0 });
 
-    const { recipientIds, groupName } = await loadRecipients(admin, message, user.id);
+    const { recipientIds, groupName, isPrivate } = await loadRecipients(admin, message, user.id);
     if (recipientIds.length > ONESIGNAL_MAX_ALIASES) return reply(413, { status: 'too_many_recipients' });
 
     claimed = await claimMessage(admin, message.id, user.id);
@@ -257,7 +277,7 @@ Deno.serve(async (request) => {
     }
 
     const senderName = profile.full_name.trim().slice(0, 80) || 'Integrante da equipe';
-    const accepted = await sendOneSignalPush(appId, restApiKey, recipientIds, senderName, groupName);
+    const accepted = await sendOneSignalPush(appId, restApiKey, recipientIds, senderName, groupName, isPrivate);
     if (!accepted) {
       await updateDelivery(admin, message.id, 'skipped', 0);
       return reply(200, { status: 'skipped', recipient_count: 0 });

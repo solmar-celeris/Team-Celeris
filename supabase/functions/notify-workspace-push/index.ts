@@ -23,7 +23,7 @@ type PushEvent = {
   created_at: string;
 };
 type Announcement = { id: string; author_id: string | null; removed_at: string | null };
-type Activity = { id: string; responsible_user_id: string | null; archived_at: string | null };
+type Activity = { id: string; responsible_user_id: string | null; archived_at: string | null; due_date: string | null };
 type ActiveProfile = { user_id: string };
 type OneSignalResponse = { id?: string | null };
 
@@ -45,7 +45,7 @@ async function loadRecipients(
   admin: SupabaseClient,
   event: PushEvent,
   actorId: string,
-): Promise<string[]> {
+): Promise<{ recipientIds: string[]; dueDate: string | null }> {
   if (event.event_type === 'announcement_created') {
     const { data, error } = await admin
       .from('announcements')
@@ -62,22 +62,25 @@ async function loadRecipients(
     if (event.target_area_id) query = query.eq('area_id', event.target_area_id);
     const { data: profiles, error: profileError } = await query;
     if (profileError) throw new Error('announcement_recipients_lookup_failed');
-    return [...new Set(((profiles ?? []) as ActiveProfile[]).map((profile) => profile.user_id))]
-      .filter((id) => id !== actorId);
+    return {
+      recipientIds: [...new Set(((profiles ?? []) as ActiveProfile[]).map((profile) => profile.user_id))]
+        .filter((id) => id !== actorId),
+      dueDate: null,
+    };
   }
 
   if (!event.target_user_id) throw new Error('activity_target_missing');
   const { data, error } = await admin
     .from('activities')
-    .select('id,responsible_user_id,archived_at')
+    .select('id,responsible_user_id,archived_at,due_date')
     .eq('id', event.entity_id)
     .maybeSingle();
   if (error) throw new Error('activity_lookup_failed');
   const activity = data as Activity | null;
   if (!activity || activity.archived_at || activity.responsible_user_id !== event.target_user_id) {
-    return [];
+    return { recipientIds: [], dueDate: activity?.due_date ?? null };
   }
-  if (event.target_user_id === actorId) return [];
+  if (event.target_user_id === actorId) return { recipientIds: [], dueDate: activity.due_date };
 
   const { data: recipient, error: recipientError } = await admin
     .from('profiles')
@@ -86,7 +89,13 @@ async function loadRecipients(
     .eq('status', 'active')
     .maybeSingle();
   if (recipientError) throw new Error('activity_recipient_lookup_failed');
-  return recipient ? [event.target_user_id] : [];
+  return { recipientIds: recipient ? [event.target_user_id] : [], dueDate: activity.due_date };
+}
+
+function displayDueDate(value: string | null): string {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return 'não definido';
+  const [year, month, day] = value.split('-');
+  return `${day}/${month}/${year}`;
 }
 
 async function claimEvent(admin: SupabaseClient, event: PushEvent, actorId: string): Promise<boolean> {
@@ -121,6 +130,7 @@ async function sendOneSignalPush(
   restApiKey: string,
   eventType: PushEvent['event_type'],
   recipientIds: string[],
+  dueDate: string | null,
 ): Promise<boolean> {
   const isAnnouncement = eventType === 'announcement_created';
   const response = await fetch('https://api.onesignal.com/notifications', {
@@ -134,12 +144,12 @@ async function sendOneSignalPush(
       target_channel: 'push',
       include_aliases: { external_id: recipientIds },
       headings: {
-        en: isAnnouncement ? 'New SolMar announcement' : 'A new activity was assigned to you',
-        pt: isAnnouncement ? 'Novo comunicado no SolMar' : 'Nova atividade atribuída a você',
+        en: isAnnouncement ? 'New SolMar announcement' : 'Activity assigned to you',
+        pt: isAnnouncement ? 'Novo comunicado no SolMar' : 'Atividade atribuída a você',
       },
       contents: {
-        en: isAnnouncement ? 'Open the app to read the notice.' : 'Open SolMar to review the activity.',
-        pt: isAnnouncement ? 'Abra o app para ler o aviso.' : 'Abra o SolMar para consultar a atividade.',
+        en: isAnnouncement ? 'Open the app to read the notice.' : `Due date: ${displayDueDate(dueDate)}`,
+        pt: isAnnouncement ? 'Abra o app para ler o aviso.' : `Prazo: ${displayDueDate(dueDate)}`,
       },
       data: { targetUrl: APP_URL },
     }),
@@ -233,7 +243,7 @@ Deno.serve(async (request) => {
     claimed = await claimEvent(admin, event, user.id);
     if (!claimed) return reply(200, { status: 'duplicate', recipient_count: 0 });
 
-    const recipientIds = await loadRecipients(admin, event, user.id);
+    const { recipientIds, dueDate } = await loadRecipients(admin, event, user.id);
     if (recipientIds.length > ONESIGNAL_MAX_ALIASES) {
       await updateEvent(admin, event.id, 'failed', 0);
       return reply(413, { status: 'too_many_recipients' });
@@ -243,7 +253,7 @@ Deno.serve(async (request) => {
       return reply(200, { status: 'skipped', recipient_count: 0 });
     }
 
-    const accepted = await sendOneSignalPush(appId, restApiKey, event.event_type, recipientIds);
+    const accepted = await sendOneSignalPush(appId, restApiKey, event.event_type, recipientIds, dueDate);
     if (!accepted) {
       await updateEvent(admin, event.id, 'skipped', 0);
       return reply(200, { status: 'skipped', recipient_count: 0 });

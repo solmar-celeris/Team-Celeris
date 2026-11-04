@@ -35,6 +35,7 @@ export type Nucleus = { id: string; name: string };
 export type MemberProfile = {
   user_id: string;
   full_name: string;
+  avatar_path?: string | null;
   area_id: string | null;
   role: 'admin' | 'area_lead' | 'member' | 'reader';
   status: 'pending' | 'active' | 'suspended';

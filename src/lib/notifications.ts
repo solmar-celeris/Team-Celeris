@@ -129,3 +129,35 @@ export async function flushPendingWorkspacePushEvents(client: SupabaseClient): P
     // A recuperação nunca deve impedir a entrada ou o uso do workspace.
   }
 }
+
+/** Aciona o push genérico de um evento criado; o servidor valida autoria e destinatários. */
+export async function notifyCalendarEventPush(client: SupabaseClient, eventId: string): Promise<ChatPushOutcome> {
+  try {
+    const { data, error } = await client.functions.invoke('notify-calendar-event-push', {
+      body: { event_id: eventId },
+    });
+    if (error) return 'failed';
+    const status = (data as { status?: unknown } | null)?.status;
+    if (status === 'disabled' || status === 'sent' || status === 'skipped' || status === 'duplicate') return status;
+    return 'failed';
+  } catch {
+    return 'failed';
+  }
+}
+
+/** Recupera eventos recentes do próprio usuário que ficaram pendentes após a criação. */
+export async function flushPendingCalendarEventPushes(client: SupabaseClient): Promise<void> {
+  try {
+    const cutoff = new Date(Date.now() - PENDING_PUSH_MAX_AGE_MS).toISOString();
+    const { data, error } = await client.from('calendar_event_push_events')
+      .select('event_id').eq('status', 'pending').gte('created_at', cutoff)
+      .order('created_at', { ascending: true }).limit(PENDING_PUSH_BATCH_SIZE);
+    if (error || !data) return;
+    for (const row of data as Array<{ event_id: string }>) {
+      const outcome = await notifyCalendarEventPush(client, row.event_id);
+      if (outcome === 'failed') break;
+    }
+  } catch {
+    // A fila de push nunca deve impedir o uso do calendário.
+  }
+}
