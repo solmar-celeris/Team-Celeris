@@ -674,14 +674,9 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
               </button>
             ))}
           </nav>
-          <div className="workspace-side-card">
-            <span className="workspace-side-mark" aria-hidden="true">↗</span>
-            <p>Uma equipe,<br /><strong>uma rota.</strong></p>
-            <small>{displayName}</small>
-          </div>
         </aside>
 
-        <main className="workspace-main" id="workspace">
+        <main className={`workspace-main${tab === 'chat' ? ' is-chat-page' : ''}`} id="workspace">
           <div className="workspace-page-heading">
             <div>
               <p className="workspace-kicker">{tab === 'week' ? 'ACOMPANHAMENTO SEMANAL' : tab === 'activities' ? 'CADASTRO DA EQUIPE' : tab === 'files' ? 'LINKS COMPARTILHADOS' : tab === 'announcements' ? 'MURAL DA EQUIPE' : tab === 'calendar' ? 'AGENDA DA EQUIPE' : tab === 'manual' ? 'CARGOS E CAPACITAÇÃO' : tab === 'ai' ? 'FERRAMENTAS EXTERNAS' : 'CONVERSA EM TEMPO REAL'}</p>

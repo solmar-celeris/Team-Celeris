@@ -53,7 +53,6 @@ export default function DashboardPreview() {
               </button>
             ))}
           </nav>
-          <div className="demo-side-note"><span className="demo-side-note-mark" aria-hidden="true">↗</span><p>Uma equipe, uma rota.<br /><strong>SolMar Celeris</strong></p></div>
         </aside>
 
         <main className="demo-main">

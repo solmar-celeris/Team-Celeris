@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ArrowUp, Download, Mic, MessageCircle, RefreshCw, ShieldCheck, Square, Trash2, UserPlus, UsersRound, Plus, Search, X } from 'lucide-react';
+import { Mp3Encoder } from '@breezystack/lamejs';
 import { notifyChatMessagePush } from '../../lib/notifications';
 import type { MemberProfile } from './domain';
 import ChatGroupDialog from './ChatGroupDialog';
@@ -27,6 +28,42 @@ function mergeMessages(current: TeamChatMessage[], incoming: TeamChatMessage[]):
   for (const message of incoming) unique.set(message.id, message);
   return [...unique.values()].sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id));
 }
+async function convertToMp3(source: Blob): Promise<Blob> {
+  const AudioContextClass = window.AudioContext;
+  if (!AudioContextClass) throw new Error('Este aparelho não oferece conversão de áudio MP3. Atualize o navegador ou o aplicativo.');
+  const context = new AudioContextClass();
+  try {
+    const decoded = await context.decodeAudioData(await source.arrayBuffer());
+    const channels = Math.min(decoded.numberOfChannels, 2);
+    const sampleRate = decoded.sampleRate;
+    const encoder = new Mp3Encoder(channels, sampleRate, 128);
+    const left = decoded.getChannelData(0);
+    const right = channels > 1 ? decoded.getChannelData(1) : undefined;
+    const frames: ArrayBuffer[] = [];
+    const blockSize = 1152;
+    for (let offset = 0; offset < left.length; offset += blockSize) {
+      const end = Math.min(offset + blockSize, left.length);
+      const leftSamples = new Int16Array(end - offset);
+      const rightSamples = right ? new Int16Array(end - offset) : undefined;
+      for (let index = offset; index < end; index += 1) {
+        const leftValue = Math.max(-1, Math.min(1, left[index]));
+        leftSamples[index - offset] = leftValue < 0 ? leftValue * 32768 : leftValue * 32767;
+        if (right && rightSamples) {
+          const rightValue = Math.max(-1, Math.min(1, right[index]));
+          rightSamples[index - offset] = rightValue < 0 ? rightValue * 32768 : rightValue * 32767;
+        }
+      }
+      const frame = encoder.encodeBuffer(leftSamples, rightSamples);
+      if (frame.length) { const copy = new Uint8Array(frame.length); copy.set(frame); frames.push(copy.buffer as ArrayBuffer); }
+    }
+    const finalFrame = encoder.flush();
+    if (finalFrame.length) { const copy = new Uint8Array(finalFrame.length); copy.set(finalFrame); frames.push(copy.buffer as ArrayBuffer); }
+    if (!frames.length) throw new Error('Não foi possível converter este áudio. Tente gravar novamente.');
+    return new Blob(frames, { type: 'audio/mpeg' });
+  } finally {
+    await context.close();
+  }
+}
 function chatError(error: unknown): string {
   if (!error || typeof error !== 'object') return 'Não foi possível concluir a operação. Tente novamente.';
   const details = error as { code?: string; message?: string };
@@ -47,6 +84,7 @@ export default function TeamChat({ client, userId, isAdmin, members }: TeamChatP
   const [groupDialogError, setGroupDialogError] = useState('');
   const [groupActionBusy, setGroupActionBusy] = useState(false);
   const [showNewDirect, setShowNewDirect] = useState(false);
+  const [showMobileConversations, setShowMobileConversations] = useState(false);
   const [memberSearch, setMemberSearch] = useState('');
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(true);
@@ -351,13 +389,10 @@ export default function TeamChat({ client, userId, isAdmin, members }: TeamChatP
       let audioPath: string | null = null;
       let audioContentType: string | null = null;
       if (recordedAudio) {
-        const mime = (recordedAudio.type || 'audio/webm').split(';')[0].toLowerCase();
-        const extensions: Record<string, string> = { 'audio/webm': 'webm', 'audio/mp4': 'mp4', 'audio/ogg': 'ogg', 'audio/aac': 'aac', 'audio/wav': 'wav', 'audio/mpeg': 'mp3' };
-        const extension = extensions[mime];
-        if (!extension) throw new Error('Formato de áudio não suportado pelo Chat. Grave novamente usando o navegador atualizado.');
-        audioPath = `${userId}/${crypto.randomUUID()}.${extension}`;
-        audioContentType = mime;
-        const { error: uploadError } = await client.storage.from('team-chat-audio').upload(audioPath, recordedAudio, { contentType: mime, upsert: false });
+        const mp3 = await convertToMp3(recordedAudio);
+        audioPath = `${userId}/${crypto.randomUUID()}.mp3`;
+        audioContentType = 'audio/mpeg';
+        const { error: uploadError } = await client.storage.from('team-chat-audio').upload(audioPath, mp3, { contentType: audioContentType, upsert: false });
         if (uploadError) throw uploadError;
       }
       const { data, error: insertError } = await client.from('team_chat_messages')
@@ -388,7 +423,7 @@ export default function TeamChat({ client, userId, isAdmin, members }: TeamChatP
       if (directError) throw directError;
       const directId = typeof data === 'string' ? data : String(data ?? '');
       if (!directId) throw new Error('Não foi possível abrir a conversa privada.');
-      setActiveGroupId(null); setActiveDirectId(directId); setShowNewDirect(false); setMemberSearch('');
+      setActiveGroupId(null); setActiveDirectId(directId); setShowNewDirect(false); setShowMobileConversations(false); setMemberSearch('');
       void loadLists();
     } catch (actionError) { setError(chatError(actionError)); }
   }
@@ -400,7 +435,7 @@ export default function TeamChat({ client, userId, isAdmin, members }: TeamChatP
       if (groupDialogMode === 'create') {
         const { data, error: createError } = await client.from('team_chat_groups').insert({ name: value.name }).select('id,name,created_by,created_at').single();
         if (createError) throw createError;
-        const created = data as unknown as TeamChatGroup; setActiveDirectId(null); setActiveGroupId(created.id); setGroupDialogMode(null);
+        const created = data as unknown as TeamChatGroup; setActiveDirectId(null); setActiveGroupId(created.id); setShowMobileConversations(false); setGroupDialogMode(null);
         if (value.memberIds.length) {
           const { error: addError } = await client.from('team_chat_group_members').insert(value.memberIds.map((memberId) => ({ group_id: created.id, user_id: memberId })));
           if (addError) setFeedback(`Grupo criado, mas não foi possível adicionar todas as pessoas: ${chatError(addError)}`);
@@ -430,6 +465,7 @@ export default function TeamChat({ client, userId, isAdmin, members }: TeamChatP
           <h2 id="team-chat-title"><MessageCircle aria-hidden="true" /> {activeDirectId ? conversationLabel : activeGroup?.name ?? 'Chat da equipe'}</h2>
           <p>{activeDirectId ? 'Conversa visível somente para você e esta pessoa.' : activeGroupId ? 'Mensagens visíveis somente aos integrantes do grupo.' : 'Converse com todos os integrantes ativos. As mensagens chegam em tempo real.'}</p></div>
         <div className="team-chat-heading-actions">
+          <button className="team-chat-mobile-toggle" type="button" onClick={() => setShowMobileConversations(true)} aria-expanded={showMobileConversations}><MessageCircle aria-hidden="true" /> Conversas</button>
           {isAdmin && <span className="team-chat-admin-badge"><ShieldCheck aria-hidden="true" /> Administrador</span>}
           {activeGroupId && (activeGroupMemberIds.has(userId) || isAdmin) && <button className="workspace-refresh" type="button" onClick={() => { setGroupDialogError(''); setGroupDialogMode('add-members'); }} disabled={availableGroupMembers.length === 0}><UserPlus aria-hidden="true" /> Adicionar pessoas</button>}
           <button className="team-chat-create-group" type="button" onClick={() => { setGroupDialogError(''); setGroupDialogMode('create'); }}><UsersRound aria-hidden="true" /> Criar grupo</button>
@@ -437,23 +473,24 @@ export default function TeamChat({ client, userId, isAdmin, members }: TeamChatP
         </div>
       </div>
       <div className="team-chat-shell">
-        <nav className="team-chat-channels" aria-label="Conversas do Chat">
+        {showMobileConversations && <button className="team-chat-drawer-backdrop" type="button" aria-label="Fechar lista de conversas" onClick={() => setShowMobileConversations(false)} />}
+        <nav className={`team-chat-channels${showMobileConversations ? ' is-mobile-open' : ''}`} aria-label="Conversas do Chat">
           <p className="team-chat-channels-title">CONVERSAS</p>
           <div className="team-chat-channel-list">
-            <button type="button" className={`team-chat-channel${!activeGroupId && !activeDirectId ? ' is-active' : ''}`} onClick={() => { setActiveGroupId(null); setActiveDirectId(null); }}><MessageCircle aria-hidden="true" /><span>Equipe</span><small>Todos</small></button>
+            <button type="button" className={`team-chat-channel${!activeGroupId && !activeDirectId ? ' is-active' : ''}`} onClick={() => { setActiveGroupId(null); setActiveDirectId(null); setShowMobileConversations(false); }}><MessageCircle aria-hidden="true" /><span>Equipe</span><small>Todos</small></button>
             <div className="team-chat-channel-heading"><span>PRIVADAS</span><button type="button" title="Nova conversa privada" aria-label="Iniciar conversa privada" onClick={() => setShowNewDirect((value) => !value)}><Plus aria-hidden="true" /></button></div>
             {showNewDirect && <div className="team-chat-member-picker"><label><Search aria-hidden="true" /><input value={memberSearch} onChange={(event) => setMemberSearch(event.target.value)} placeholder="Buscar integrante" /></label><div>{filteredMembers.map((member) => <button type="button" key={member.user_id} onClick={() => void startDirect(member.user_id)}>{avatar(member.user_id, member.full_name)}<span>{member.full_name}</span></button>)}</div></div>}
             {directs.map((conversation) => {
               const otherId = conversation.user_a_id === userId ? conversation.user_b_id : conversation.user_a_id;
               const name = memberNames.get(otherId) || 'Integrante';
-              return <button type="button" className={`team-chat-channel${activeDirectId === conversation.id ? ' is-active' : ''}`} key={conversation.id} onClick={() => { setActiveGroupId(null); setActiveDirectId(conversation.id); }}>
+              return <button type="button" className={`team-chat-channel${activeDirectId === conversation.id ? ' is-active' : ''}`} key={conversation.id} onClick={() => { setActiveGroupId(null); setActiveDirectId(conversation.id); setShowMobileConversations(false); }}>
                 {avatar(otherId, name)}<span>{name}</span><small>Privado</small></button>;
             })}
             {groups.length > 0 && <div className="team-chat-channel-heading"><span>GRUPOS</span></div>}
             {groups.map((group) => {
               const groupIds = groupMembers.filter((member) => member.group_id === group.id).map((member) => member.user_id);
               const count = groupIds.length;
-              return <button type="button" className={`team-chat-channel${activeGroupId === group.id ? ' is-active' : ''}`} key={group.id} onClick={() => { setActiveDirectId(null); setActiveGroupId(group.id); }}>
+              return <button type="button" className={`team-chat-channel${activeGroupId === group.id ? ' is-active' : ''}`} key={group.id} onClick={() => { setActiveDirectId(null); setActiveGroupId(group.id); setShowMobileConversations(false); }}>
                 <span className="team-chat-group-avatars">{groupIds.slice(0, 2).map((id) => avatar(id, memberNames.get(id) || 'Integrante', 'sm'))}<UsersRound aria-hidden="true" /></span><span>{group.name}</span><small>{count}</small></button>;
             })}
             {directs.length === 0 && groups.length === 0 && <p className="team-chat-no-groups">Inicie uma conversa privada ou crie um grupo.</p>}
