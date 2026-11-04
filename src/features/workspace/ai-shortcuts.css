@@ -32,8 +32,6 @@
 }
 
 .ai-shortcut-logo { width: 32px; height: 32px; object-fit: contain; border-radius: 7px; }
-.ai-shortcut-card.is-canva .ai-shortcut-icon { color: #6848d8; background: color-mix(in srgb, #8165ff 14%, var(--card)); }
-:root[data-theme="dark"] .ai-shortcut-card.is-canva .ai-shortcut-icon { color: #c4b8ff; }
 .ai-prompt-library { display: grid; gap: 13px; margin-top: 6px; }
 .ai-prompt-library-heading { padding: 20px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
 .ai-prompt-library-heading .workspace-kicker { margin-bottom: 5px; }

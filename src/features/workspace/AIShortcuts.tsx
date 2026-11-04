@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowUpRight, Brain, Palette, Sparkles, WandSparkles, type LucideIcon } from 'lucide-react';
+import { ArrowUpRight, Brain, Sparkles, WandSparkles, type LucideIcon } from 'lucide-react';
 import recordPrompt from './prompts/registro-de-atividades.md?raw';
 import popPrompt from './prompts/procedimento-operacional-padrao.md?raw';
 import './ai-shortcuts.css';
@@ -50,14 +50,6 @@ const services: AIService[] = [
     logo: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSntqd-Z7ClE9ubKSLIHpY1CBq5DNOFQkKDgYqo0mLnw&s=10',
     icon: Sparkles,
     accent: 'sky',
-  },
-  {
-    name: 'Canva',
-    subtitle: 'Design e colaboração',
-    description: 'Acesse o Canva; o login Google depende da sessão já autorizada no aparelho.',
-    url: 'https://www.canva.com/',
-    icon: Palette,
-    accent: 'canva',
   },
 ];
 
@@ -133,11 +125,10 @@ export default function AIShortcuts() {
               <span className="ai-shortcut-description">{service.description}</span>
             </span>
             <ArrowUpRight className="ai-shortcut-arrow" aria-hidden="true" />
-            <span className="sr-only"> (abre em nova aba)</span>
           </a>
         ))}
       </div>
-      <p className="ai-shortcuts-note">Os atalhos abrem sites externos e não compartilham automaticamente dados ou credenciais do SolMar. No Canva, o login com Google só pode reutilizar uma conta que já esteja conectada no navegador/aparelho e autorizada no Canva; este atalho não contorna a autenticação.</p>
+      <p className="ai-shortcuts-note">Os atalhos levam a serviços externos; eles não compartilham automaticamente dados ou credenciais do SolMar.</p>
 
       <section className="ai-prompt-library" aria-labelledby="ai-prompt-library-title">
         <div className="ai-prompt-library-heading">

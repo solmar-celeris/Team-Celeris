@@ -23,7 +23,7 @@ type PushEvent = {
   created_at: string;
 };
 type Announcement = { id: string; author_id: string | null; removed_at: string | null };
-type Activity = { id: string; responsible_user_id: string | null; archived_at: string | null; due_date: string | null };
+type Activity = { id: string; name: string; expected_deliverable: string | null; responsible_user_id: string | null; archived_at: string | null; due_date: string | null };
 type ActiveProfile = { user_id: string };
 type OneSignalResponse = { id?: string | null };
 
@@ -45,7 +45,7 @@ async function loadRecipients(
   admin: SupabaseClient,
   event: PushEvent,
   actorId: string,
-): Promise<{ recipientIds: string[]; dueDate: string | null }> {
+): Promise<{ recipientIds: string[]; dueDate: string | null; activityName: string | null; expectedDeliverable: string | null }> {
   if (event.event_type === 'announcement_created') {
     const { data, error } = await admin
       .from('announcements')
@@ -66,21 +66,23 @@ async function loadRecipients(
       recipientIds: [...new Set(((profiles ?? []) as ActiveProfile[]).map((profile) => profile.user_id))]
         .filter((id) => id !== actorId),
       dueDate: null,
+      activityName: null,
+      expectedDeliverable: null,
     };
   }
 
   if (!event.target_user_id) throw new Error('activity_target_missing');
   const { data, error } = await admin
     .from('activities')
-    .select('id,responsible_user_id,archived_at,due_date')
+    .select('id,name,expected_deliverable,responsible_user_id,archived_at,due_date')
     .eq('id', event.entity_id)
     .maybeSingle();
   if (error) throw new Error('activity_lookup_failed');
   const activity = data as Activity | null;
   if (!activity || activity.archived_at || activity.responsible_user_id !== event.target_user_id) {
-    return { recipientIds: [], dueDate: activity?.due_date ?? null };
+    return { recipientIds: [], dueDate: activity?.due_date ?? null, activityName: activity?.name ?? null, expectedDeliverable: activity?.expected_deliverable ?? null };
   }
-  if (event.target_user_id === actorId) return { recipientIds: [], dueDate: activity.due_date };
+  if (event.target_user_id === actorId) return { recipientIds: [], dueDate: activity.due_date, activityName: activity.name, expectedDeliverable: activity.expected_deliverable };
 
   const { data: recipient, error: recipientError } = await admin
     .from('profiles')
@@ -89,7 +91,7 @@ async function loadRecipients(
     .eq('status', 'active')
     .maybeSingle();
   if (recipientError) throw new Error('activity_recipient_lookup_failed');
-  return { recipientIds: recipient ? [event.target_user_id] : [], dueDate: activity.due_date };
+  return { recipientIds: recipient ? [event.target_user_id] : [], dueDate: activity.due_date, activityName: activity.name, expectedDeliverable: activity.expected_deliverable };
 }
 
 function displayDueDate(value: string | null): string {
@@ -131,8 +133,12 @@ async function sendOneSignalPush(
   eventType: PushEvent['event_type'],
   recipientIds: string[],
   dueDate: string | null,
+  activityName: string | null,
+  expectedDeliverable: string | null,
 ): Promise<boolean> {
   const isAnnouncement = eventType === 'announcement_created';
+  const activityDetails = `Atividade: ${(activityName || 'Atividade da equipe').trim().slice(0, 110)}. Prazo: ${displayDueDate(dueDate)}. Entrega esperada: ${(expectedDeliverable || 'não especificada').trim().slice(0, 140)}${expectedDeliverable && expectedDeliverable.length > 140 ? '…' : ''}.`;
+  const englishActivityDetails = `Activity: ${(activityName || 'Team activity').trim().slice(0, 110)}. Due: ${displayDueDate(dueDate)}. Expected deliverable: ${(expectedDeliverable || 'not specified').trim().slice(0, 140)}${expectedDeliverable && expectedDeliverable.length > 140 ? '…' : ''}.`;
   const response = await fetch('https://api.onesignal.com/notifications', {
     method: 'POST',
     headers: {
@@ -148,8 +154,8 @@ async function sendOneSignalPush(
         pt: isAnnouncement ? 'Novo comunicado no SolMar' : 'Atividade atribuída a você',
       },
       contents: {
-        en: isAnnouncement ? 'Open the app to read the notice.' : `Due date: ${displayDueDate(dueDate)}`,
-        pt: isAnnouncement ? 'Abra o app para ler o aviso.' : `Prazo: ${displayDueDate(dueDate)}`,
+        en: isAnnouncement ? 'Open the app to read the notice.' : englishActivityDetails,
+        pt: isAnnouncement ? 'Abra o app para ler o aviso.' : activityDetails,
       },
       data: { targetUrl: APP_URL },
     }),
@@ -243,7 +249,7 @@ Deno.serve(async (request) => {
     claimed = await claimEvent(admin, event, user.id);
     if (!claimed) return reply(200, { status: 'duplicate', recipient_count: 0 });
 
-    const { recipientIds, dueDate } = await loadRecipients(admin, event, user.id);
+    const { recipientIds, dueDate, activityName, expectedDeliverable } = await loadRecipients(admin, event, user.id);
     if (recipientIds.length > ONESIGNAL_MAX_ALIASES) {
       await updateEvent(admin, event.id, 'failed', 0);
       return reply(413, { status: 'too_many_recipients' });
@@ -253,7 +259,7 @@ Deno.serve(async (request) => {
       return reply(200, { status: 'skipped', recipient_count: 0 });
     }
 
-    const accepted = await sendOneSignalPush(appId, restApiKey, event.event_type, recipientIds, dueDate);
+    const accepted = await sendOneSignalPush(appId, restApiKey, event.event_type, recipientIds, dueDate, activityName, expectedDeliverable);
     if (!accepted) {
       await updateEvent(admin, event.id, 'skipped', 0);
       return reply(200, { status: 'skipped', recipient_count: 0 });

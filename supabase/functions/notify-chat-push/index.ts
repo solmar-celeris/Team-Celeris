@@ -16,6 +16,7 @@ type ChatMessage = {
   sender_id: string | null;
   group_id: string | null;
   dm_conversation_id: string | null;
+  body: string;
   created_at: string;
   removed_at: string | null;
 };
@@ -161,9 +162,9 @@ async function sendOneSignalPush(
   restApiKey: string,
   recipientIds: string[],
   senderName: string,
-  groupName: string | null,
-  isPrivate: boolean,
+  messageText: string,
 ): Promise<boolean> {
+  const notificationText = messageText.slice(0, 2_000);
   const response = await fetch('https://api.onesignal.com/notifications', {
     method: 'POST',
     headers: {
@@ -179,8 +180,8 @@ async function sendOneSignalPush(
         pt: `Nova mensagem de ${senderName}`,
       },
       contents: {
-        en: isPrivate ? 'In a private conversation' : groupName ? `In the “${groupName}” group` : 'In the team chat',
-        pt: isPrivate ? 'Em uma conversa privada' : groupName ? `No grupo “${groupName}”` : 'No Chat da equipe',
+        en: notificationText,
+        pt: notificationText,
       },
       data: { targetUrl: APP_URL },
     }),
@@ -252,7 +253,7 @@ Deno.serve(async (request) => {
 
     const { data: messageData, error: messageError } = await admin
       .from('team_chat_messages')
-      .select('id,sender_id,group_id,dm_conversation_id,created_at,removed_at')
+      .select('id,sender_id,group_id,dm_conversation_id,body,created_at,removed_at')
       .eq('id', body.message_id)
       .maybeSingle();
     if (messageError) throw new Error('message_lookup_failed');
@@ -266,7 +267,7 @@ Deno.serve(async (request) => {
     const restApiKey = Deno.env.get('ONESIGNAL_REST_API_KEY');
     if (!appId || !restApiKey) return reply(200, { status: 'disabled', recipient_count: 0 });
 
-    const { recipientIds, groupName, isPrivate } = await loadRecipients(admin, message, user.id);
+    const { recipientIds } = await loadRecipients(admin, message, user.id);
     if (recipientIds.length > ONESIGNAL_MAX_ALIASES) return reply(413, { status: 'too_many_recipients' });
 
     claimed = await claimMessage(admin, message.id, user.id);
@@ -277,7 +278,7 @@ Deno.serve(async (request) => {
     }
 
     const senderName = profile.full_name.trim().slice(0, 80) || 'Integrante da equipe';
-    const accepted = await sendOneSignalPush(appId, restApiKey, recipientIds, senderName, groupName, isPrivate);
+    const accepted = await sendOneSignalPush(appId, restApiKey, recipientIds, senderName, message.body);
     if (!accepted) {
       await updateDelivery(admin, message.id, 'skipped', 0);
       return reply(200, { status: 'skipped', recipient_count: 0 });

@@ -84,3 +84,90 @@
   .team-calendar-weekdays { padding-right: 4px; padding-left: 4px; font-size: 8px; }
   .team-calendar-form-row { grid-template-columns: 1fr; }
 }
+
+
+/* Camadas com profundidade 3D sutil, mantendo a paleta Team Celeris. */
+.team-calendar-toolbar {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-color: rgba(255,255,255,.16);
+  color: #fff;
+  background: linear-gradient(125deg, #013d71 0%, #014b89 54%, #0766a7 100%);
+  box-shadow: 0 14px 28px rgba(1,53,94,.19), inset 0 1px 0 rgba(255,255,255,.18), inset 0 -3px 0 rgba(0,27,54,.22);
+}
+.team-calendar-toolbar::after {
+  position: absolute;
+  z-index: -1;
+  top: -72px;
+  right: 16%;
+  width: 200px;
+  height: 200px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 50%;
+  box-shadow: 0 0 0 18px rgba(255,255,255,.035), 0 0 0 38px rgba(255,255,255,.025);
+  content: "";
+  pointer-events: none;
+}
+.team-calendar-month-nav h2 { color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,.2); }
+.team-calendar-month-nav button, .team-calendar-today {
+  border-color: rgba(255,255,255,.25);
+  color: #fff;
+  background: linear-gradient(180deg, rgba(255,255,255,.19), rgba(255,255,255,.08));
+  box-shadow: 0 4px 0 rgba(0,24,49,.28), inset 0 1px 0 rgba(255,255,255,.23);
+  transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease;
+}
+.team-calendar-month-nav button:hover, .team-calendar-today:hover { transform: translateY(-1px); filter: brightness(1.08); }
+.team-calendar-month-nav button:active, .team-calendar-today:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,24,49,.3), inset 0 1px 0 rgba(255,255,255,.2); }
+.team-calendar-add {
+  border-color: #f18a40;
+  color: #fff;
+  background: linear-gradient(180deg, #f28a3c 0%, #d75b0e 100%);
+  box-shadow: 0 4px 0 #873a0d, 0 8px 16px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.3);
+  transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease;
+}
+.team-calendar-add:hover { transform: translateY(-1px); filter: brightness(1.05); }
+.team-calendar-add:active { transform: translateY(2px); box-shadow: 0 1px 0 #873a0d, inset 0 1px 0 rgba(255,255,255,.3); }
+.team-calendar-board, .team-calendar-agenda {
+  border-color: color-mix(in srgb, var(--blue) 13%, var(--line));
+  box-shadow: 0 12px 28px rgba(1,45,81,.1), 0 3px 7px rgba(1,45,81,.06), inset 0 1px 0 rgba(255,255,255,.78);
+}
+.team-calendar-weekdays { color: var(--ocean); background: linear-gradient(180deg, color-mix(in srgb, var(--sky) 13%, var(--card)), var(--card)); }
+.team-calendar-day {
+  border: 1px solid color-mix(in srgb, var(--blue) 7%, var(--line));
+  border-radius: 8px;
+  background: linear-gradient(145deg, var(--card) 0%, color-mix(in srgb, var(--surface) 75%, var(--card)) 100%);
+  box-shadow: 0 2px 4px rgba(1,46,82,.045), inset 0 1px 0 rgba(255,255,255,.82);
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+.team-calendar-day:hover { z-index: 2; transform: translateY(-2px); border-color: color-mix(in srgb, var(--ocean) 28%, var(--line)); box-shadow: 0 7px 13px rgba(1,54,96,.13), inset 0 1px 0 rgba(255,255,255,.8); }
+.team-calendar-day.is-selected { transform: translateY(-1px); border-color: color-mix(in srgb, var(--ocean) 34%, var(--line)); box-shadow: inset 0 0 0 2px var(--ocean), 0 6px 12px rgba(1,75,137,.15); }
+.team-calendar-day.is-outside { opacity: .56; }
+.team-calendar-day.is-today .team-calendar-day-number {
+  background: linear-gradient(145deg, #fa9b4c, #d65c0c);
+  box-shadow: 0 3px 0 #9d430b, 0 5px 9px rgba(196,84,12,.28), inset 0 1px 0 rgba(255,255,255,.48);
+}
+.team-calendar-day.is-selected:not(.is-today) .team-calendar-day-number {
+  background: linear-gradient(145deg, #1475b5, #014b89);
+  box-shadow: 0 3px 0 #00345f, 0 5px 10px rgba(1,75,137,.24), inset 0 1px 0 rgba(255,255,255,.28);
+}
+.team-calendar-day-events > span { box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 1px 2px rgba(0,0,0,.06); }
+.team-calendar-event {
+  border-color: color-mix(in srgb, var(--blue) 12%, var(--line));
+  border-left-width: 4px;
+  background: linear-gradient(140deg, var(--card) 0%, color-mix(in srgb, var(--sky) 6%, var(--card)) 100%);
+  box-shadow: 0 5px 12px rgba(1,52,91,.08), inset 0 1px 0 rgba(255,255,255,.8);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+.team-calendar-event:hover { transform: translateY(-2px); box-shadow: 0 10px 19px rgba(1,52,91,.13), inset 0 1px 0 rgba(255,255,255,.8); }
+.team-calendar-event.is-external { background: linear-gradient(140deg, var(--card) 0%, rgba(224,105,22,.08) 100%); }
+.team-calendar-legend i { box-shadow: 0 2px 4px rgba(1,75,137,.25); }
+.team-calendar-modal { box-shadow: 0 30px 80px rgba(0,0,0,.3), 0 8px 22px rgba(1,48,86,.16); }
+:root[data-theme="dark"] .team-calendar-board, :root[data-theme="dark"] .team-calendar-agenda { box-shadow: 0 12px 28px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.035); }
+:root[data-theme="dark"] .team-calendar-day { border-color: color-mix(in srgb, var(--line) 80%, #2775a8); background: linear-gradient(145deg, var(--card), #152532); box-shadow: 0 3px 7px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.035); }
+:root[data-theme="dark"] .team-calendar-day:hover { box-shadow: 0 8px 15px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.06); }
+:root[data-theme="dark"] .team-calendar-event { background: linear-gradient(140deg, var(--card), #132737); box-shadow: 0 5px 13px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.035); }
+:root[data-theme="dark"] .team-calendar-event.is-external { background: linear-gradient(140deg, var(--card), #2a211b); }
+@media (prefers-reduced-motion: reduce) {
+  .team-calendar-day, .team-calendar-event, .team-calendar-add, .team-calendar-month-nav button, .team-calendar-today { transition: none; }
+}
