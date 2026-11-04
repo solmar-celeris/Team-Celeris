@@ -13,7 +13,7 @@ import {
   generalStatusLabels,
   getGeneralStatus,
   isActivityExpected,
-  parseIsoDate,
+  mondayOfDate,
   type Activity,
   type ActivityType,
   type Area,
@@ -228,7 +228,7 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
   const [cycleStart, setCycleStart] = useState(defaultCycleStart);
   const [cycleEndDate, setCycleEndDate] = useState(defaultCycleEnd);
   const [periodMigrationAvailable, setPeriodMigrationAvailable] = useState(true);
-  const [selectedWeekStart, setSelectedWeekStart] = useState(defaultCycleStart);
+  const [selectedWeekStart, setSelectedWeekStart] = useState(mondayOfDate(new Date(`${defaultCycleStart}T00:00:00.000Z`)));
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -249,10 +249,6 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
     if (profile.role !== 'admin') return;
     if (start > end) {
       setPeriodError('A data final não pode ser anterior à data inicial.');
-      return;
-    }
-    if (parseIsoDate(start).getUTCDay() !== 1) {
-      setPeriodError('A data inicial deve ser uma segunda-feira, pois os registros são organizados por semana.');
       return;
     }
     if (!periodMigrationAvailable) {
@@ -357,13 +353,13 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
           ? { ...activity, responsible_name: currentResponsibleName }
           : activity;
       });
-      const nextUpdates = await fetchCycleUpdates(client, nextCycleStart, nextCycleEnd);
+      const nextUpdates = await fetchCycleUpdates(client, mondayOfDate(new Date(`${nextCycleStart}T00:00:00.000Z`)), nextCycleEnd);
 
       setCycleStart(nextCycleStart);
       setCycleEndDate(nextCycleEnd);
       setSelectedWeekStart((current) => {
         const validStarts = new Set(nextWeeks.map((week) => week.start));
-        return validStarts.has(current) ? current : nextCycleStart;
+        return validStarts.has(current) ? current : (nextWeeks[0]?.start ?? nextCycleStart);
       });
       setActivities(nextActivities);
       setAreas(nextAreas);
@@ -988,7 +984,7 @@ function ProjectPeriodDialog({
           <label><span>Fim do projeto <b>obrigatório</b></span>
             <input type="date" required min={start} value={end} onChange={(event) => setEnd(event.target.value)} />
           </label>
-          <p className="workspace-period-help form-span-2">A data inicial deve cair em uma segunda-feira. Padrão do projeto: 09/11/2026 a 22/12/2027.</p>
+          <p className="workspace-period-help form-span-2">O início pode ser qualquer data. A semana que contém esse dia começa na segunda-feira correspondente; o acompanhamento inicia na data escolhida. Padrão do projeto: 09/11/2026 a 22/12/2027.</p>
           {error && <p className="workspace-dialog-error form-span-2" role="alert">{error}</p>}
           <div className="workspace-dialog-actions form-span-2">
             <button type="button" className="workspace-cancel-button" onClick={onClose} disabled={busy}>Cancelar</button>

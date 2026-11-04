@@ -48,7 +48,7 @@ Se você não sabe se a migração antiga de Arquivos/Comunicados já foi execut
 
 ### Ajustar o período do projeto
 
-Depois de aplicar `20261104120000_workspace_project_period.sql` e publicar o novo site, entre com um perfil ativo cujo papel seja **Administrador**. Nas abas **Semana** ou **Atividades**, confira o intervalo exibido e selecione **Editar período**. O padrão é **09/11/2026 a 22/12/2027**. Informe o início e o fim e salve; o início precisa ser uma segunda-feira, pois os status semanais são agrupados por semana. O fim é inclusivo e a última semana pode ser parcial. As outras áreas do site continuam usando o intervalo salvo sem que o usuário precise ajustar semana por semana.
+Depois de aplicar `20261104120000_workspace_project_period.sql` e publicar o novo site, entre com um perfil ativo cujo papel seja **Administrador**. Nas abas **Semana** ou **Atividades**, confira o intervalo exibido e selecione **Editar período**. O padrão é **09/11/2026 a 22/12/2027**. Informe o início em qualquer dia e a data final; o início não precisa ser uma segunda-feira. Os status continuam agrupados por semanas de segunda a domingo; a primeira semana começa visualmente na data inicial escolhida. O fim é inclusivo e a última semana pode ser parcial. As outras áreas do site continuam usando o intervalo salvo sem que o usuário precise ajustar semana por semana.
 
 O Supabase também verifica a permissão de Administrador; esconder o botão para os demais perfis não é a única proteção. Se a tela informar que a migration ainda falta, aplique o arquivo acima no projeto Supabase ligado ao Netlify e atualize a página. Não altere a RLS para contornar o aviso.
 

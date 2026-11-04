@@ -50,7 +50,7 @@ export type WeeklyUpdate = {
   updated_at: string;
 };
 
-export type CycleWeek = { start: string; end: string; number: number };
+export type CycleWeek = { start: string; end: string; number: number; periodStart?: string };
 
 export const weeklyStatusLabels: Record<WeeklyStatus, string> = {
   completed: 'Concluído',
@@ -73,7 +73,6 @@ export const activityTypeLabels: Record<ActivityType, string> = {
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const WEEK_MS = 7 * DAY_MS;
 
 export function parseIsoDate(value: string): Date {
   return new Date(`${value.slice(0, 10)}T00:00:00.000Z`);
@@ -116,7 +115,7 @@ export function formatFullDate(value: string): string {
 }
 
 export function formatWeekRange(week: CycleWeek): string {
-  const first = parseIsoDate(week.start);
+  const first = parseIsoDate(week.periodStart ?? week.start);
   const last = parseIsoDate(week.end);
   const monthYear = last.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric', timeZone: 'UTC' });
   const firstDay = first.toLocaleDateString('pt-BR', { day: '2-digit', timeZone: 'UTC' });
@@ -133,13 +132,19 @@ export function buildCycleWeeks(start: string, count: number): CycleWeek[] {
 
 export function buildCycleWeeksInRange(start: string, end: string): CycleWeek[] {
   if (!start || !end || end < start) return [];
-  const totalDays = Math.floor((parseIsoDate(end).getTime() - parseIsoDate(start).getTime()) / DAY_MS) + 1;
+  const firstWeekStart = mondayOfDate(parseIsoDate(start));
+  const totalDays = Math.floor((parseIsoDate(end).getTime() - parseIsoDate(firstWeekStart).getTime()) / DAY_MS) + 1;
   const count = Math.ceil(totalDays / 7);
 
   return Array.from({ length: count }, (_, index) => {
-    const weekStart = addDays(start, index * 7);
-    const daysInWeek = Math.min(7, totalDays - index * 7);
-    return { start: weekStart, end: addDays(weekStart, daysInWeek - 1), number: index + 1 };
+    const weekStart = addDays(firstWeekStart, index * 7);
+    const weekEnd = addDays(weekStart, 6);
+    return {
+      start: weekStart,
+      end: weekEnd > end ? end : weekEnd,
+      number: index + 1,
+      periodStart: weekStart < start ? start : weekStart,
+    };
   });
 }
 
@@ -162,8 +167,7 @@ export function isActivityExpected(
   if (activity.frequency === 'Semanal') return true;
 
   if (activity.frequency === 'Quinzenal') {
-    const cycleWeek = Math.floor((parseIsoDate(week.start).getTime() - parseIsoDate(cycleStart).getTime()) / WEEK_MS);
-    return cycleWeek >= 0 && cycleWeek % 2 === 0;
+    return (week.number - 1) % 2 === 0;
   }
 
   if (activity.frequency === 'Mensal') {
