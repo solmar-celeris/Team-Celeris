@@ -163,8 +163,16 @@ async function sendOneSignalPush(
   recipientIds: string[],
   senderName: string,
   messageText: string,
+  message: ChatMessage,
 ): Promise<boolean> {
   const notificationText = messageText.slice(0, 2_000);
+  const targetUrl = new URL(APP_URL);
+  targetUrl.searchParams.set('push', 'chat');
+  targetUrl.searchParams.set('message_id', message.id);
+  const conversationType = message.dm_conversation_id ? 'direct' : message.group_id ? 'group' : 'team';
+  const conversationId = message.dm_conversation_id ?? message.group_id;
+  if (conversationId) targetUrl.searchParams.set('conversation_id', conversationId);
+  targetUrl.searchParams.set('conversation_type', conversationType);
   const response = await fetch('https://api.onesignal.com/notifications', {
     method: 'POST',
     headers: {
@@ -183,7 +191,14 @@ async function sendOneSignalPush(
         en: notificationText,
         pt: notificationText,
       },
-      data: { targetUrl: APP_URL },
+      url: targetUrl.toString(),
+      data: {
+        targetUrl: targetUrl.toString(),
+        push_type: 'chat',
+        message_id: message.id,
+        conversation_id: conversationId,
+        conversation_type: conversationType,
+      },
     }),
   });
   if (!response.ok) {
@@ -278,7 +293,7 @@ Deno.serve(async (request) => {
     }
 
     const senderName = profile.full_name.trim().slice(0, 80) || 'Integrante da equipe';
-    const accepted = await sendOneSignalPush(appId, restApiKey, recipientIds, senderName, message.body);
+    const accepted = await sendOneSignalPush(appId, restApiKey, recipientIds, senderName, message.body, message);
     if (!accepted) {
       await updateDelivery(admin, message.id, 'skipped', 0);
       return reply(200, { status: 'skipped', recipient_count: 0 });

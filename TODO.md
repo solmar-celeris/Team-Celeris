@@ -118,7 +118,7 @@
 - [ ] Depois que o usuário aplicar a migração e publicar, verificar no site real leitura/gravação de perfil ativo e bloqueio de pendentes/suspensos.
 
 ## 15. Etapa 6 — Chat geral e grupos
-- [x] Preservar a sala geral compartilhada e estendê-la com grupos nomeados, sem anexos ou edição.
+- [x] Preservar a sala geral compartilhada e estendê-la com grupos nomeados, mantendo o modelo de mensagens e as permissões por participante.
 - [x] Permitir leitura/envio da sala geral a perfis ativos; grupos ficam limitados aos participantes ativos e Administradores ativos; visitante, pendente e suspenso não acessam.
 - [x] Exibir autor/horário derivados da sessão e do banco e limitar a mensagem a 2.000 caracteres após remover espaços externos.
 - [x] Usar Supabase Realtime/Postgres Changes com RLS e tabela na publicação `supabase_realtime`.
@@ -155,7 +155,7 @@
 - [x] Permitir que integrantes do grupo adicionem outras contas ativas depois da criação; mostrar apenas grupos dos quais a pessoa participa. Administradores podem moderar mensagens conforme a regra existente.
 - [x] Integrantes do grupo enviam e recebem mensagens em tempo real; o canal geral continua visível para todos os perfis ativos.
 - [x] RLS no Supabase limita a leitura e envio no grupo a participantes ativos e Administradores; visitantes, pendentes, suspensos e não participantes não leem as mensagens privadas do grupo.
-- [x] Somente Administradores ativos podem remover mensagens, inclusive nas conversas de grupo; manter autoria/horário, limite de 2.000 caracteres e sem anexos ou e-mail de Chat.
+- [x] Somente Administradores ativos podem remover mensagens, inclusive nas conversas de grupo; manter autoria/horário e limite de 2.000 caracteres. Anexos estão habilitados em bucket privado por migration incremental; o Chat não envia e-mail.
 - [x] Criar migration SQL incremental para grupos/membros e associação das mensagens, sem executar SQL remoto nem repetir migrations aplicadas.
 - [ ] Depois do deploy e das migrations, verificar com três contas que pessoa não convidada não vê grupo/histórico e que as mensagens chegam em tempo real.
 
@@ -184,3 +184,5 @@
 - [x] **Confirmação de leitura:** registrar quando um integrante abre mensagens recebidas; no remetente, mostrar tique duplo e estado “Lida”, com quantidade de leitores nas mensagens de grupo. Proteger os recibos por RLS e limitar a leitura aos participantes autorizados pelo RLS das mensagens.
 - [x] **Áudio no Chat:** permitir gravar pelo microfone, parar/descartar e enviar; converter a gravação para MP3 real antes de armazenar com MIME `audio/mpeg` e extensão `.mp3`; exibir player e download. Armazenar no bucket privado, limitado a 15 MB, fornecer somente URLs assinadas temporárias e submeter leitura/download às mesmas regras de acesso do Chat. Aplicar a migration incremental `20261104170000_chat_read_receipts_audio.sql`; manter o RLS habilitado.
 - [x] **Arquitetura do Chat no desktop e mobile:** manter a lista de conversas na lateral esquerda no desktop; no celular, abrir a lista em painel lateral retrátil e liberar quase toda a área restante para a conversa ativa. Remover do rodapé lateral a frase “Uma equipe, uma rota”.
+- [x] **Destino de todos os push:** ao tocar numa notificação de Chat, abrir a conversa e mensagem correspondentes; de Comunicado, abrir o comunicado; de Atividade, abrir a atividade atribuída; e de Calendário, abrir o evento e a data correspondentes. Manter RLS como autoridade de acesso e não expor itens sem permissão. Front-end e Edge Functions atualizados no pacote; publicação no Supabase/Netlify ainda depende do usuário.
+- [x] **Anexos do Chat:** permitir anexar imagens, documentos e arquivos de áudio; oferecer um controle para abrir a câmera e capturar uma imagem no dispositivo. Guardar anexos em bucket privado, limitar tipos e tamanho, e só permitir acesso às pessoas autorizadas a ler a mensagem pela RLS. Migration incremental `20261104183000_chat_attachments.sql` incluída; aplicação remota depende do usuário.

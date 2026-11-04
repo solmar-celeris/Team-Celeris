@@ -82,6 +82,10 @@ type ActivityFormState = {
 };
 type WeeklyDraft = { status: WeeklyStatus; justification: string };
 type WorkspaceTab = 'week' | 'activities' | 'files' | 'announcements' | 'chat' | 'calendar' | 'manual' | 'ai';
+type PushDeepLink =
+  | { type: 'chat'; messageId: string; conversationId: string | null; conversationType: 'team' | 'group' | 'direct' }
+  | { type: 'announcement' | 'activity'; itemId: string }
+  | { type: 'calendar'; itemId: string; date: string | null };
 type WeekCalendarEvent = {
   id: string;
   title: string;
@@ -105,6 +109,41 @@ const workspaceTabs: { id: WorkspaceTab; label: string; icon: LucideIcon }[] = [
 const defaultFilters: FilterState = {
   search: '', responsible: '', nucleus: '', area: '', type: '', status: '', from: '', to: '',
 };
+
+function parsePushDeepLink(): PushDeepLink | null {
+  if (typeof window === 'undefined') return null;
+  const params = new URLSearchParams(window.location.search);
+  const isUuid = (value: string | null): value is string => Boolean(value && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value));
+  const type = params.get('push');
+  if (type === 'chat') {
+    const messageId = params.get('message_id');
+    const rawConversationId = params.get('conversation_id');
+    const conversationType = params.get('conversation_type');
+    if (!isUuid(messageId) || (rawConversationId && !isUuid(rawConversationId))) return null;
+    if (conversationType !== 'team' && conversationType !== 'group' && conversationType !== 'direct') return null;
+    if (conversationType !== 'team' && !rawConversationId) return null;
+    return { type, messageId, conversationId: rawConversationId, conversationType };
+  }
+  if (type === 'announcement' || type === 'activity') {
+    const itemId = params.get('item_id');
+    return isUuid(itemId) ? { type, itemId } : null;
+  }
+  if (type === 'calendar') {
+    const itemId = params.get('item_id');
+    const date = params.get('date');
+    if (!isUuid(itemId) || (date && !/^\d{4}-\d{2}-\d{2}$/.test(date))) return null;
+    return { type, itemId, date };
+  }
+  return null;
+}
+
+function tabForPush(target: PushDeepLink | null): WorkspaceTab {
+  if (!target) return 'week';
+  if (target.type === 'chat') return 'chat';
+  if (target.type === 'announcement') return 'announcements';
+  if (target.type === 'activity') return 'activities';
+  return 'calendar';
+}
 
 const roleLabels: Record<MemberProfile['role'], string> = {
   admin: 'Administrador',
@@ -225,7 +264,8 @@ function statusClass(status: GeneralStatus | WeeklyStatus): string {
 }
 
 export default function TeamWorkspace({ client, userId, profile, onLogout }: TeamWorkspaceProps) {
-  const [tab, setTab] = useState<WorkspaceTab>('week');
+  const [pushTarget] = useState<PushDeepLink | null>(() => parsePushDeepLink());
+  const [tab, setTab] = useState<WorkspaceTab>(() => tabForPush(pushTarget));
   const [theme, setTheme] = useState<'light' | 'dark'>(() =>
     document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light',
   );
@@ -233,7 +273,7 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
   const [weekCalendarEvents, setWeekCalendarEvents] = useState<WeekCalendarEvent[]>([]);
   const [weekEventsLoading, setWeekEventsLoading] = useState(false);
   const [weekEventsError, setWeekEventsError] = useState(false);
-  const [calendarFocusDate, setCalendarFocusDate] = useState<string | undefined>();
+  const [calendarFocusDate, setCalendarFocusDate] = useState<string | undefined>(() => pushTarget?.type === 'calendar' ? pushTarget.date ?? undefined : undefined);
   const [areas, setAreas] = useState<Area[]>([]);
   const [nuclei, setNuclei] = useState<Nucleus[]>([]);
   const [members, setMembers] = useState<ActivityMember[]>([]);
@@ -293,6 +333,13 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
+
+  useEffect(() => {
+    if (!pushTarget) return;
+    const url = new URL(window.location.href);
+    for (const key of ['push', 'item_id', 'message_id', 'conversation_id', 'conversation_type', 'date']) url.searchParams.delete(key);
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  }, [pushTarget]);
 
   const loadData = useCallback(async (quiet = false) => {
     if (quiet) setRefreshing(true);
@@ -525,6 +572,12 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
       return true;
     });
   }, [activities, areasById, expectedActivities, filters, generalStatusById, nucleiById, tab, updatesForWeek]);
+
+  useEffect(() => {
+    if (tab !== 'activities' || loading || pushTarget?.type !== 'activity') return;
+    const card = document.getElementById(`activity-card-${pushTarget.itemId}`);
+    card?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [loading, pushTarget, tab, visibleActivities]);
 
   const permissionSummary = profile.role === 'admin'
     ? 'Você pode editar atividades e registrar status em toda a equipe.'
@@ -910,7 +963,7 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
                     const status = generalStatusById.get(activity.id) ?? 'not_started';
                     const canEdit = canManageActivity(profile, activity.area_id);
                     return (
-                      <article className="workspace-activity-card" key={activity.id}>
+                      <article id={`activity-card-${activity.id}`} className={`workspace-activity-card${pushTarget?.type === 'activity' && pushTarget.itemId === activity.id ? ' is-push-target' : ''}`} key={activity.id}>
                         <div className="workspace-activity-card-head">
                           <span className="workspace-code">{activity.code}</span>
                           <span className={`workspace-status ${statusClass(status)}`}>{generalStatusLabels[status]}</span>
@@ -962,12 +1015,12 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
           )}
 
           {(tab === 'files' || tab === 'announcements') && (
-            <SharedContentWorkspace client={client} mode={tab} userId={userId} isAdmin={profile.role === 'admin'} areas={areas} members={members} />
+            <SharedContentWorkspace client={client} mode={tab} userId={userId} isAdmin={profile.role === 'admin'} areas={areas} members={members} targetAnnouncementId={pushTarget?.type === 'announcement' ? pushTarget.itemId : undefined} />
           )}
           {tab === 'chat' && (
-            <TeamChat client={client} userId={userId} isAdmin={profile.role === 'admin'} members={members} />
+            <TeamChat client={client} userId={userId} isAdmin={profile.role === 'admin'} members={members} initialMessageId={pushTarget?.type === 'chat' ? pushTarget.messageId : undefined} initialConversationId={pushTarget?.type === 'chat' ? pushTarget.conversationId : undefined} initialConversationType={pushTarget?.type === 'chat' ? pushTarget.conversationType : undefined} />
           )}
-          {tab === 'calendar' && <TeamCalendar client={client} userId={userId} isAdmin={profile.role === 'admin'} initialDate={calendarFocusDate} />}
+          {tab === 'calendar' && <TeamCalendar client={client} userId={userId} isAdmin={profile.role === 'admin'} initialDate={calendarFocusDate} initialEventId={pushTarget?.type === 'calendar' ? pushTarget.itemId : undefined} />}
           {tab === 'manual' && <ManualFunctions />}
           {tab === 'ai' && <AIShortcuts />}
 

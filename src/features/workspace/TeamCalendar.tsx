@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ChevronLeft, ChevronRight, Clock3, MapPin, Plus, Trash2, X } from 'lucide-react';
 import { flushPendingCalendarEventPushes, notifyCalendarEventPush } from '../../lib/notifications';
@@ -15,7 +15,7 @@ type EventDraft = {
   title: string; event_scope: EventScope; event_kind: EventKind; event_date: string;
   start_time: string; end_time: string; location: string; description: string;
 };
-type Props = { client: SupabaseClient; userId: string; isAdmin: boolean; initialDate?: string };
+type Props = { client: SupabaseClient; userId: string; isAdmin: boolean; initialDate?: string; initialEventId?: string };
 const weekdays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 const kinds: { value: EventKind; label: string; scope: EventScope }[] = [
   { value: 'meeting', label: 'Reunião', scope: 'internal' },
@@ -37,7 +37,7 @@ function eventError(error: unknown): string {
   if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') return error.message;
   return 'Não foi possível salvar o evento. Tente novamente.';
 }
-export default function TeamCalendar({ client, userId, isAdmin, initialDate }: Props) {
+export default function TeamCalendar({ client, userId, isAdmin, initialDate, initialEventId }: Props) {
   const now = new Date();
   const focusDate = initialDate && /^\d{4}-\d{2}-\d{2}$/.test(initialDate) ? new Date(`${initialDate}T12:00:00`) : now;
   const [month, setMonth] = useState(() => new Date(focusDate.getFullYear(), focusDate.getMonth(), 1));
@@ -52,6 +52,7 @@ export default function TeamCalendar({ client, userId, isAdmin, initialDate }: P
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
   const [formError, setFormError] = useState('');
+  const targetEventScrolledRef = useRef(false);
   const startDate = isoLocal(new Date(month.getFullYear(), month.getMonth(), 1));
   const endDate = isoLocal(new Date(month.getFullYear(), month.getMonth() + 1, 0));
   const loadEvents = useCallback(async () => {
@@ -65,6 +66,16 @@ export default function TeamCalendar({ client, userId, isAdmin, initialDate }: P
     setLoading(false);
   }, [client, endDate, startDate]);
   useEffect(() => { void loadEvents(); }, [loadEvents]);
+  useEffect(() => {
+    if (!initialEventId) return;
+    let cancelled = false;
+    void client.from('calendar_events').select('event_date').eq('id', initialEventId).maybeSingle().then(({ data }) => {
+      if (cancelled || !data || !/^\d{4}-\d{2}-\d{2}$/.test(data.event_date)) return;
+      setSelectedDate(data.event_date);
+      setMonth(new Date(`${data.event_date}T12:00:00`));
+    });
+    return () => { cancelled = true; };
+  }, [client, initialEventId]);
   useEffect(() => { void flushPendingCalendarEventPushes(client); }, [client]);
   useEffect(() => {
     const channel = client.channel('team-calendar-events').on('postgres_changes', { event: '*', schema: 'public', table: 'calendar_events' }, () => { void loadEvents(); }).subscribe();
@@ -87,6 +98,14 @@ export default function TeamCalendar({ client, userId, isAdmin, initialDate }: P
     return map;
   }, [events]);
   const selectedEvents = eventsByDate.get(selectedDate) ?? [];
+  useEffect(() => {
+    if (!initialEventId || targetEventScrolledRef.current || !selectedEvents.length) return;
+    const target = document.getElementById(`calendar-event-${initialEventId}`);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      targetEventScrolledRef.current = true;
+    }
+  }, [initialEventId, selectedEvents]);
   function moveMonth(delta: number) {
     const next = new Date(month.getFullYear(), month.getMonth() + delta, 1);
     setMonth(next); setSelectedDate(isoLocal(new Date(next.getFullYear(), next.getMonth(), 1)));
@@ -144,7 +163,7 @@ export default function TeamCalendar({ client, userId, isAdmin, initialDate }: P
           <div className="team-calendar-legend"><span><i className="is-internal" /> Interno</span><span><i className="is-external" /> Externo</span></div>
         </div>
         <aside className="team-calendar-agenda"><div className="team-calendar-agenda-heading"><div><p className="workspace-kicker">AGENDA DO DIA</p><h3>{dateLabel(selectedDate)}</h3></div><button type="button" aria-label="Adicionar evento nesta data" onClick={openCreate}><Plus aria-hidden="true" /></button></div>
-          {loading ? <p className="team-calendar-empty">Carregando eventos…</p> : selectedEvents.length === 0 ? <p className="team-calendar-empty">Nenhum evento nesta data. Use “Adicionar evento” para incluir uma reunião, treinamento ou compromisso externo.</p> : <div className="team-calendar-event-list">{selectedEvents.map((event) => <article className={`team-calendar-event is-${event.event_scope}`} key={event.id}><div className="team-calendar-event-label"><span>{event.event_scope === 'internal' ? 'INTERNO' : 'EXTERNO'}</span><small>{kindLabel(event.event_kind)}</small></div><h4>{event.title}</h4>{(event.start_time || event.end_time) && <p><Clock3 aria-hidden="true" />{event.start_time?.slice(0, 5) ?? '—'}{event.end_time ? ` – ${event.end_time.slice(0, 5)}` : ''}</p>}{event.location && <p><MapPin aria-hidden="true" />{event.location}</p>}{event.description && <p className="team-calendar-event-description">{event.description}</p>}{(event.created_by === userId || isAdmin) && <div className="team-calendar-event-actions"><button type="button" onClick={() => openEdit(event)}>Editar</button><button type="button" onClick={() => void removeEvent(event)} disabled={removing === event.id}><Trash2 aria-hidden="true" />{removing === event.id ? 'Removendo…' : 'Remover'}</button></div>}</article>)}</div>}
+          {loading ? <p className="team-calendar-empty">Carregando eventos…</p> : selectedEvents.length === 0 ? <p className="team-calendar-empty">Nenhum evento nesta data. Use “Adicionar evento” para incluir uma reunião, treinamento ou compromisso externo.</p> : <div className="team-calendar-event-list">{selectedEvents.map((event) => <article id={`calendar-event-${event.id}`} className={`team-calendar-event is-${event.event_scope}${initialEventId === event.id ? ' is-push-target' : ''}`} key={event.id}><div className="team-calendar-event-label"><span>{event.event_scope === 'internal' ? 'INTERNO' : 'EXTERNO'}</span><small>{kindLabel(event.event_kind)}</small></div><h4>{event.title}</h4>{(event.start_time || event.end_time) && <p><Clock3 aria-hidden="true" />{event.start_time?.slice(0, 5) ?? '—'}{event.end_time ? ` – ${event.end_time.slice(0, 5)}` : ''}</p>}{event.location && <p><MapPin aria-hidden="true" />{event.location}</p>}{event.description && <p className="team-calendar-event-description">{event.description}</p>}{(event.created_by === userId || isAdmin) && <div className="team-calendar-event-actions"><button type="button" onClick={() => openEdit(event)}>Editar</button><button type="button" onClick={() => void removeEvent(event)} disabled={removing === event.id}><Trash2 aria-hidden="true" />{removing === event.id ? 'Removendo…' : 'Remover'}</button></div>}</article>)}</div>}
         </aside>
       </div>
       {modal && <div className="team-calendar-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) setModal(false); }}><section className="team-calendar-modal" role="dialog" aria-modal="true" aria-labelledby="calendar-form-title"><header><div><p className="workspace-kicker">AGENDA DA EQUIPE</p><h3 id="calendar-form-title">{editing ? 'Editar evento' : 'Novo evento'}</h3></div><button type="button" aria-label="Fechar" onClick={() => setModal(false)} disabled={saving}><X aria-hidden="true" /></button></header>

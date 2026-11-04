@@ -311,3 +311,40 @@
   .workspace-main.is-chat-page .team-chat-audio-state { grid-column: 1 / -1; }
   .workspace-main.is-chat-page .team-chat-audio-player { min-width: 0; width: min(64vw, 270px); }
 }
+
+
+.team-chat-hidden-input { display: none !important; }
+.team-chat-compose-actions { display: inline-flex; align-items: center; gap: 6px; }
+.team-chat-compose-actions button.team-chat-attach-button,
+.team-chat-compose-actions button.team-chat-camera-button,
+.team-chat-compose-actions button.team-chat-record-button {
+  width: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--ocean);
+  background: var(--card);
+}
+.team-chat-compose-actions button.team-chat-attach-button:hover:not(:disabled),
+.team-chat-compose-actions button.team-chat-camera-button:hover:not(:disabled),
+.team-chat-compose-actions button.team-chat-record-button:hover:not(:disabled) { border-color: var(--sky); background: color-mix(in srgb, var(--sky) 9%, var(--card)); }
+.team-chat-attachment-pending { display: flex; align-items: center; gap: 9px; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; color: var(--ocean); background: var(--card); }
+.team-chat-attachment-pending > svg { width: 18px; height: 18px; flex: 0 0 auto; }
+.team-chat-attachment-pending > span { display: grid; min-width: 0; overflow: hidden; color: var(--ink); font-size: 11px; font-weight: 700; text-overflow: ellipsis; }
+.team-chat-attachment-pending small { color: var(--muted); font-size: 9px; font-weight: 500; }
+.team-chat-attachment-pending button { display: grid; width: 28px; height: 28px; flex: 0 0 auto; place-items: center; margin-left: auto; border: 0; border-radius: 7px; color: var(--muted); background: transparent; cursor: pointer; }
+.team-chat-attachment-pending button svg { width: 16px; height: 16px; }
+.team-chat-attachment-message { display: grid; gap: 7px; max-width: min(100%, 420px); }
+.team-chat-attachment-message > a:first-child img { display: block; width: auto; max-width: min(100%, 360px); max-height: 300px; border-radius: 10px; object-fit: contain; }
+.team-chat-attachment-download { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; color: var(--ocean); background: var(--card); text-decoration: none; font-size: 11px; font-weight: 750; }
+.team-chat-attachment-download span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.team-chat-attachment-download svg { width: 15px; height: 15px; flex: 0 0 auto; }
+.team-chat-attachment-download svg:last-child { margin-left: auto; }
+@media (max-width: 760px) {
+  .workspace-main.is-chat-page .team-chat-composer { grid-template-columns: minmax(0, 1fr); }
+  .workspace-main.is-chat-page .team-chat-composer textarea { grid-column: 1; grid-row: auto; }
+  .workspace-main.is-chat-page .team-chat-compose-footer { grid-column: 1; grid-row: auto; justify-content: flex-end; }
+  .workspace-main.is-chat-page .team-chat-compose-actions button { width: 36px; min-width: 36px; min-height: 38px; }
+}

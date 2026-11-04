@@ -131,12 +131,17 @@ async function sendOneSignalPush(
   appId: string,
   restApiKey: string,
   eventType: PushEvent['event_type'],
+  entityId: string,
   recipientIds: string[],
   dueDate: string | null,
   activityName: string | null,
   expectedDeliverable: string | null,
 ): Promise<boolean> {
   const isAnnouncement = eventType === 'announcement_created';
+  const pushType = isAnnouncement ? 'announcement' : 'activity';
+  const targetUrl = new URL(APP_URL);
+  targetUrl.searchParams.set('push', pushType);
+  targetUrl.searchParams.set('item_id', entityId);
   const activityDetails = `Atividade: ${(activityName || 'Atividade da equipe').trim().slice(0, 110)}. Prazo: ${displayDueDate(dueDate)}. Entrega esperada: ${(expectedDeliverable || 'não especificada').trim().slice(0, 140)}${expectedDeliverable && expectedDeliverable.length > 140 ? '…' : ''}.`;
   const englishActivityDetails = `Activity: ${(activityName || 'Team activity').trim().slice(0, 110)}. Due: ${displayDueDate(dueDate)}. Expected deliverable: ${(expectedDeliverable || 'not specified').trim().slice(0, 140)}${expectedDeliverable && expectedDeliverable.length > 140 ? '…' : ''}.`;
   const response = await fetch('https://api.onesignal.com/notifications', {
@@ -157,7 +162,8 @@ async function sendOneSignalPush(
         en: isAnnouncement ? 'Open the app to read the notice.' : englishActivityDetails,
         pt: isAnnouncement ? 'Abra o app para ler o aviso.' : activityDetails,
       },
-      data: { targetUrl: APP_URL },
+      url: targetUrl.toString(),
+      data: { targetUrl: targetUrl.toString(), push_type: pushType, item_id: entityId },
     }),
   });
   if (!response.ok) {
@@ -259,7 +265,7 @@ Deno.serve(async (request) => {
       return reply(200, { status: 'skipped', recipient_count: 0 });
     }
 
-    const accepted = await sendOneSignalPush(appId, restApiKey, event.event_type, recipientIds, dueDate, activityName, expectedDeliverable);
+    const accepted = await sendOneSignalPush(appId, restApiKey, event.event_type, event.entity_id, recipientIds, dueDate, activityName, expectedDeliverable);
     if (!accepted) {
       await updateEvent(admin, event.id, 'skipped', 0);
       return reply(200, { status: 'skipped', recipient_count: 0 });

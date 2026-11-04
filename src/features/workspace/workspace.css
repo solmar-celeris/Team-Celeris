@@ -473,3 +473,14 @@
 .workspace-nav-icon { position: relative; }
 .workspace-nav button.is-active .workspace-nav-icon { box-shadow: 0 3px 7px rgba(1,75,137,.18), inset 0 1px 0 rgba(255,255,255,.72); }
 .workspace-nav-icon svg { filter: drop-shadow(0 1px 1px rgba(1,38,70,.12)); }
+
+/* Destino aberto por push: realce visual do item, sem alteração de permissões. */
+.workspace-activity-card.is-push-target,
+.shared-announcement-card.is-push-target,
+.team-calendar-event.is-push-target,
+.team-chat-message.is-push-target {
+  outline: 3px solid #f39a32;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgba(243, 154, 50, .16), 0 14px 34px rgba(1, 75, 137, .18);
+  scroll-margin: 32px;
+}

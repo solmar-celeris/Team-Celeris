@@ -14,6 +14,7 @@ type SharedContentWorkspaceProps = {
   isAdmin: boolean;
   areas: Pick<Area, 'id' | 'name'>[];
   members: Pick<MemberProfile, 'user_id' | 'full_name'>[];
+  targetAnnouncementId?: string;
 };
 type DriveFolder = {
   id: string;
@@ -77,7 +78,7 @@ function formatDate(value: string): string {
   return new Date(value).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-export default function SharedContentWorkspace({ client, mode, userId, isAdmin, areas, members }: SharedContentWorkspaceProps) {
+export default function SharedContentWorkspace({ client, mode, userId, isAdmin, areas, members, targetAnnouncementId }: SharedContentWorkspaceProps) {
   const [folders, setFolders] = useState<DriveFolder[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -194,6 +195,12 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
   useEffect(() => {
     void loadContent(true);
   }, [loadContent]);
+
+  useEffect(() => {
+    if (mode !== 'announcements' || loading || !targetAnnouncementId) return;
+    const card = document.getElementById(`announcement-card-${targetAnnouncementId}`);
+    card?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [loading, mode, targetAnnouncementId, announcements]);
 
   const areasById = useMemo(() => new Map(areas.map((area) => [area.id, area.name])), [areas]);
   const membersById = useMemo(() => new Map(members.map((member) => [member.user_id, member.full_name])), [members]);
@@ -495,7 +502,7 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
           ) : (
             <div className="shared-announcement-list">
               {visibleAnnouncements.map((item) => (
-                <article className={`shared-announcement-card${item.pinned_at ? ' is-pinned' : ''}`} key={item.id}>
+                <article id={`announcement-card-${item.id}`} className={`shared-announcement-card${item.pinned_at ? ' is-pinned' : ''}${targetAnnouncementId === item.id ? ' is-push-target' : ''}`} key={item.id}>
                   <div className="shared-announcement-meta"><span className="shared-audience">{item.audience_area_id ? areasById.get(item.audience_area_id) ?? 'Área' : 'Toda a equipe'}</span><span>{formatDate(item.created_at)}</span>{item.pinned_at && <span className="shared-pinned-label"><Pin size={12} aria-hidden="true" />Fixado</span>}</div>
                   <h3>{item.title}</h3>
                   <p className="shared-announcement-message">{item.message}</p>

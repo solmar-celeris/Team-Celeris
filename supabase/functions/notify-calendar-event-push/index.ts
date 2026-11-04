@@ -50,7 +50,11 @@ async function updateEvent(admin: SupabaseClient, eventId: string, status: 'sent
   }).eq('event_id', eventId);
   if (error) throw new Error('calendar_push_update_failed');
 }
-async function sendPush(appId: string, apiKey: string, recipients: string[], title: string, date: string): Promise<boolean> {
+async function sendPush(appId: string, apiKey: string, recipients: string[], event: CalendarEvent): Promise<boolean> {
+  const targetUrl = new URL(APP_URL);
+  targetUrl.searchParams.set('push', 'calendar');
+  targetUrl.searchParams.set('item_id', event.id);
+  targetUrl.searchParams.set('date', event.event_date);
   const response = await fetch('https://api.onesignal.com/notifications', {
     method: 'POST',
     headers: { Authorization: `Key ${apiKey}`, 'Content-Type': 'application/json' },
@@ -59,8 +63,9 @@ async function sendPush(appId: string, apiKey: string, recipients: string[], tit
       target_channel: 'push',
       include_aliases: { external_id: recipients },
       headings: { en: 'New calendar event', pt: 'Novo evento no calendário' },
-      contents: { en: `${title} · ${date}`, pt: `${title} · ${date}` },
-      data: { targetUrl: APP_URL },
+      contents: { en: `${event.title.trim().slice(0, 140)} · ${formatDate(event.event_date)}`, pt: `${event.title.trim().slice(0, 140)} · ${formatDate(event.event_date)}` },
+      url: targetUrl.toString(),
+      data: { targetUrl: targetUrl.toString(), push_type: 'calendar', item_id: event.id, event_date: event.event_date },
     }),
   });
   if (!response.ok) {
@@ -129,7 +134,7 @@ Deno.serve(async (request) => {
       await updateEvent(admin, event.id, 'skipped', 0);
       return reply(200, { status: 'skipped', recipient_count: 0 });
     }
-    const accepted = await sendPush(appId, restApiKey, recipientIds, event.title.trim().slice(0, 140), formatDate(event.event_date));
+    const accepted = await sendPush(appId, restApiKey, recipientIds, event);
     if (!accepted) {
       await updateEvent(admin, event.id, 'skipped', 0);
       return reply(200, { status: 'skipped', recipient_count: 0 });
