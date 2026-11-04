@@ -621,7 +621,7 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
           <p className="workspace-sidebar-label">ROTINA DA EQUIPE</p>
           <nav className="workspace-nav">
             {workspaceTabs.map(({ id, label, icon: Icon }) => (
-              <button key={id} type="button" className={tab === id ? 'is-active' : ''} onClick={() => setTab(id)} aria-current={tab === id ? 'page' : undefined}>
+              <button key={id} type="button" title={label} aria-label={label} className={tab === id ? 'is-active' : ''} onClick={() => setTab(id)} aria-current={tab === id ? 'page' : undefined}>
                 <span className="workspace-nav-icon"><Icon aria-hidden="true" /></span>
                 <span className="workspace-nav-label">{label}</span>
               </button>
