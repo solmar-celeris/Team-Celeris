@@ -120,6 +120,13 @@ export default function AIShortcuts() {
         ))}
       </div>
       <p className="ai-shortcuts-note">Os atalhos levam a serviços externos; eles não compartilham automaticamente dados ou credenciais do SolMar.</p>
+<a
+  href="https://drive.google.com/uc?export=download&id=1DnU7amLCKepVDixVOAAwOYIzo7K1z5zv"
+  target="_blank"
+  rel="noopener noreferrer"
+>
+  Baixar logo do SolMar Celeris
+</a>
 
       <section className="ai-prompt-library" aria-labelledby="ai-prompt-library-title">
         <div className="ai-prompt-library-heading">
