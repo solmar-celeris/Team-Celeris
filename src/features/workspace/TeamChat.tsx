@@ -134,9 +134,12 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   const [recording, setRecording] = useState(false);
   const [recordedAudio, setRecordedAudio] = useState<Blob | null>(null);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraError, setCameraError] = useState('');
   const recorderRef = useRef<MediaRecorder | null>(null);
   const attachmentInputRef = useRef<HTMLInputElement | null>(null);
-  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraVideoRef = useRef<HTMLVideoElement | null>(null);
+  const cameraStreamRef = useRef<MediaStream | null>(null);
   const recordingStreamRef = useRef<MediaStream | null>(null);
   const recordingChunksRef = useRef<Blob[]>([]);
   const recordingConversationRef = useRef<string | null>(null);
@@ -165,6 +168,11 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   const activeKey = activeDirectId ?? activeGroupId ?? 'team';
   const activeConversationRef = useRef(activeKey);
   activeConversationRef.current = activeKey;
+
+  useEffect(() => () => {
+    cameraStreamRef.current?.getTracks().forEach((track) => track.stop());
+    cameraStreamRef.current = null;
+  }, []);
 
   const loadLists = useCallback(async () => {
     try {
@@ -466,6 +474,63 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
     setPendingAttachment(file);
   }
 
+  function closeCamera() {
+    cameraStreamRef.current?.getTracks().forEach((track) => track.stop());
+    cameraStreamRef.current = null;
+    if (cameraVideoRef.current) cameraVideoRef.current.srcObject = null;
+    setCameraOpen(false);
+    setCameraError('');
+  }
+
+  async function openCamera() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError('Este navegador não oferece acesso direto à câmera. Atualize o navegador ou use o botão de anexar imagem.');
+      return;
+    }
+    setError('');
+    setCameraError('');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      cameraStreamRef.current = stream;
+      setCameraOpen(true);
+      window.setTimeout(() => {
+        if (cameraVideoRef.current) {
+          cameraVideoRef.current.srcObject = stream;
+          void cameraVideoRef.current.play();
+        }
+      }, 0);
+    } catch (cameraAccessError) {
+      const name = cameraAccessError instanceof DOMException ? cameraAccessError.name : '';
+      const message = name === 'NotAllowedError' || name === 'SecurityError'
+        ? 'A permissão da câmera foi negada. Autorize o acesso à câmera nas configurações do navegador e tente novamente.'
+        : name === 'NotFoundError' || name === 'DevicesNotFoundError'
+          ? 'Nenhuma câmera foi encontrada neste computador.'
+          : 'Não foi possível abrir a câmera. Verifique se ela está disponível e não está sendo usada por outro aplicativo.';
+      setCameraError(message);
+      setError(message);
+    }
+  }
+
+  function captureCameraPhoto() {
+    const video = cameraVideoRef.current;
+    if (!video || video.readyState < 2 || !video.videoWidth || !video.videoHeight) {
+      setCameraError('A câmera ainda está iniciando. Aguarde um instante e tente novamente.');
+      return;
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        setCameraError('Não foi possível capturar a foto. Tente novamente.');
+        return;
+      }
+      handleAttachmentSelection(new File([blob], `foto-chat-${Date.now()}.jpg`, { type: 'image/jpeg' }));
+      closeCamera();
+    }, 'image/jpeg', 0.92);
+  }
+
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); const text = draft.trim();
     if (recordedAudio && pendingAttachment) { setError('Envie a gravação ou o arquivo selecionado em mensagens separadas.'); return; }
@@ -632,14 +697,14 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
             </div>
             <form className="team-chat-composer" onSubmit={(event) => void sendMessage(event)}>
               <input ref={attachmentInputRef} className="team-chat-hidden-input" type="file" accept={CHAT_FILE_ACCEPT} onChange={(event) => { handleAttachmentSelection(event.currentTarget.files?.[0]); event.currentTarget.value = ''; }} />
-              <input ref={cameraInputRef} className="team-chat-hidden-input" type="file" accept="image/*" capture="environment" onChange={(event) => { handleAttachmentSelection(event.currentTarget.files?.[0]); event.currentTarget.value = ''; }} />
               {pendingAttachment && <div className="team-chat-attachment-pending" role="status">{attachmentMime(pendingAttachment)?.startsWith('image/') ? <ImageIcon aria-hidden="true" /> : <FileText aria-hidden="true" />}<span>{pendingAttachment.name}<small>{(pendingAttachment.size / (1024 * 1024)).toFixed(1)} MB</small></span><button type="button" onClick={() => setPendingAttachment(null)} aria-label="Remover arquivo selecionado"><X aria-hidden="true" /></button></div>}
               <textarea aria-label="Sua mensagem" id="team-chat-message" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={canWrite ? 'Escreva uma mensagem…' : 'Você não participa deste grupo.'} rows={1} maxLength={MESSAGE_LIMIT} disabled={sending || !canWrite} />
               {recording && <div className="team-chat-audio-state is-recording"><span className="team-chat-record-dot" aria-hidden="true" />Gravando áudio · {Math.floor(recordingSeconds / 60)}:{String(recordingSeconds % 60).padStart(2, '0')}<button type="button" onClick={stopAudioRecording} aria-label="Parar gravação"><Square aria-hidden="true" /> Parar</button></div>}
               {recordedAudio && !recording && <div className="team-chat-audio-state"><span>Áudio gravado · {Math.floor(recordingSeconds / 60)}:{String(recordingSeconds % 60).padStart(2, '0')}</span><button type="button" onClick={discardRecordedAudio} aria-label="Descartar áudio gravado"><X aria-hidden="true" /> Descartar</button></div>}
-              <div className="team-chat-compose-footer"><span>{Array.from(draft).length}/{MESSAGE_LIMIT} · {activeDirectId ? 'Conversa privada' : activeGroupId ? 'Somente participantes do grupo' : 'Visível para os integrantes ativos'}</span><div className="team-chat-compose-actions"><button className="team-chat-attach-button" type="button" onClick={() => attachmentInputRef.current?.click()} aria-label="Anexar imagem, documento ou áudio" title="Anexar imagem, documento ou áudio" disabled={sending || !canWrite}><Paperclip aria-hidden="true" /></button><button className="team-chat-camera-button" type="button" onClick={() => cameraInputRef.current?.click()} aria-label="Abrir câmera e tirar foto" title="Abrir câmera e tirar foto" disabled={sending || !canWrite}><Camera aria-hidden="true" /></button><button className="team-chat-record-button" type="button" onClick={() => void startAudioRecording()} aria-label="Gravar áudio" title="Gravar áudio" disabled={sending || recording || !canWrite}><Mic aria-hidden="true" /></button><button type="submit" aria-label={sending ? 'Enviando mensagem' : recordedAudio || (pendingAttachment && attachmentMime(pendingAttachment)?.startsWith('audio/')) ? 'Enviar áudio' : 'Enviar mensagem'} title={sending ? 'Enviando…' : 'Enviar'} disabled={sending || (!draft.trim() && !recordedAudio && !pendingAttachment) || !canWrite}><ArrowUp aria-hidden="true" /></button></div></div>
+              <div className="team-chat-compose-footer"><span>{Array.from(draft).length}/{MESSAGE_LIMIT} · {activeDirectId ? 'Conversa privada' : activeGroupId ? 'Somente participantes do grupo' : 'Visível para os integrantes ativos'}</span><div className="team-chat-compose-actions"><button className="team-chat-attach-button" type="button" onClick={() => attachmentInputRef.current?.click()} aria-label="Anexar imagem, documento ou áudio" title="Anexar imagem, documento ou áudio" disabled={sending || !canWrite}><Paperclip aria-hidden="true" /></button><button className="team-chat-camera-button" type="button" onClick={() => void openCamera()} aria-label="Abrir câmera e tirar foto" title="Abrir câmera e tirar foto" disabled={sending || !canWrite}><Camera aria-hidden="true" /></button><button className="team-chat-record-button" type="button" onClick={() => void startAudioRecording()} aria-label="Gravar áudio" title="Gravar áudio" disabled={sending || recording || !canWrite}><Mic aria-hidden="true" /></button><button type="submit" aria-label={sending ? 'Enviando mensagem' : recordedAudio || (pendingAttachment && attachmentMime(pendingAttachment)?.startsWith('audio/')) ? 'Enviar áudio' : 'Enviar mensagem'} title={sending ? 'Enviando…' : 'Enviar'} disabled={sending || (!draft.trim() && !recordedAudio && !pendingAttachment) || !canWrite}><ArrowUp aria-hidden="true" /></button></div></div>
             </form>
           </div>
+          {cameraOpen && <div className="team-chat-camera-backdrop" role="presentation"><section className="team-chat-camera-dialog" role="dialog" aria-modal="true" aria-labelledby="team-chat-camera-title"><header><div><p className="workspace-kicker">CÂMERA DO COMPUTADOR</p><h3 id="team-chat-camera-title">Tirar foto</h3></div><button type="button" onClick={closeCamera} aria-label="Fechar câmera"><X aria-hidden="true" /></button></header><video ref={cameraVideoRef} autoPlay muted playsInline aria-label="Pré-visualização da câmera" />{cameraError && <p className="team-chat-camera-error" role="alert">{cameraError}</p>}<footer><button type="button" className="team-chat-camera-cancel" onClick={closeCamera}>Cancelar</button><button type="button" className="team-chat-camera-capture" onClick={captureCameraPhoto} disabled={Boolean(cameraError)}><Camera aria-hidden="true" /> Capturar foto</button></footer></section></div>}
           <p className="team-chat-retention-note">Mensagens ficam salvas até um Administrador removê-las. As conversas privadas só podem ser lidas pelos dois participantes. Mensagens do Chat não enviam e-mail.</p>
         </div>
       </div>

@@ -347,6 +347,21 @@
 .team-chat-attachment-download span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .team-chat-attachment-download svg { width: 15px; height: 15px; flex: 0 0 auto; }
 .team-chat-attachment-download svg:last-child { margin-left: auto; }
+.team-chat-camera-backdrop { position: fixed; z-index: 50; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(4, 22, 39, .64); backdrop-filter: blur(5px); }
+.team-chat-camera-dialog { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; width: min(100%, 620px); max-height: min(92dvh, 760px); overflow: hidden; border: 1px solid color-mix(in srgb, var(--blue) 25%, var(--line)); border-radius: 18px; background: var(--card); box-shadow: 0 24px 80px rgba(0, 24, 47, .3); }
+.team-chat-camera-dialog > header { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 16px 18px 12px; border-bottom: 1px solid var(--line); }
+.team-chat-camera-dialog > header .workspace-kicker { margin: 0 0 4px; color: var(--blue); }
+.team-chat-camera-dialog h3 { margin: 0; color: var(--ocean); font-size: 19px; }
+.team-chat-camera-dialog > header button { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid var(--line); border-radius: 9px; color: var(--muted); background: var(--surface); cursor: pointer; }
+.team-chat-camera-dialog > header button svg { width: 17px; height: 17px; }
+.team-chat-camera-dialog video { display: block; width: 100%; max-height: min(62dvh, 530px); min-height: 240px; object-fit: cover; background: #071b2d; }
+.team-chat-camera-error { margin: 0; padding: 10px 18px; color: #8e2424; background: color-mix(in srgb, #e54444 8%, var(--card)); font-size: 11px; line-height: 1.5; }
+.team-chat-camera-dialog > footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--line); background: var(--surface); }
+.team-chat-camera-dialog > footer button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 38px; padding: 0 13px; border-radius: 9px; cursor: pointer; font-size: 11px; font-weight: 800; }
+.team-chat-camera-cancel { border: 1px solid var(--line); color: var(--ink); background: var(--card); }
+.team-chat-camera-capture { border: 1px solid var(--ocean); color: #fff; background: var(--ocean); }
+.team-chat-camera-capture:disabled { cursor: not-allowed; opacity: .55; }
+.team-chat-camera-capture svg { width: 15px; height: 15px; }
 @media (max-width: 760px) {
   .workspace-main.is-chat-page .team-chat-composer { grid-template-columns: minmax(0, 1fr); }
   .workspace-main.is-chat-page .team-chat-composer textarea { grid-column: 1; grid-row: auto; }
