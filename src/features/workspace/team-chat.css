@@ -255,7 +255,7 @@
 .workspace-main.is-chat-page .team-chat-history { min-height: 0; }
 .workspace-main.is-chat-page .team-chat-retention-note { display: none; }
 
-@media (max-width: 760px) {
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
   .workspace-main.is-chat-page {
     box-sizing: border-box;
     height: calc(100dvh - 64px - 68px - env(safe-area-inset-bottom));

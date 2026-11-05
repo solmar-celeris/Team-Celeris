@@ -240,7 +240,7 @@
   .workspace-filter-panel { grid-template-columns: repeat(4, minmax(100px, 1fr)); }
   .workspace-filter-panel .workspace-search { grid-column: span 2; }
 }
-@media (max-width: 760px) {
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
   .workspace-topbar { min-height: 64px; padding: 7px 13px; }
   .workspace-brand { gap: 8px; }
   .workspace-brand img { height: 42px; max-width: 54px; }
@@ -329,7 +329,7 @@
 .workspace-manual .manual-note { font-size: 13.5px; line-height: 1.65; }
 .workspace-manual .manual-note strong { font-size: 14.5px; }
 
-@media (max-width: 760px) {
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
   .workspace-activity-card h3 { font-size: 16px; }
   .workspace-manual .manual-role-head h3 { font-size: 18px; }
   .workspace-manual .manual-section-heading > p { font-size: 13.5px; }
@@ -344,7 +344,7 @@
 :root[data-theme="dark"] .workspace-period-button { color: #b9ddff; }
 
 /* Mobile: conteúdo em largura total e navegação fixa inferior. */
-@media (max-width: 760px) {
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
   .workspace-frame {
     display: block;
     width: 100%;
@@ -354,11 +354,15 @@
   .workspace-sidebar {
     position: fixed;
     z-index: 40;
-    inset: auto 0 0;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
     display: block;
     width: 100%;
-    height: auto;
-    padding: 5px 5px max(5px, env(safe-area-inset-bottom));
+    height: calc(64px + env(safe-area-inset-bottom));
+    box-sizing: border-box;
+    padding: 4px 5px calc(4px + env(safe-area-inset-bottom));
     overflow: hidden;
     border: 0;
     border-top: 1px solid var(--line);
@@ -371,6 +375,7 @@
   .workspace-side-card { display: none; }
   .workspace-nav {
     display: flex;
+    height: 100%;
     align-items: stretch;
     justify-content: flex-start;
     gap: 2px;
@@ -458,7 +463,7 @@
 .workspace-week-event > button { min-height: 32px; padding: 0 10px; border: 1px solid color-mix(in srgb, var(--blue) 25%, var(--line)); border-radius: 8px; color: var(--ocean); background: var(--surface); cursor: pointer; font-size: 9px; font-weight: 750; }
 .workspace-week-event > button:hover { border-color: var(--ocean); background: color-mix(in srgb, var(--sky) 8%, var(--card)); }
 .workspace-week-events-note { margin: 9px 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
-@media (max-width: 760px) {
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
   .workspace-week-event { grid-template-columns: minmax(0,1fr) auto; gap: 8px; }
   .workspace-week-event-date { grid-column: 1 / -1; display: flex; flex-wrap: wrap; }
   .workspace-week-event-date svg { grid-row: auto; }
