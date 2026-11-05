@@ -556,8 +556,8 @@
 @media (max-width: 760px), (hover: none) and (pointer: coarse) {
   .workspace-frame > .workspace-sidebar {
     order: 1;
-    height: 62px;
-    padding: 5px 9px;
+    height: 82px;
+    padding: 4px 7px;
     overflow: hidden;
     border: 0;
     border-bottom: 1px solid var(--line);
@@ -565,47 +565,47 @@
     box-shadow: 0 5px 18px rgba(1, 38, 70, .1);
   }
   .workspace-nav {
-    display: flex;
+    display: grid;
     height: 100%;
-    gap: 7px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-    scroll-snap-type: x proximity;
-    -webkit-overflow-scrolling: touch;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 2px 5px;
+    overflow: hidden;
   }
-  .workspace-nav::-webkit-scrollbar { display: none; }
   .workspace-nav button {
     display: flex;
-    flex: 0 0 auto;
-    align-self: center;
-    width: auto;
-    min-width: 64px;
-    min-height: 44px;
-    gap: 6px;
-    padding: 0 10px;
+    flex-direction: column;
+    justify-content: center;
+    align-self: stretch;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    gap: 2px;
+    padding: 2px 3px;
     border: 1px solid transparent;
-    border-radius: 9px;
-    font-size: 10px;
-    white-space: nowrap;
-    scroll-snap-align: start;
+    border-radius: 7px;
+    font-size: 8px;
+    white-space: normal;
   }
-  .workspace-nav-icon { width: 20px; height: 20px; flex: 0 0 20px; }
-  .workspace-nav-icon svg { width: 14px; height: 14px; }
+  .workspace-nav-icon { width: 15px; height: 15px; flex: 0 0 15px; border-radius: 5px; }
+  .workspace-nav-icon svg { width: 11px; height: 11px; }
   .workspace-nav-label {
     display: block;
-    width: auto;
-    max-width: none;
+    width: 100%;
+    max-width: 100%;
     height: auto;
     padding: 0;
     margin: 0;
     overflow: visible;
     clip: auto;
     border: 0;
-    font-size: 10px;
-    line-height: 1;
-    text-align: left;
-    white-space: nowrap;
+    font-size: 8px;
+    font-weight: 750;
+    line-height: 1.05;
+    text-align: center;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
   .workspace-nav button.is-active { box-shadow: inset 0 2px #e06916, 0 0 16px rgba(1, 75, 137, .1); }
   .workspace-main { order: 2; }
