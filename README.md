@@ -5,7 +5,7 @@ Aplicação responsiva em português, construída com React, TypeScript e Vite. 
 ## Funcionalidades desta versão
 
 - Login/cadastro por e-mail e senha; após a migration de ativação, novos cadastros ficam ativos automaticamente como Integrante. A confirmação de e-mail continua conforme a configuração já existente no Supabase.
-- Navegação com ícones na ordem **Chat**, **Comunicados**, **Semana**, **Atividades**, **Arquivos**, **Manual de funções** e **IA** (atalhos externos ChatGPT, Claude AI, Manus IA e Gemini).
+- Navegação com ícones na ordem **Chat**, **Comunicados**, **Semana**, **Atividades**, **Arquivos**, **Manual de funções** e **IA** (atalhos externos ChatGPT, Claude AI e Gemini).
 - Atividades e atualizações semanais ligadas ao Supabase, com filtros, permissões RLS, edição autorizada e justificativa obrigatória quando o status é Pendente.
 - Arquivos: links de pastas do Google Drive, mostrados como cartões clicáveis; o app não lê o conteúdo das pastas.
 - Comunicados: publicação para a equipe ou uma área, autoria automática, fixação/desafixação e remoção lógica auditada.

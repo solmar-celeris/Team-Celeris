@@ -24,20 +24,20 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  color: #e6eef6;
-  background: #0e1822;
-  --bg: #0e1822;
-  --card: #16232f;
-  --ink: #e6eef6;
-  --muted: #9fb0c0;
-  --line: #2a3b4b;
+  color: #eaf4ff;
+  background: #070b14;
+  --bg: #070b14;
+  --card: #101827;
+  --ink: #eaf4ff;
+  --muted: #92a4ba;
+  --line: #25344b;
   --blue: #67b6fa;
   --ocean: #38b6ff;
   --sky: #67b6fa;
   --orange: #e87b27;
-  --orange-pale: #39291c;
-  --surface: #1b2a38;
-  --shadow: 0 22px 60px rgba(0, 0, 0, .2);
+  --orange-pale: #292416;
+  --surface: #0c1422;
+  --shadow: 0 22px 60px rgba(0, 0, 0, .36);
 }
 
 * { box-sizing: border-box; }
@@ -191,3 +191,22 @@ h1 em { color: var(--ink); font-style: normal; }
   .auth-mode-switch { margin-bottom: 19px; }
   .auth-mode-switch button { min-height: 40px; }
 }
+
+/* Game HUD skin: high-contrast midnight surfaces with restrained energy accents. */
+:root[data-theme="dark"] body {
+  background-color: #070b14;
+  background-image: radial-gradient(ellipse at 18% -12%, rgba(1, 75, 137, .22), transparent 42%), linear-gradient(rgba(56, 182, 255, .025) 1px, transparent 1px), linear-gradient(90deg, rgba(56, 182, 255, .025) 1px, transparent 1px);
+  background-size: auto, 32px 32px, 32px 32px;
+}
+:root[data-theme="dark"] .topbar {
+  background: linear-gradient(105deg, #08111f 0%, #0b1d2e 54%, #10182a 100%);
+  border-bottom: 2px solid #38b6ff;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, .28), 0 1px 18px rgba(56, 182, 255, .12);
+}
+:root[data-theme="dark"] .connection-pill { border-color: rgba(79, 220, 195, .32); color: #b9f8e9; background: rgba(40, 196, 164, .08); }
+:root[data-theme="dark"] .theme-toggle { border-color: rgba(83, 215, 255, .3); color: #8cecff; background: rgba(55, 176, 211, .09); }
+:root[data-theme="dark"] .auth-panel { border-color: #273952; background: linear-gradient(150deg, #111c2c, #0b1220); box-shadow: 0 24px 70px rgba(0, 0, 0, .42), 0 0 35px rgba(43, 196, 225, .07); }
+:root[data-theme="dark"] .auth-icon { color: #8acbff; background: #122b3a; }
+:root[data-theme="dark"] .auth-mode-switch button.is-selected { color: #04111a; background: #014b89; }
+:root[data-theme="dark"] .primary-button { color: #ffffff; background: #e06916; }
+:root[data-theme="dark"] .secondary-button { color: #ffffff; background: #014b89; }

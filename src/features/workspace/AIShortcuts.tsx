@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowUpRight, Brain, Sparkles, type LucideIcon } from 'lucide-react';
+import { ArrowDownToLine, ArrowUpRight, Brain, Sparkles, type LucideIcon } from 'lucide-react';
 import recordPrompt from './prompts/registro-de-atividades.md?raw';
 import popPrompt from './prompts/procedimento-operacional-padrao.md?raw';
 import './ai-shortcuts.css';
@@ -120,6 +120,17 @@ export default function AIShortcuts() {
         ))}
       </div>
       <p className="ai-shortcuts-note">Os atalhos levam a serviços externos; eles não compartilham automaticamente dados ou credenciais do SolMar.</p>
+
+      <section className="ai-logo-download" aria-labelledby="ai-logo-download-title">
+        <div>
+          <p className="workspace-kicker">ARQUIVO DA EQUIPE</p>
+          <h3 id="ai-logo-download-title">Logo SolMar Celeris</h3>
+          <p>Baixe a logo SolMar Celeris diretamente do Google Drive.</p>
+        </div>
+        <a href="https://drive.google.com/uc?export=download&id=1DnU7amLCKepVDixVOAAwOYIzo7K1z5zv" target="_blank" rel="noopener noreferrer">
+          <ArrowDownToLine aria-hidden="true" /> Baixar logo (PNG)
+        </a>
+      </section>
 
       <section className="ai-prompt-library" aria-labelledby="ai-prompt-library-title">
         <div className="ai-prompt-library-heading">

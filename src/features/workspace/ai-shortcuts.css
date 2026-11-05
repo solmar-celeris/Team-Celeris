@@ -22,6 +22,13 @@
 .ai-shortcut-description { color: var(--muted); font-size: 12px; line-height: 1.45; }
 .ai-shortcut-arrow { width: 19px; height: 19px; align-self: start; color: var(--blue); }
 .ai-shortcuts-note { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+.ai-logo-download { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 13px; background: var(--card); }
+.ai-logo-download .workspace-kicker { margin: 0 0 4px; }
+.ai-logo-download h3 { margin: 0; color: var(--ink); font-size: 15px; }
+.ai-logo-download p:last-child { margin: 5px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.ai-logo-download a { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 0 13px; border: 1px solid color-mix(in srgb, var(--blue) 30%, var(--line)); border-radius: 9px; color: var(--ocean); background: color-mix(in srgb, var(--sky) 8%, var(--card)); font-size: 11px; font-weight: 800; text-decoration: none; }
+.ai-logo-download a:hover { border-color: var(--blue); text-decoration: underline; }
+.ai-logo-download a svg { width: 16px; height: 16px; }
 @media (max-width: 760px) {
   .ai-shortcuts-grid { grid-template-columns: 1fr; gap: 10px; }
   .ai-shortcut-card { min-height: 104px; }
@@ -57,6 +64,7 @@
 .ai-copy-feedback { margin: 0; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--blue) 24%, var(--line)); border-radius: 9px; color: var(--ocean); background: color-mix(in srgb, var(--sky) 7%, var(--card)); font-size: 11px; }
 :root[data-theme="dark"] .ai-copy-feedback { color: #b9ddff; }
 @media (max-width: 760px) {
+  .ai-logo-download { align-items: flex-start; flex-direction: column; padding: 14px; }
   .ai-prompt-library-heading { padding: 15px; }
   .ai-prompt-card summary { padding: 13px; }
   .ai-prompt-content { padding: 0 13px 13px; }
