@@ -95,15 +95,15 @@ type WeekCalendarEvent = {
   start_time: string | null;
   location: string;
 };
-const workspaceTabs: { id: WorkspaceTab; label: string; icon: LucideIcon }[] = [
-  { id: 'chat', label: 'Chat', icon: MessageCircle },
-  { id: 'announcements', label: 'Comunicados', icon: Megaphone },
-  { id: 'week', label: 'Semana', icon: Clock3 },
-  { id: 'activities', label: 'Atividades', icon: ClipboardList },
-  { id: 'files', label: 'Arquivos', icon: Folder },
-  { id: 'calendar', label: 'Calendário de eventos', icon: CalendarDays },
-  { id: 'manual', label: 'Manual de funções', icon: BookOpen },
-  { id: 'ai', label: 'IA', icon: Sparkles },
+const workspaceTabs: { id: WorkspaceTab; label: string; mobileLabel: string; icon: LucideIcon }[] = [
+  { id: 'chat', label: 'Chat', mobileLabel: 'Chat', icon: MessageCircle },
+  { id: 'announcements', label: 'Comunicados', mobileLabel: 'Avisos', icon: Megaphone },
+  { id: 'week', label: 'Semana', mobileLabel: 'Sem.', icon: Clock3 },
+  { id: 'activities', label: 'Atividades', mobileLabel: 'Ativ.', icon: ClipboardList },
+  { id: 'files', label: 'Arquivos', mobileLabel: 'Arq.', icon: Folder },
+  { id: 'calendar', label: 'Calendário de eventos', mobileLabel: 'Eventos', icon: CalendarDays },
+  { id: 'manual', label: 'Manual de funções', mobileLabel: 'Manual', icon: BookOpen },
+  { id: 'ai', label: 'IA', mobileLabel: 'IA', icon: Sparkles },
 ];
 
 const defaultFilters: FilterState = {
@@ -720,10 +720,11 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
         <aside className="workspace-sidebar" aria-label="Navegação do espaço da equipe">
           <p className="workspace-sidebar-label">ROTINA DA EQUIPE</p>
           <nav className="workspace-nav">
-            {workspaceTabs.map(({ id, label, icon: Icon }) => (
+            {workspaceTabs.map(({ id, label, mobileLabel, icon: Icon }) => (
               <button key={id} type="button" title={label} aria-label={label} className={tab === id ? 'is-active' : ''} onClick={() => setTab(id)} aria-current={tab === id ? 'page' : undefined}>
                 <span className="workspace-nav-icon"><Icon aria-hidden="true" /></span>
                 <span className="workspace-nav-label">{label}</span>
+                <span className="workspace-nav-mobile-label" aria-hidden="true">{mobileLabel}</span>
               </button>
             ))}
           </nav>
