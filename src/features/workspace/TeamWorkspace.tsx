@@ -693,7 +693,7 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
     <section className="workspace-screen" aria-label="Espaço de trabalho SolMar Celeris">
       <header className="workspace-topbar">
         <a className="workspace-brand" href="#workspace" aria-label="SolMar Celeris">
-          <img src="/assets/solmar-celeris-logo.png" alt="" />
+          <img src="/assets/solmar-celeris-site-logo.png" alt="" />
           <span><strong>SolMar Celeris</strong><small>UFCI/RJ · ESPAÇO DA EQUIPE</small></span>
         </a>
         <div className="workspace-top-actions">
