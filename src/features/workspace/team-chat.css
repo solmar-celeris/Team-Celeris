@@ -258,7 +258,7 @@
 @media (max-width: 760px), (hover: none) and (pointer: coarse) {
   .workspace-main.is-chat-page {
     box-sizing: border-box;
-    height: calc(100dvh - 64px - 68px - env(safe-area-inset-bottom));
+    height: calc(100dvh - 64px - 70px - env(safe-area-inset-bottom));
     padding: 5px 7px;
   }
   .workspace-main.is-chat-page > .team-chat { grid-template-rows: auto minmax(0, 1fr); gap: 5px; }
