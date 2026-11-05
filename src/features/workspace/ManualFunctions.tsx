@@ -187,15 +187,6 @@ export default function ManualFunctions() {
 
   return (
     <section className="workspace-manual" aria-label="Manual de funções e capacitação">
-      <div className="manual-intro">
-        <span className="manual-intro-icon" aria-hidden="true">M</span>
-        <div>
-          <p className="workspace-kicker">CARGOS · RESPONSABILIDADES · CAPACITAÇÃO</p>
-          <h2>Como cada área contribui</h2>
-          <p>Consulte as responsabilidades centrais, os conhecimentos e ferramentas de apoio, as capacitações recomendadas e as entregas esperadas para cada função do SolMar Celeris.</p>
-        </div>
-      </div>
-
       <div className="manual-controls">
         <label className="manual-search">
           <Search aria-hidden="true" />
