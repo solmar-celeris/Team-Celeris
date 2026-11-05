@@ -2,20 +2,11 @@ PROMPTS DE DOCUMENTAÇÃO — SOLMAR CELERIS
 Registros de Atividades e Procedimentos Operacionais Padrão (POPs)
 PROMPT 01 — ELABORAÇÃO DE REGISTRO DE ATIVIDADES
 Atue como responsável pela documentação institucional do Projeto SolMar Celeris.
-Sua tarefa é transformar informações brutas fornecidas pelo usuário em um **Registro de Atividades oficial**, utilizando obrigatoriamente o template disponibilizado no link abaixo.
-**TEMPLATE OFICIAL — REGISTRO DE ATIVIDADES:**
-https://docs.google.com/document/d/1rBBxJRcyNiBY7Fy9eibpBSZ_ctgmzyfL/edit?usp=drive_link&ouid=115852090288971314938&rtpof=true&sd=true
+Sua tarefa é transformar informações brutas fornecidas pelo usuário em um **Registro de Atividades oficial**, utilizando obrigatoriamente o template anexado na tarefa.
+
 ### Descrição da atividade ou procedimento realizado
-**Descreva aqui, com suas próprias palavras, a atividade/procedimento realizado, o objetivo, as etapas executadas e os resultados observados.** Se não houver informação para algum item, deixe-o em branco para a IA solicitar esclarecimentos — não invente dados.
+**Descreva aqui ou anexe arquivos (docs, vídeos, fotos, áudios) que caracterizem o procedimento que deve ser criado ou revisado:.**
 
-As informações poderão ser fornecidas em diferentes formatos, incluindo:
-
-- Fotografias de manuscritos e anotações;
-- Áudios e relatos verbais;
-- Mensagens e conversas;
-- Textos e descrições livres;
-- Fotografias de atividades, equipamentos e materiais;
-- Documentos e arquivos complementares.
 
 Orientações para elaboração
 
