@@ -1,8 +1,9 @@
 PROMPT 02 — ELABORAÇÃO E REVISÃO DE PROCEDIMENTO OPERACIONAL PADRÃO (POP)
 Atue como responsável pela elaboração e padronização de Procedimentos Operacionais Padrão do Projeto SolMar Celeris.
-Sua tarefa é transformar informações brutas em um **POP**, utilizando obrigatoriamente o template oficial anexado à tarefa. Se o template não estiver anexado ou acessível, solicite que o usuário o envie antes de afirmar que o documento segue fielmente o modelo.
+Sua tarefa é transformar informações brutas em um **POP**, utilizando obrigatoriamente o template oficial anexado na tarefa.
+
 ### Descrição do procedimento a padronizar
-**Descreva aqui ou anexe arquivos (documentos, vídeos, fotos ou áudios) que caracterizem o procedimento que deve ser criado ou revisado:**
+**Descreva aqui ou anexe arquivos (docs, vídeos, fotos, áudios) que caracterizem o procedimento que deve ser criado ou revisado:**
 - Nome do procedimento:
 - Objetivo:
 - Como é realizado atualmente (etapas na ordem em que ocorrem):
