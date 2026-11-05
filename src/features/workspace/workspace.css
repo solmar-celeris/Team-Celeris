@@ -62,6 +62,10 @@
 .workspace-nav button:hover { color: var(--ink); background: var(--card); }
 .workspace-nav button.is-active { border-color: color-mix(in srgb, var(--sky) 22%, var(--line)); color: var(--ocean); background: var(--card); box-shadow: 0 7px 20px rgba(1,75,137,.06); }
 :root[data-theme="dark"] .workspace-nav button.is-active { color: #8acbff; }
+@media (min-width: 761px) {
+  /* O selo Powered by Netlify ocupa o canto inferior direito no navegador. */
+  .workspace-sidebar { padding-right: clamp(220px, 24vw, 330px); }
+}
 .workspace-side-card { margin-top: auto; padding: 15px 13px; border: 1px solid var(--line); border-radius: 13px; background: var(--card); }
 .workspace-side-mark { color: var(--orange); font-size: 18px; }
 .workspace-side-card p { margin: 9px 0 16px; color: var(--muted); font-size: 11px; line-height: 1.45; }
