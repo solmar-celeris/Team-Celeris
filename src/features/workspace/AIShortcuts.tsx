@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowUpRight, Brain, Sparkles, WandSparkles, type LucideIcon } from 'lucide-react';
+import { ArrowUpRight, Brain, Sparkles, type LucideIcon } from 'lucide-react';
 import recordPrompt from './prompts/registro-de-atividades.md?raw';
 import popPrompt from './prompts/procedimento-operacional-padrao.md?raw';
 import './ai-shortcuts.css';
@@ -34,15 +34,6 @@ const services: AIService[] = [
     accent: 'orange',
   },
   {
-    name: 'Manus IA',
-    subtitle: 'Manus',
-    description: 'Assistente de IA para explorar ideias e realizar tarefas.',
-    url: 'https://manus.im/',
-    logo: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdD70EmoWGGA3DAYRQv6d_9Jpa2LFK2IVKAi-70A85rA&s=10',
-    icon: WandSparkles,
-    accent: 'ocean',
-  },
-  {
     name: 'Gemini',
     subtitle: 'Google',
     description: 'Assistente de IA do Google para perguntas e criação.',
@@ -54,8 +45,8 @@ const services: AIService[] = [
 ];
 
 const prompts = [
-  { id: 'registro', title: 'Registro de Atividades', description: 'Organize relatos, fotos, áudios e documentos no template oficial de registro.', content: recordPrompt },
-  { id: 'pop', title: 'Procedimento Operacional Padrão (POP)', description: 'Elabore um POP novo ou revise um procedimento sem perder o histórico.', content: popPrompt },
+  { id: 'registro', title: 'Registro de Atividades', description: 'Organize relatos, fotos, áudios e documentos no template oficial de registro.', content: recordPrompt, templateUrl: 'https://docs.google.com/document/d/1rBBxJRcyNiBY7Fy9eibpBSZ_ctgmzyfL/export?format=docx', templateLabel: 'Baixar template de Registro de Atividades (DOCX)' },
+  { id: 'pop', title: 'Procedimento Operacional Padrão (POP)', description: 'Elabore um POP novo ou revise um procedimento sem perder o histórico.', content: popPrompt, templateUrl: 'https://docs.google.com/document/d/1MRQZyQyggwlgq2oXCwoQ4JMCVHc4yI23/export?format=docx', templateLabel: 'Baixar template de POP (DOCX)' },
 ];
 
 function ServiceMark({ service }: { service: AIService }) {
@@ -140,7 +131,11 @@ export default function AIShortcuts() {
         </div>
         <div className="ai-prompt-list">
           {prompts.map((prompt) => (
-            <details className="ai-prompt-card" key={prompt.id}>
+            <div className="ai-prompt-item" key={prompt.id}>
+              <a className="ai-prompt-download" href={prompt.templateUrl} target="_blank" rel="noopener noreferrer" download>
+                {prompt.templateLabel} ↓
+              </a>
+              <details className="ai-prompt-card">
               <summary>
                 <span><strong>{prompt.title}</strong><small>{prompt.description}</small></span>
                 <span className="ai-prompt-toggle" aria-hidden="true">+</span>
@@ -148,14 +143,12 @@ export default function AIShortcuts() {
               <div className="ai-prompt-content">
                 <div className="ai-prompt-actions">
                   <button type="button" className="workspace-save-button" onClick={() => void handleCopy(prompt.title, prompt.content)}>Copiar prompt completo</button>
-                  <a href={prompt.id === 'registro'
-                    ? 'https://docs.google.com/document/d/1rBBxJRcyNiBY7Fy9eibpBSZ_ctgmzyfL/edit?usp=drive_link&ouid=115852090288971314938&rtpof=true&sd=true'
-                    : 'https://docs.google.com/document/d/1MRQZyQyggwlgq2oXCwoQ4JMCVHc4yI23/edit?usp=drive_link&ouid=115852090288971314938&rtpof=true&sd=true'}
-                    target="_blank" rel="noopener noreferrer">Abrir template oficial ↗</a>
+
                 </div>
                 <pre>{prompt.content}</pre>
               </div>
-            </details>
+              </details>
+            </div>
           ))}
         </div>
         {copyMessage && <p className="ai-copy-feedback" role="status">{copyMessage}</p>}

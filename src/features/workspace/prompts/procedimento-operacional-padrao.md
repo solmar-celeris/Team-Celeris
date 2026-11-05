@@ -3,6 +3,17 @@ Atue como responsável pela elaboração e padronização de Procedimentos Opera
 Sua tarefa é transformar informações brutas em um **POP**, utilizando obrigatoriamente o template oficial disponibilizado no link abaixo.
 **TEMPLATE OFICIAL — POP:**
 https://docs.google.com/document/d/1MRQZyQyggwlgq2oXCwoQ4JMCVHc4yI23/edit?usp=drive_link&ouid=115852090288971314938&rtpof=true&sd=true
+### Descrição do procedimento a padronizar
+**Descreva aqui o procedimento que deve ser criado ou revisado:**
+- Nome do procedimento:
+- Objetivo:
+- Como é realizado atualmente (etapas na ordem em que ocorrem):
+- Ferramentas, materiais e equipamentos:
+- Parâmetros, cuidados de segurança e pontos de atenção:
+- Alterações solicitadas (para revisão de POP):
+
+Use somente as informações fornecidas. Se algum dado técnico estiver ausente ou incerto, sinalize a lacuna para validação do responsável técnico; não invente etapas nem parâmetros.
+
 As informações poderão ser fornecidas em diferentes formatos, incluindo:
 
 - Fotografias de manuscritos e anotações;
@@ -45,6 +56,7 @@ Preserve exatamente os campos e as seções existentes no template:
 - TÍTULO
 - NÚMERO
 - OBJETIVO
+- DESCRIÇÃO DO PROCEDIMENTO (explique brevemente o processo, sua finalidade e quando se aplica; integre ao campo/seção equivalente do template oficial sem criar campos incompatíveis)
 - Histórico de revisões:
   - Rev.
   - Data

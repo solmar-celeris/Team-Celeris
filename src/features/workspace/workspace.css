@@ -359,7 +359,7 @@
   .workspace-frame > .workspace-sidebar {
     position: relative;
     top: auto;
-    z-index: 4;
+    z-index: 10000;
     order: 2;
     flex: 0 0 auto;
     display: block;
@@ -377,6 +377,13 @@
   }
   .workspace-sidebar-label,
   .workspace-side-card { display: none; }
+  body > #netlify-badge,
+  body > .netlify-badge,
+  body > [data-netlify-badge],
+  body > iframe[src*="netlify"],
+  #netlify-badge,
+  .netlify-badge,
+  [data-netlify-badge] { display: none !important; }
   .workspace-nav {
     display: grid;
     height: 100%;

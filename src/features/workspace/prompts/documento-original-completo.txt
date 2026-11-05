@@ -6,7 +6,6 @@ Claude: https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTQ5HPalIyZmovDrPi-
 
 Gemini: https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSntqd-Z7ClE9ubKSLIHpY1CBq5DNOFQkKDgYqo0mLnw&s=10
 
-Manus: https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdD70EmoWGGA3DAYRQv6d_9Jpa2LFK2IVKAi-70A85rA&s=10
 
 
 PROMPTS DE DOCUMENTAÇÃO — SOLMAR CELERIS
