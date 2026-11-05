@@ -10,7 +10,7 @@
 .team-chat-admin-badge svg { width: 13px; height: 13px; }
 .team-chat-connection { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 10px; }
 .team-chat-connection i { width: 7px; height: 7px; border-radius: 50%; background: #b5b9bd; }
-.team-chat-connection.is-connected i { background: #37a577; box-shadow: 0 0 0 3px color-mix(in srgb, #37a577 14%, transparent); }
+.team-chat-connection.is-connected i { background: var(--blue); box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 14%, transparent); }
 .team-chat-connection.is-connecting i { background: var(--orange); animation: chat-pulse 1.3s ease-in-out infinite; }
 .team-chat-connection.is-disconnected i { background: #c3453b; }
 @keyframes chat-pulse { 50% { opacity: .4; } }
