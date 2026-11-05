@@ -34,7 +34,7 @@ export default function DashboardPreview() {
 
       <header className="demo-header">
         <a className="demo-brand" href="/" aria-label="SolMar Celeris — voltar ao login">
-          <img src="/manus-storage/celeris-logo_054fb93a.png" alt="Logo SolMar Celeris" />
+          <img src="/assets/solmar-celeris-logo.png" alt="Logo SolMar Celeris" />
           <span className="demo-brand-caption">UFCI/RJ <small>GESTÃO DA EQUIPE</small></span>
         </a>
         <div className="demo-header-right">

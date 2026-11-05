@@ -174,6 +174,23 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
     cameraStreamRef.current = null;
   }, []);
 
+  useEffect(() => {
+    if (!cameraOpen || !cameraStreamRef.current || !cameraVideoRef.current) return;
+    const stream = cameraStreamRef.current;
+    const video = cameraVideoRef.current;
+    const startPreview = () => {
+      if (cameraStreamRef.current !== stream) return;
+      video.srcObject = stream;
+      void video.play().catch(() => setCameraError('A prévia da câmera foi bloqueada. Clique novamente no botão da câmera para autorizar a reprodução.'));
+    };
+    video.addEventListener('loadedmetadata', startPreview, { once: true });
+    startPreview();
+    return () => {
+      video.removeEventListener('loadedmetadata', startPreview);
+      if (video.srcObject === stream) video.srcObject = null;
+    };
+  }, [cameraOpen]);
+
   const loadLists = useCallback(async () => {
     try {
       const [groupResult, memberResult, directResult] = await Promise.all([
@@ -493,12 +510,6 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
       cameraStreamRef.current = stream;
       setCameraOpen(true);
-      window.setTimeout(() => {
-        if (cameraVideoRef.current) {
-          cameraVideoRef.current.srcObject = stream;
-          void cameraVideoRef.current.play();
-        }
-      }, 0);
     } catch (cameraAccessError) {
       const name = cameraAccessError instanceof DOMException ? cameraAccessError.name : '';
       const message = name === 'NotAllowedError' || name === 'SecurityError'

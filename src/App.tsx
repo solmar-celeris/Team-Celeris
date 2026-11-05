@@ -31,7 +31,7 @@ export default function App() {
         <a className="brand" href="#inicio" aria-label="Team Celeris Workspace — início">
           <img
             className="brand-logo"
-            src="/assets/celeris-logo.png"
+            src="/assets/solmar-celeris-logo.png"
             alt="Logo SolMar Celeris"
           />
           <span className="brand-name">Team Celeris Workspace</span>
