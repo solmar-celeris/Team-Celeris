@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { BookOpen, CalendarDays, Check, ClipboardList, Clock3, Folder, Megaphone, MessageCircle, Sparkles, Trash2, X, type LucideIcon } from 'lucide-react';
+import { BookOpen, CalendarDays, Check, ClipboardList, Clock3, Folder, Megaphone, MessageCircle, Sparkles, Trash2, X, Paperclip, ExternalLink, Users, type LucideIcon } from 'lucide-react';
 import {
   activityTypeLabels,
+  activityFlowLabels,
+  activityFlowStages,
+  activityPriorityLabels,
   addDays,
   buildCycleWeeksInRange,
   canManageActivity,
@@ -15,11 +18,14 @@ import {
   isActivityExpected,
   mondayOfDate,
   type Activity,
+  type ActivityAttachment,
+  type ActivityFlowStatus,
+  type ActivityPriority,
+  type ActivityWipLimit,
   type ActivityType,
   type Area,
   type GeneralStatus,
   type MemberProfile,
-  type Nucleus,
   type WeeklyStatus,
   type WeeklyUpdate,
   weeklyStatusLabels,
@@ -30,6 +36,8 @@ import TeamChat from './TeamChat';
 import TeamCalendar from './TeamCalendar';
 import ManualFunctions from './ManualFunctions';
 import AIShortcuts from './AIShortcuts';
+import AvailabilityWorkspace from './AvailabilityWorkspace';
+import PERTCPMWorkspace from './PERTCPMWorkspace';
 import { flushPendingWorkspacePushEvents, notifyActivityChange, notifyWorkspacePush } from '../../lib/notifications';
 import './workspace.css';
 
@@ -55,11 +63,12 @@ type ActivityMutation = {
   due_date: string | null;
   expected_deliverable: string;
   notes: string;
+  priority: ActivityPriority;
+  effort_points: number | null;
 };
 type FilterState = {
   search: string;
   responsible: string;
-  nucleus: string;
   area: string;
   type: string;
   status: string;
@@ -79,9 +88,12 @@ type ActivityFormState = {
   due_date: string;
   expected_deliverable: string;
   notes: string;
+  priority: ActivityPriority;
+  effort_points: string;
 };
+type AttachmentSubmission = { files: File[]; driveName: string; driveUrl: string };
 type WeeklyDraft = { status: WeeklyStatus; justification: string };
-type WorkspaceTab = 'week' | 'activities' | 'files' | 'announcements' | 'chat' | 'calendar' | 'manual' | 'ai';
+type WorkspaceTab = 'week' | 'activities' | 'files' | 'announcements' | 'chat' | 'calendar' | 'availability' | 'manual' | 'ai';
 type PushDeepLink =
   | { type: 'chat'; messageId: string; conversationId: string | null; conversationType: 'team' | 'group' | 'direct' }
   | { type: 'announcement' | 'activity'; itemId: string }
@@ -96,18 +108,19 @@ type WeekCalendarEvent = {
   location: string;
 };
 const workspaceTabs: { id: WorkspaceTab; label: string; mobileLabel: string; icon: LucideIcon }[] = [
-  { id: 'chat', label: 'Chat', mobileLabel: 'Chat', icon: MessageCircle },
+  { id: 'chat', label: 'SolMarZap', mobileLabel: 'Zap', icon: MessageCircle },
   { id: 'announcements', label: 'Comunicados', mobileLabel: 'Avisos', icon: Megaphone },
   { id: 'week', label: 'Semana', mobileLabel: 'Sem.', icon: Clock3 },
   { id: 'activities', label: 'Atividades', mobileLabel: 'Ativ.', icon: ClipboardList },
   { id: 'files', label: 'Arquivos', mobileLabel: 'Arq.', icon: Folder },
   { id: 'calendar', label: 'Calendário de eventos', mobileLabel: 'Eventos', icon: CalendarDays },
+  { id: 'availability', label: 'Disponibilidades', mobileLabel: 'Disp.', icon: Users },
   { id: 'manual', label: 'Manual de funções', mobileLabel: 'Manual', icon: BookOpen },
   { id: 'ai', label: 'IA', mobileLabel: 'IA', icon: Sparkles },
 ];
 
 const defaultFilters: FilterState = {
-  search: '', responsible: '', nucleus: '', area: '', type: '', status: '', from: '', to: '',
+  search: '', responsible: '', area: '', type: '', status: '', from: '', to: '',
 };
 
 function parsePushDeepLink(): PushDeepLink | null {
@@ -201,6 +214,8 @@ function makeFormState(activity: Activity | null, firstAreaId: string): Activity
       due_date: '',
       expected_deliverable: '',
       notes: '',
+      priority: 'medium',
+      effort_points: '',
     };
   }
 
@@ -217,6 +232,8 @@ function makeFormState(activity: Activity | null, firstAreaId: string): Activity
     due_date: activity.due_date ?? '',
     expected_deliverable: activity.expected_deliverable,
     notes: activity.notes,
+    priority: activity.priority,
+    effort_points: activity.effort_points === null ? '' : String(activity.effort_points),
   };
 }
 
@@ -235,6 +252,8 @@ function buildMutation(form: ActivityFormState, members: ActivityMember[]): Acti
     due_date: form.due_date || null,
     expected_deliverable: form.expected_deliverable.trim(),
     notes: form.notes.trim(),
+    priority: form.priority,
+    effort_points: form.effort_points === '' ? null : Number(form.effort_points),
   };
 }
 
@@ -263,6 +282,26 @@ function statusClass(status: GeneralStatus | WeeklyStatus): string {
   return `status-${status}`;
 }
 
+const ACTIVITY_FILE_TYPES: Record<string, { mime: string; extension: string }> = {
+  'image/jpeg': { mime: 'image/jpeg', extension: 'jpg' }, 'image/png': { mime: 'image/png', extension: 'png' },
+  'image/gif': { mime: 'image/gif', extension: 'gif' }, 'image/webp': { mime: 'image/webp', extension: 'webp' },
+  'image/heic': { mime: 'image/heic', extension: 'heic' }, 'image/heif': { mime: 'image/heif', extension: 'heif' },
+  'application/pdf': { mime: 'application/pdf', extension: 'pdf' }, 'text/plain': { mime: 'text/plain', extension: 'txt' },
+  'text/csv': { mime: 'text/csv', extension: 'csv' }, 'application/msword': { mime: 'application/msword', extension: 'doc' },
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': { mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', extension: 'docx' },
+  'application/vnd.ms-excel': { mime: 'application/vnd.ms-excel', extension: 'xls' },
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': { mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', extension: 'xlsx' },
+  'application/vnd.ms-powerpoint': { mime: 'application/vnd.ms-powerpoint', extension: 'ppt' },
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': { mime: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', extension: 'pptx' },
+};
+function safeDriveUrl(value: string): string | null {
+  try {
+    const url = new URL(value.trim());
+    if (url.protocol !== 'https:' || url.username || url.password || !['drive.google.com', 'docs.google.com'].includes(url.hostname.toLowerCase())) return null;
+    return url.href;
+  } catch { return null; }
+}
+
 export default function TeamWorkspace({ client, userId, profile, onLogout }: TeamWorkspaceProps) {
   const [pushTarget] = useState<PushDeepLink | null>(() => parsePushDeepLink());
   const [tab, setTab] = useState<WorkspaceTab>(() => tabForPush(pushTarget));
@@ -270,12 +309,22 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
     document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light',
   );
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [activityAttachments, setActivityAttachments] = useState<ActivityAttachment[]>([]);
+  const [attachmentUrls, setAttachmentUrls] = useState<Record<string, string>>({});
+  const [wipLimits, setWipLimits] = useState<ActivityWipLimit[]>([]);
+  const [activityView, setActivityView] = useState<'list' | 'board' | 'pert'>('list');
+  const [savingFlowId, setSavingFlowId] = useState<string | null>(null);
+  const [flowTargetById, setFlowTargetById] = useState<Record<string, ActivityFlowStatus | ''>>({});
+  const [blockedReasonById, setBlockedReasonById] = useState<Record<string, string>>({});
+  const [wipAreaEditor, setWipAreaEditor] = useState('');
+  const [wipDrafts, setWipDrafts] = useState<Record<string, string>>({});
+  const [savingWipKey, setSavingWipKey] = useState<string | null>(null);
+  const [driveDraftById, setDriveDraftById] = useState<Record<string, { name: string; url: string }>>({});
   const [weekCalendarEvents, setWeekCalendarEvents] = useState<WeekCalendarEvent[]>([]);
   const [weekEventsLoading, setWeekEventsLoading] = useState(false);
   const [weekEventsError, setWeekEventsError] = useState(false);
   const [calendarFocusDate, setCalendarFocusDate] = useState<string | undefined>(() => pushTarget?.type === 'calendar' ? pushTarget.date ?? undefined : undefined);
   const [areas, setAreas] = useState<Area[]>([]);
-  const [nuclei, setNuclei] = useState<Nucleus[]>([]);
   const [members, setMembers] = useState<ActivityMember[]>([]);
   const [displayName, setDisplayName] = useState(profile.full_name || 'Integrante');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -382,29 +431,26 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
       const nextWeeks = buildCycleWeeksInRange(nextCycleStart, nextCycleEnd);
       if (nextWeeks.length === 0) throw new Error('O período do projeto no Supabase tem uma data final anterior à inicial.');
 
-      const [activityResult, areaResult, nucleusResult, profileResult] = await Promise.all([
+      const [activityResult, areaResult, profileResult, attachmentResult, wipResult] = await Promise.all([
         client.from('activities')
-          .select('id,code,area_id,name,description,activity_type,frequency,execution_condition,responsible_name,responsible_user_id,start_date,due_date,expected_deliverable,notes,created_at,updated_at,archived_at')
+          .select('id,code,area_id,name,description,activity_type,frequency,execution_condition,responsible_name,responsible_user_id,start_date,due_date,expected_deliverable,notes,flow_status,priority,effort_points,blocked_reason,pert_optimistic_days,pert_most_likely_days,pert_pessimistic_days,created_at,updated_at,archived_at')
           .is('archived_at', null)
           .order('code', { ascending: true }),
         client.from('areas')
           .select('id,name,code_prefix,nucleus_id,is_active')
-          .eq('is_active', true)
-          .order('name', { ascending: true }),
-        client.from('nuclei')
-          .select('id,name')
           .order('name', { ascending: true }),
         client.from('profiles')
           .select('user_id,full_name,avatar_path,area_id,role,status')
           .eq('status', 'active')
           .order('full_name', { ascending: true }),
+        client.from('activity_attachments').select('id,activity_id,kind,storage_path,content_type,file_name,file_size,drive_url,created_at').order('created_at', { ascending: true }),
+        client.from('activity_flow_wip_limits').select('area_id,flow_status,limit_count'),
       ]);
-      const failure = activityResult.error ?? areaResult.error ?? nucleusResult.error ?? profileResult.error;
+      const failure = activityResult.error ?? areaResult.error ?? profileResult.error ?? attachmentResult.error ?? wipResult.error;
       if (failure) throw failure;
 
       const activitiesFromDatabase = (activityResult.data ?? []) as unknown as Activity[];
       const nextAreas = (areaResult.data ?? []) as unknown as Area[];
-      const nextNuclei = (nucleusResult.data ?? []) as unknown as Nucleus[];
       const nextMembers = (profileResult.data ?? []) as unknown as ActivityMember[];
       const namesByUserId = new Map(nextMembers.map((member) => [member.user_id, member.full_name]));
       const nextActivities = activitiesFromDatabase.map((activity) => {
@@ -424,8 +470,10 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
         return validStarts.has(current) ? current : (nextWeeks[0]?.start ?? nextCycleStart);
       });
       setActivities(nextActivities);
+      setActivityAttachments((attachmentResult.data ?? []) as ActivityAttachment[]);
+      setWipLimits((wipResult.data ?? []) as ActivityWipLimit[]);
       setAreas(nextAreas);
-      setNuclei(nextNuclei);
+      setWipAreaEditor((current) => (current && nextAreas.some((area) => area.id === current && area.is_active)) ? current : (nextAreas.find((area) => area.is_active)?.id || ''));
       setMembers(nextMembers);
       setUpdates(nextUpdates);
     } catch (error) {
@@ -439,6 +487,25 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    if (!wipAreaEditor) return;
+    setWipDrafts(Object.fromEntries(activityFlowStages.map((stage) => {
+      const limit = wipLimits.find((item) => item.area_id === wipAreaEditor && item.flow_status === stage)?.limit_count;
+      return [stage, limit == null ? '' : String(limit)];
+    })));
+  }, [wipAreaEditor, wipLimits]);
+
+  useEffect(() => {
+    const local = activityAttachments.filter((attachment) => attachment.kind === 'file' && attachment.storage_path);
+    if (!local.length) { setAttachmentUrls({}); return; }
+    let active = true;
+    void Promise.all(local.map(async (attachment) => {
+      const { data } = await client.storage.from('activity-attachments').createSignedUrl(attachment.storage_path!, 3600);
+      return [attachment.id, data?.signedUrl ?? ''] as const;
+    })).then((entries) => { if (active) setAttachmentUrls(Object.fromEntries(entries.filter(([, url]) => url))); });
+    return () => { active = false; };
+  }, [activityAttachments, client]);
 
   useEffect(() => {
     if (profile.status === 'active') void flushPendingWorkspacePushEvents(client);
@@ -497,7 +564,9 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
   }, [client, selectedWeek?.start]);
 
   const areasById = useMemo(() => new Map(areas.map((area) => [area.id, area])), [areas]);
-  const nucleiById = useMemo(() => new Map(nuclei.map((nucleus) => [nucleus.id, nucleus])), [nuclei]);
+  const activeAreas = useMemo(() => areas.filter((area) => area.is_active), [areas]);
+  const isAreaActive = (areaId: string) => areasById.get(areaId)?.is_active === true;
+  const mayUpdateActivity = (activity: Activity) => isAreaActive(activity.area_id) && canUpdateActivityWeek(profile, userId, activity);
   const updatesByActivity = useMemo(() => {
     const map = new Map<string, WeeklyUpdate[]>();
     for (const update of updates) {
@@ -552,8 +621,6 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
     const source = tab === 'week' ? expectedActivities : activities;
     const search = filters.search.trim().toLocaleLowerCase('pt-BR');
     return source.filter((activity) => {
-      const area = areasById.get(activity.area_id);
-      const nucleus = area ? nucleiById.get(area.nucleus_id) : undefined;
       const status = tab === 'week'
         ? (updatesForWeek.get(activity.id)?.status ?? 'not_started')
         : generalStatusById.get(activity.id) ?? 'not_started';
@@ -561,7 +628,6 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
         .join(' ').toLocaleLowerCase('pt-BR');
       if (search && !haystack.includes(search)) return false;
       if (filters.responsible && activity.responsible_name !== filters.responsible) return false;
-      if (filters.nucleus && nucleus?.id !== filters.nucleus) return false;
       if (filters.area && activity.area_id !== filters.area) return false;
       if (filters.type && activity.activity_type !== filters.type) return false;
       if (filters.status && status !== filters.status) return false;
@@ -571,13 +637,71 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
       if (filters.to && activityStart > filters.to) return false;
       return true;
     });
-  }, [activities, areasById, expectedActivities, filters, generalStatusById, nucleiById, tab, updatesForWeek]);
+  }, [activities, expectedActivities, filters, generalStatusById, tab, updatesForWeek]);
 
   useEffect(() => {
     if (tab !== 'activities' || loading || pushTarget?.type !== 'activity') return;
     const card = document.getElementById(`activity-card-${pushTarget.itemId}`);
     card?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [loading, pushTarget, tab, visibleActivities]);
+
+  const boardColumns = activityFlowStages.map((stage) => {
+    const boardActivities = activities.filter((activity) => isAreaActive(activity.area_id) && (!filters.area || activity.area_id === filters.area));
+    const cards = visibleActivities.filter((activity) => isAreaActive(activity.area_id) && activity.flow_status === stage);
+    const areaIds = [...new Set(boardActivities.map((activity) => activity.area_id))];
+    const wipCount = boardActivities.filter((activity) => activity.flow_status === stage).length;
+    const exceededAreas = areaIds.flatMap((areaId) => {
+      const count = boardActivities.filter((activity) => activity.area_id === areaId && activity.flow_status === stage).length;
+      const setting = wipLimits.find((item) => item.area_id === areaId && item.flow_status === stage);
+      return setting?.limit_count !== null && setting?.limit_count !== undefined && count > setting.limit_count
+        ? [{ areaId, count, limit: setting.limit_count }] : [];
+    });
+    const configured = areaIds.map((areaId) => wipLimits.find((item) => item.area_id === areaId && item.flow_status === stage)?.limit_count).filter((value): value is number => value !== null && value !== undefined);
+    return { stage, cards, wipCount, exceededAreas, configuredLimit: configured.length ? configured.reduce((sum, value) => sum + value, 0) : null };
+  });
+
+  function renderFlowCard(activity: Activity) {
+    const area = areasById.get(activity.area_id);
+    const canFlow = mayUpdateActivity(activity);
+    const canEdit = isAreaActive(activity.area_id) && canManageActivity(profile, activity.area_id);
+    const transitions: Record<ActivityFlowStatus, ActivityFlowStatus[]> = {
+      backlog: ['ready'], ready: ['in_progress'], in_progress: ['blocked', 'done'],
+      blocked: ['ready', 'in_progress'], done: ['in_progress'],
+    };
+    const related = activityAttachments.filter((attachment) => attachment.activity_id === activity.id);
+    const selectedTarget = flowTargetById[activity.id] ?? '';
+    return (
+      <article id={`activity-card-${activity.id}`} className={`activity-board-card${pushTarget?.type === 'activity' && pushTarget.itemId === activity.id ? ' is-push-target' : ''}`} key={activity.id}>
+        <div className="activity-board-card-top"><span className="workspace-code">{activity.code}</span><span className={`activity-priority priority-${activity.priority}`}>{activityPriorityLabels[activity.priority]}</span></div>
+        <h3>{activity.name}</h3>
+        <p className="activity-board-card-area">{area?.name ?? 'Área'}{activity.due_date ? ` · Prazo ${formatShortDate(activity.due_date)}` : ''}</p>
+        {activity.description && <p className="activity-board-card-description">{activity.description}</p>}
+        <div className="activity-board-card-facts"><span>Responsável: {activity.responsible_name || 'A definir'}</span><span>Esforço: {activity.effort_points === null ? 'não estimado' : `${activity.effort_points} ponto(s)`}</span></div>
+        {activity.flow_status === 'blocked' && <p className="activity-blocked-reason"><strong>Bloqueio:</strong> {activity.blocked_reason}</p>}
+        {related.length > 0 && <ul className="activity-attachments" aria-label="Anexos da atividade">{related.map((attachment) => <li key={attachment.id}>
+          {attachment.kind === 'drive_link' && attachment.drive_url
+            ? <a href={attachment.drive_url} target="_blank" rel="noopener noreferrer"><ExternalLink size={13} aria-hidden="true" />{attachment.file_name}<span className="sr-only"> (abre em nova aba; acesso depende das permissões do Google)</span></a>
+            : attachmentUrls[attachment.id] ? <a href={attachmentUrls[attachment.id]} target="_blank" rel="noopener noreferrer"><Paperclip size={13} aria-hidden="true" />{attachment.file_name}</a> : <span><Paperclip size={13} aria-hidden="true" />{attachment.file_name} (link temporariamente indisponível)</span>}
+        </li>)}</ul>}
+        <div className="activity-flow-control">
+          {canFlow ? <>
+            <label><span>Mover cartão</span><select aria-label={`Mover ${activity.code} para outra etapa`} value={selectedTarget} disabled={savingFlowId === activity.id} onChange={(event) => {
+              const target = event.target.value as ActivityFlowStatus | '';
+              setFlowTargetById((current) => ({ ...current, [activity.id]: target }));
+              if (target && target !== 'blocked') void moveActivityFlow(activity, target);
+            }}>
+              <option value="">Escolha uma etapa…</option>{transitions[activity.flow_status].map((target) => <option key={target} value={target}>{activityFlowLabels[target]}</option>)}
+            </select></label>
+            {selectedTarget === 'blocked' && <div className="activity-block-form"><label><span>Motivo do bloqueio <b>obrigatório</b></span><textarea value={blockedReasonById[activity.id] ?? ''} rows={2} onChange={(event) => setBlockedReasonById((current) => ({ ...current, [activity.id]: event.target.value }))} /></label><button type="button" disabled={savingFlowId === activity.id || !(blockedReasonById[activity.id] ?? '').trim()} onClick={() => void moveActivityFlow(activity, 'blocked', blockedReasonById[activity.id] ?? '')}>{savingFlowId === activity.id ? 'Salvando…' : 'Registrar bloqueio'}</button></div>}
+          </> : <span className="workspace-read-only">Fluxo somente leitura</span>}
+          {canFlow && <div className="activity-card-attachment-controls"><label><span>Anexar arquivo</span><input type="file" multiple accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,application/pdf,text/plain,text/csv,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation" disabled={savingFlowId === activity.id} onChange={(event) => { const selected = Array.from(event.target.files ?? []); if (selected.length) void uploadActivityFiles(activity, selected); event.target.value = ''; }} /></label><label><span>Nome do link Google</span><input maxLength={240} value={driveDraftById[activity.id]?.name ?? ''} onChange={(event) => setDriveDraftById((current) => ({ ...current, [activity.id]: { ...(current[activity.id] ?? { name: '', url: '' }), name: event.target.value } }))} /></label><label><span>URL do Drive/Docs</span><input type="url" value={driveDraftById[activity.id]?.url ?? ''} onChange={(event) => setDriveDraftById((current) => ({ ...current, [activity.id]: { ...(current[activity.id] ?? { name: '', url: '' }), url: event.target.value } }))} /></label><button type="button" onClick={() => void addActivityDriveLink(activity)} disabled={savingFlowId === activity.id}>Adicionar link</button></div>}
+          {canEdit && <button type="button" className="activity-card-edit" onClick={() => { setDialogError(''); setDialogActivity(activity); }}>Editar</button>}
+        </div>
+      </article>
+    );
+  }
+
+  const activityEditorAreas = useMemo(() => profile.role === 'area_lead' ? activeAreas.filter((area) => area.id === profile.area_id) : activeAreas, [activeAreas, profile.area_id, profile.role]);
 
   const permissionSummary = profile.role === 'admin'
     ? 'Você pode editar atividades e registrar status em toda a equipe.'
@@ -587,54 +711,159 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
         ? 'Você pode atualizar status das atividades vinculadas à sua conta; a edição também é conferida pelo banco.'
         : 'Seu perfil é somente leitura.';
 
-  async function saveActivity(form: ActivityFormState) {
+  async function saveActivity(form: ActivityFormState, submission: AttachmentSubmission) {
     const validation = validateActivity(form);
-    if (validation) {
-      setDialogError(validation);
-      return;
+    if (validation) { setDialogError(validation); return; }
+    if (form.effort_points !== '' && (!Number.isInteger(Number(form.effort_points)) || Number(form.effort_points) < 0 || Number(form.effort_points) > 100)) {
+      setDialogError('Informe um esforço inteiro entre 0 e 100, ou deixe em branco.'); return;
     }
+    if (!dialogActivity && !(profile.role === 'admin' || (profile.role === 'area_lead' && profile.area_id === form.area_id))) {
+      setDialogError('Somente Administrador ou Líder da área selecionada pode criar atividade.'); return;
+    }
+    const driveUrl = submission.driveUrl.trim() ? safeDriveUrl(submission.driveUrl) : null;
+    if (submission.driveUrl.trim() && !driveUrl) { setDialogError('Use um link HTTPS do host exato drive.google.com ou docs.google.com, sem credenciais.'); return; }
+    for (const file of submission.files) {
+      const mime = file.type.toLowerCase();
+      if (!ACTIVITY_FILE_TYPES[mime] || file.size <= 0 || file.size > 15 * 1024 * 1024) {
+        setDialogError(`Arquivo “${file.name}” inválido. Aceite apenas imagem, PDF, TXT/CSV ou DOC/XLS/PPT até 15 MiB.`); return;
+      }
+    }
+    if (driveUrl && !submission.driveName.trim()) { setDialogError('Informe um nome para o link do Google Drive/Docs.'); return; }
+
     setSavingActivity(true);
     setDialogError('');
     const payload = buildMutation(form, members);
     const oldResponsibleUserId = dialogActivity ? dialogActivity.responsible_user_id : null;
-    const shouldNotifyAssignee = Boolean(payload.responsible_user_id)
-      && payload.responsible_user_id !== oldResponsibleUserId;
+    const shouldNotifyAssignee = Boolean(payload.responsible_user_id) && payload.responsible_user_id !== oldResponsibleUserId;
     let savedActivityId = '';
+    let parentSaved = false;
     try {
       if (dialogActivity) {
-        const { data, error } = await client.from('activities')
-          .update(payload)
-          .eq('id', dialogActivity.id)
-          .select('id')
-          .single();
+        const { data, error } = await client.from('activities').update(payload).eq('id', dialogActivity.id).select('id').single();
         if (error) throw error;
         savedActivityId = data.id;
-        setFeedback('Atividade atualizada.');
+        parentSaved = true;
       } else {
-        const { data, error } = await client.from('activities').insert(payload).select('id').single();
+        const { data, error } = await client.from('activities').insert({ ...payload, flow_status: 'backlog', blocked_reason: '' }).select('id').single();
         if (error) throw error;
         savedActivityId = data.id;
-        setFeedback('Atividade cadastrada. O código foi gerado pelo banco.');
+        parentSaved = true;
+      }
+      for (const file of submission.files) {
+        const kind = ACTIVITY_FILE_TYPES[file.type.toLowerCase()];
+        const objectPath = `${userId}/${savedActivityId}/${crypto.randomUUID()}.${kind.extension}`;
+        const { error: uploadError } = await client.storage.from('activity-attachments').upload(objectPath, file, { contentType: kind.mime, upsert: false });
+        if (uploadError) throw uploadError;
+        const { error: metadataError } = await client.from('activity_attachments').insert({
+          activity_id: savedActivityId, kind: 'file', storage_path: objectPath, content_type: kind.mime,
+          file_name: file.name.trim().slice(0, 240), file_size: file.size, created_by: userId,
+        });
+        if (metadataError) {
+          await client.storage.from('activity-attachments').remove([objectPath]);
+          throw metadataError;
+        }
+      }
+      if (driveUrl) {
+        const { error } = await client.from('activity_attachments').insert({
+          activity_id: savedActivityId, kind: 'drive_link', file_name: submission.driveName.trim().slice(0, 240), drive_url: driveUrl, created_by: userId,
+        });
+        if (error) throw error;
       }
       setDialogActivity(false);
+      setFeedback(dialogActivity ? 'Atividade atualizada.' : 'Atividade cadastrada no Backlog. O código foi gerado pelo banco.');
       if (shouldNotifyAssignee) {
         void notifyWorkspacePush(client, 'activity_assigned', savedActivityId).then((result) => {
-          if (result === 'failed') {
-            setFeedback('Atividade salva, mas o push da nova atribuição não foi enviado. A atividade continua salva.');
-          }
+          if (result === 'failed') setFeedback('Atividade salva, mas o push da nova atribuição não foi enviado. A atividade continua salva.');
         });
       }
       await loadData(true);
       void notifyActivityChange(client, 'activities', savedActivityId).then((result) => {
-        if (result.status === 'failed') {
-          setFeedback('Atividade salva, mas o aviso por e-mail não pôde ser enviado. A atividade continua salva.');
-        }
+        if (result.status === 'failed') setFeedback('Atividade salva, mas o aviso por e-mail não pôde ser enviado. A atividade continua salva.');
       });
     } catch (error) {
-      setDialogError(`Não foi possível salvar. Confira sua permissão e os dados: ${errorText(error)}`);
-    } finally {
-      setSavingActivity(false);
-    }
+      if (parentSaved && !dialogActivity) {
+        setDialogActivity(false);
+        await loadData(true);
+        setFeedback(`Atividade criada; não foi possível completar todos os anexos. Você pode tentar novamente ao editar o cartão. ${errorText(error)}`);
+      } else setDialogError(`Não foi possível salvar a atividade ou seus anexos. Os arquivos enviados sem metadados foram removidos. ${errorText(error)}`);
+    } finally { setSavingActivity(false); }
+  }
+
+  async function uploadActivityFiles(activity: Activity, files: File[]) {
+    if (!mayUpdateActivity(activity)) return;
+    const unsupported = files.find((file) => !ACTIVITY_FILE_TYPES[file.type.toLowerCase()] || file.size <= 0 || file.size > 15 * 1024 * 1024);
+    if (unsupported) { setFeedback(`Arquivo “${unsupported.name}” não permitido. Use os tipos seguros aceitos até 15 MiB.`); return; }
+    setSavingFlowId(activity.id); setFeedback('');
+    try {
+      for (const file of files) {
+        const kind = ACTIVITY_FILE_TYPES[file.type.toLowerCase()];
+        const objectPath = `${userId}/${activity.id}/${crypto.randomUUID()}.${kind.extension}`;
+        const { error: uploadError } = await client.storage.from('activity-attachments').upload(objectPath, file, { contentType: kind.mime, upsert: false });
+        if (uploadError) throw uploadError;
+        const { error: metadataError } = await client.from('activity_attachments').insert({ activity_id: activity.id, kind: 'file', storage_path: objectPath, content_type: kind.mime, file_name: file.name.trim().slice(0, 240), file_size: file.size, created_by: userId });
+        if (metadataError) { await client.storage.from('activity-attachments').remove([objectPath]); throw metadataError; }
+      }
+      await loadData(true); setFeedback('Anexo(s) adicionado(s) à atividade.');
+    } catch (error) {
+      setFeedback(`Não foi possível concluir o envio. Arquivos sem metadados foram removidos; anexos já salvos permanecem disponíveis. ${errorText(error)}`);
+    } finally { setSavingFlowId(null); }
+  }
+
+  async function addActivityDriveLink(activity: Activity) {
+    if (!mayUpdateActivity(activity)) return;
+    const draft = driveDraftById[activity.id] ?? { name: '', url: '' };
+    const url = safeDriveUrl(draft.url);
+    if (!draft.name.trim() || !url) { setFeedback('Informe um nome e um link HTTPS válido de drive.google.com ou docs.google.com.'); return; }
+    setSavingFlowId(activity.id);
+    try {
+      const { error } = await client.from('activity_attachments').insert({ activity_id: activity.id, kind: 'drive_link', file_name: draft.name.trim().slice(0, 240), drive_url: url, created_by: userId });
+      if (error) throw error;
+      setDriveDraftById((current) => ({ ...current, [activity.id]: { name: '', url: '' } }));
+      await loadData(true); setFeedback('Link nomeado adicionado. A abertura depende das permissões do Google.');
+    } catch (error) { setFeedback(`Não foi possível salvar o link: ${errorText(error)}`); }
+    finally { setSavingFlowId(null); }
+  }
+
+  async function moveActivityFlow(activity: Activity, target: ActivityFlowStatus, blockedReason = '') {
+    if (!mayUpdateActivity(activity)) { setFeedback('Você não tem permissão para alterar o fluxo desta atividade.'); return; }
+    if (target === 'blocked' && !blockedReason.trim()) { setFeedback('Informe o motivo obrigatório do bloqueio.'); return; }
+    setSavingFlowId(activity.id);
+    setFeedback('');
+    try {
+      const { data, error } = await client.rpc('move_activity_flow', {
+        p_activity_id: activity.id, p_flow_status: target, p_blocked_reason: blockedReason.trim(),
+      });
+      if (error) throw error;
+      const updated = data as Activity;
+      setActivities((current) => current.map((item) => item.id === activity.id ? { ...item, flow_status: updated.flow_status, blocked_reason: updated.blocked_reason } : item));
+      setFlowTargetById((current) => ({ ...current, [activity.id]: '' }));
+      setBlockedReasonById((current) => ({ ...current, [activity.id]: '' }));
+      setFeedback(`Cartão ${activity.code} movido para ${activityFlowLabels[target]}.`);
+    } catch (error) { setFeedback(`Não foi possível mover o cartão: ${errorText(error)}`); }
+    finally { setSavingFlowId(null); }
+  }
+
+  async function saveWipSettings() {
+    if (profile.role !== 'admin' || !wipAreaEditor) return;
+    setSavingWipKey(wipAreaEditor); setFeedback('');
+    try {
+      for (const stage of activityFlowStages) {
+        const raw = wipDrafts[stage] ?? '';
+        if (raw !== '' && (!/^\d+$/.test(raw) || Number(raw) > 10000)) throw new Error(`O limite de ${activityFlowLabels[stage]} deve ser um inteiro não negativo ou ficar vazio.`);
+      }
+      for (const stage of activityFlowStages) {
+        const raw = wipDrafts[stage] ?? '';
+        const { error } = await client.from('activity_flow_wip_limits').upsert({
+          area_id: wipAreaEditor, flow_status: stage, limit_count: raw === '' ? null : Number(raw), updated_by: userId,
+        }, { onConflict: 'area_id,flow_status' });
+        if (error) throw error;
+      }
+      const { data, error } = await client.from('activity_flow_wip_limits').select('area_id,flow_status,limit_count');
+      if (error) throw error;
+      setWipLimits((data ?? []) as ActivityWipLimit[]);
+      setFeedback('Limites WIP atualizados. Campo vazio significa sem limite configurado.');
+    } catch (error) { setFeedback(`Não foi possível salvar os limites WIP: ${errorText(error)}`); }
+    finally { setSavingWipKey(null); }
   }
 
   async function removeActivity(activity: Activity) {
@@ -733,8 +962,8 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
         <main className={`workspace-main${tab === 'chat' ? ' is-chat-page' : ''}`} id="workspace">
           <div className="workspace-page-heading">
             <div>
-              <p className="workspace-kicker">{tab === 'week' ? 'ACOMPANHAMENTO SEMANAL' : tab === 'activities' ? 'CADASTRO DA EQUIPE' : tab === 'files' ? 'LINKS COMPARTILHADOS' : tab === 'announcements' ? 'MURAL DA EQUIPE' : tab === 'calendar' ? 'AGENDA DA EQUIPE' : tab === 'manual' ? 'CARGOS E CAPACITAÇÃO' : tab === 'ai' ? 'FERRAMENTAS EXTERNAS' : 'CONVERSA EM TEMPO REAL'}</p>
-              <h1>{tab === 'week' ? 'Semana em movimento.' : tab === 'activities' ? 'Atividades da equipe.' : tab === 'files' ? 'Arquivos da equipe.' : tab === 'announcements' ? 'Comunicados da equipe.' : tab === 'calendar' ? 'Calendário de eventos.' : tab === 'manual' ? 'Manual de funções.' : tab === 'ai' ? 'Atalhos de IA.' : 'Chat da equipe.'}</h1>
+              <p className="workspace-kicker">{tab === 'week' ? 'ACOMPANHAMENTO SEMANAL' : tab === 'activities' ? 'CADASTRO DA EQUIPE' : tab === 'files' ? 'LINKS COMPARTILHADOS' : tab === 'announcements' ? 'MURAL DA EQUIPE' : tab === 'calendar' ? 'AGENDA DA EQUIPE' : tab === 'availability' ? 'DISPONIBILIDADES E ESCALAS' : tab === 'manual' ? 'CARGOS E CAPACITAÇÃO' : tab === 'ai' ? 'FERRAMENTAS EXTERNAS' : 'SOLMARZAP · MENSAGENS'}</p>
+              <h1>{tab === 'week' ? 'Semana em movimento.' : tab === 'activities' ? 'Atividades da equipe.' : tab === 'files' ? 'Arquivos da equipe.' : tab === 'announcements' ? 'Comunicados da equipe.' : tab === 'calendar' ? 'Calendário de eventos.' : tab === 'availability' ? 'Disponibilidades da equipe.' : tab === 'manual' ? 'Manual de funções.' : tab === 'ai' ? 'Atalhos de IA.' : 'SolMarZap'}</h1>
               <p className="workspace-subtitle">{tab === 'week'
                 ? 'Registre o que avançou e sinalize o que precisa de atenção.'
                 : tab === 'activities'
@@ -743,13 +972,15 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
                     ? 'Acesse atalhos visuais para as pastas compartilhadas.'
                     : tab === 'announcements'
                       ? 'Compartilhe avisos com toda a equipe ou com uma área.'
-                      : tab === 'manual'
-                        ? 'Consulte o que cada núcleo e área deve fazer e quais competências desenvolver.'
+                      : tab === 'availability'
+                        ? 'Informe seus horários semanais e consulte as disponibilidades ou escalas do time.'
+                        : tab === 'manual'
+                        ? 'Consulte as responsabilidades de cada área e as competências a desenvolver.'
                         : tab === 'ai'
                           ? 'Acesse plataformas de inteligência artificial em poucos cliques.'
                           : tab === 'calendar'
                             ? 'Organize reuniões, treinamentos e compromissos externos e acompanhe-os também na Semana.'
-                            : 'Converse com todos os integrantes ativos em uma sala compartilhada ou inicie uma conversa privada.'}</p>
+                            : 'Converse em grupo ou de forma privada, com chamadas, arquivos e leitura em tempo real.'}</p>
             </div>
             <div className="workspace-heading-actions">
               {(tab === 'week' || tab === 'activities') && <span className="workspace-cycle-chip">PERÍODO · {formatFullDate(cycleStart)} – {formatFullDate(cycleEnd)} · {cycleWeeksCount} SEMANAS</span>}
@@ -776,7 +1007,7 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
           )}
           {feedback && <p className="workspace-feedback" role="status">{feedback}</p>}
 
-          {(tab === 'week' || tab === 'activities') && <div className="workspace-filter-panel">
+          {(tab === 'week' || (tab === 'activities' && activityView !== 'pert')) && <div className="workspace-filter-panel">
             <label className="workspace-search">
               <span>Buscar</span>
               <input value={filters.search} onChange={(event) => updateFilter('search', event.target.value)} placeholder="Código, nome, descrição…" />
@@ -789,17 +1020,10 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
               </select>
             </label>
             <label>
-              <span>Núcleo</span>
-              <select value={filters.nucleus} onChange={(event) => { updateFilter('nucleus', event.target.value); updateFilter('area', ''); }}>
-                <option value="">Todos</option>
-                {nuclei.map((nucleus) => <option key={nucleus.id} value={nucleus.id}>{nucleus.name}</option>)}
-              </select>
-            </label>
-            <label>
               <span>Área</span>
               <select value={filters.area} onChange={(event) => updateFilter('area', event.target.value)}>
                 <option value="">Todas</option>
-                {areas.filter((area) => !filters.nucleus || area.nucleus_id === filters.nucleus).map((area) => <option key={area.id} value={area.id}>{area.name}</option>)}
+                {areas.map((area) => <option key={area.id} value={area.id}>{area.is_active ? area.name : `${area.name} · inativa`}</option>)}
               </select>
             </label>
             <label>
@@ -857,15 +1081,13 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
                     const saved = updatesForWeek.get(activity.id);
                     const draft = drafts[activity.id] ?? { status: 'not_started' as WeeklyStatus, justification: '' };
                     const area = areasById.get(activity.area_id);
-                    const nucleus = area ? nucleiById.get(area.nucleus_id) : undefined;
-                    const mayUpdate = canUpdateActivityWeek(profile, userId, activity);
+                    const mayUpdate = mayUpdateActivity(activity);
                     return (
                       <article className="workspace-week-card" key={activity.id}>
                         <div className="workspace-week-card-main">
                           <div className="workspace-activity-meta">
                             <span className="workspace-code">{activity.code}</span>
-                            <span>{nucleus?.name ?? 'Núcleo'}</span><i />
-                            <span>{area?.name ?? 'Área'}</span>
+                            <span>{area?.name ?? 'Área removida'}</span>
                             {!saved && <span className="workspace-no-update">Sem atualização</span>}
                           </div>
                           <h3>{activity.name}</h3>
@@ -944,71 +1166,50 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
           {tab === 'activities' && (
             <section className="workspace-activities-section" aria-labelledby="activity-list-title">
               <div className="workspace-list-heading">
-                <div>
-                  <p className="workspace-kicker">LISTA OPERACIONAL</p>
-                  <h2 id="activity-list-title">Atividades cadastradas</h2>
-                </div>
-                <span className="workspace-count">{visibleActivities.length} de {activities.length}</span>
+                <div><p className="workspace-kicker">FLUXO CONTÍNUO · SEM SPRINTS OBRIGATÓRIAS</p><h2 id="activity-list-title">{activityView === 'pert' ? 'Marcos · caminho crítico PERT/CPM' : 'Atividades cadastradas'}</h2></div>
+                <div className="activity-view-tools"><span className="workspace-count">{activityView === 'pert' ? `${activities.filter((item) => item.activity_type === 'marco' && isAreaActive(item.area_id)).length} marcos` : `${visibleActivities.length} de ${activities.length}`}</span><div className="activity-view-switch" role="group" aria-label="Visualização de atividades">
+                  <button type="button" aria-pressed={activityView === 'list'} onClick={() => setActivityView('list')}>Lista</button><button type="button" aria-pressed={activityView === 'board'} onClick={() => setActivityView('board')}>Quadro</button><button type="button" aria-pressed={activityView === 'pert'} onClick={() => setActivityView('pert')}>PERT/CPM</button>
+                </div></div>
               </div>
-              {loading ? <WorkspaceLoading /> : visibleActivities.length === 0 ? (
-                <EmptyState title={activities.length === 0 ? 'Ainda não há atividades no banco.' : 'Nenhuma atividade corresponde aos filtros.'}>
-                  {activities.length === 0
-                    ? 'Se esperava encontrar as 58 atividades iniciais, confirme que a migração foi executada no Supabase conectado a este site.'
-                    : 'Limpe os filtros ou tente outra busca.'}
-                </EmptyState>
+              {activityView === 'board' && profile.role === 'admin' && (
+                <section className="activity-wip-editor" aria-label="Configuração de limites WIP">
+                  <div><strong>Limites WIP por área</strong><p>Opcional e configurável pela Administração; vazio significa sem limite. Ajuste após observar o fluxo da equipe.</p></div>
+                  <label><span>Área do quadro</span><select value={wipAreaEditor} onChange={(event) => {
+                    const areaId = event.target.value; setWipAreaEditor(areaId);
+                    const next: Record<string, string> = {}; for (const stage of activityFlowStages) { const setting = wipLimits.find((item) => item.area_id === areaId && item.flow_status === stage); next[stage] = setting?.limit_count == null ? '' : String(setting.limit_count); }
+                    setWipDrafts(next);
+                  }}><option value="">Selecione uma área</option>{activeAreas.map((area) => <option value={area.id} key={area.id}>{area.name}</option>)}</select></label>
+                  {wipAreaEditor && <div className="activity-wip-fields">{activityFlowStages.map((stage) => <label key={stage}><span>{activityFlowLabels[stage]}</span><input aria-label={`Limite WIP para ${activityFlowLabels[stage]}`} type="number" min="0" step="1" placeholder="Sem limite" value={wipDrafts[stage] ?? ''} onChange={(event) => setWipDrafts((current) => ({ ...current, [stage]: event.target.value }))} /></label>)}<button type="button" onClick={() => void saveWipSettings()} disabled={savingWipKey === wipAreaEditor}>{savingWipKey ? 'Salvando…' : 'Salvar limites'}</button></div>}
+                </section>
+              )}
+              {activityView === 'pert' ? (loading ? <WorkspaceLoading /> : <PERTCPMWorkspace client={client} activities={activities.filter((activity) => isAreaActive(activity.area_id))} profile={profile} />) : loading ? <WorkspaceLoading /> : visibleActivities.length === 0 ? (
+                <EmptyState title={activities.length === 0 ? 'Ainda não há atividades no banco.' : 'Nenhuma atividade corresponde aos filtros.'}>{activities.length === 0 ? 'Confirme que a migration exclusiva de fluxo e anexos foi aplicada no Supabase conectado.' : 'Limpe os filtros ou tente outra busca.'}</EmptyState>
+              ) : activityView === 'board' ? (
+                <div className="activity-board" aria-label="Quadro Scrumban de atividades">
+                  {boardColumns.map(({ stage, cards, wipCount, exceededAreas, configuredLimit }) => (
+                    <section className={`activity-board-column${exceededAreas.length ? ' is-over-wip' : ''}`} key={stage} aria-labelledby={`activity-stage-${stage}`}>
+                      <header><div><h3 id={`activity-stage-${stage}`}>{activityFlowLabels[stage]}</h3><span className="activity-board-count">{cards.length} cartão(ões)</span></div><span className={`activity-wip-badge${exceededAreas.length ? ' is-over' : ''}`}>{configuredLimit === null ? `${wipCount} · sem limite` : `WIP ${wipCount} · limite somado ${configuredLimit}`}</span></header>
+                      {exceededAreas.length > 0 && <p className="activity-wip-warning" role="status">Limite excedido: {exceededAreas.map((item) => `${areasById.get(item.areaId)?.name ?? 'Área'} (${item.count}/${item.limit})`).join(', ')}</p>}
+                      <div className="activity-board-cards">{cards.length ? cards.map(renderFlowCard) : <p className="activity-board-empty">Nenhum cartão nesta etapa.</p>}</div>
+                    </section>
+                  ))}
+                </div>
               ) : (
                 <div className="workspace-activity-list">
                   {visibleActivities.map((activity) => {
                     const area = areasById.get(activity.area_id);
-                    const nucleus = area ? nucleiById.get(area.nucleus_id) : undefined;
-                    const status = generalStatusById.get(activity.id) ?? 'not_started';
-                    const canEdit = canManageActivity(profile, activity.area_id);
-                    return (
-                      <article id={`activity-card-${activity.id}`} className={`workspace-activity-card${pushTarget?.type === 'activity' && pushTarget.itemId === activity.id ? ' is-push-target' : ''}`} key={activity.id}>
-                        <div className="workspace-activity-card-head">
-                          <span className="workspace-code">{activity.code}</span>
-                          <span className={`workspace-status ${statusClass(status)}`}>{generalStatusLabels[status]}</span>
-                        </div>
-                        <h3>{activity.name}</h3>
-                        <p className="workspace-activity-description">{activity.description || 'Sem descrição.'}</p>
-                        <div className="workspace-activity-facts">
-                          <span><small>Núcleo</small><strong>{nucleus?.name ?? '—'}</strong></span>
-                          <span><small>Área</small><strong>{area?.name ?? '—'}</strong></span>
-                          <span><small>Tipo</small><strong>{activityTypeLabels[activity.activity_type]}</strong></span>
-                          <span><small>Responsável</small><strong>{activity.responsible_name || 'A definir'}</strong></span>
-                          <span><small>Início</small><strong>{activity.start_date ? formatShortDate(activity.start_date) : '—'}</strong></span>
-                          <span><small>Prazo</small><strong>{activity.due_date ? formatShortDate(activity.due_date) : '—'}</strong></span>
-                        </div>
-                        {(activity.frequency || activity.execution_condition) && (
-                          <p className="workspace-activity-extra"><strong>{activity.activity_type === 'rotina' ? activity.frequency : activity.execution_condition || activity.frequency}</strong></p>
-                        )}
-                        {activity.expected_deliverable && <p className="workspace-activity-deliverable"><small>Entregável esperado</small>{activity.expected_deliverable}</p>}
-                        {activity.notes && <p className="workspace-activity-notes"><small>Observações</small>{activity.notes}</p>}
-                        <div className="workspace-activity-card-foot">
-                          <span>{canEdit ? 'Edição autorizada para seu perfil e área' : profile.role === 'reader' ? 'Perfil somente leitura' : 'Visualização; edição depende do perfil e da área'}</span>
-                          {canEdit && (
-                            <div className="workspace-activity-actions">
-                              <button type="button" onClick={() => { setDialogError(''); setDialogActivity(activity); }}>Editar atividade</button>
-                              {confirmRemoveActivityId === activity.id ? (
-                                <div className="workspace-activity-remove-confirm" role="group" aria-label={`Confirmar remoção de ${activity.code}`}>
-                                  <span>Remover?</span>
-                                  <button type="button" className="workspace-activity-confirm-remove" onClick={() => void removeActivity(activity)} disabled={removingActivityId === activity.id}>
-                                    <Check size={13} aria-hidden="true" />{removingActivityId === activity.id ? 'Removendo…' : 'Confirmar'}
-                                  </button>
-                                  <button type="button" className="workspace-activity-cancel-remove" onClick={() => setConfirmRemoveActivityId(null)} disabled={removingActivityId === activity.id}>
-                                    <X size={13} aria-hidden="true" />Cancelar
-                                  </button>
-                                </div>
-                              ) : (
-                                <button type="button" className="workspace-activity-remove" onClick={() => setConfirmRemoveActivityId(activity.id)}>
-                                  <Trash2 size={13} aria-hidden="true" />Remover
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </article>
-                    );
+                    const status = generalStatusById.get(activity.id) ?? 'not_started'; const canEdit = isAreaActive(activity.area_id) && canManageActivity(profile, activity.area_id);
+                    const related = activityAttachments.filter((attachment) => attachment.activity_id === activity.id);
+                    return <article id={`activity-card-${activity.id}`} className={`workspace-activity-card${pushTarget?.type === 'activity' && pushTarget.itemId === activity.id ? ' is-push-target' : ''}`} key={activity.id}>
+                      <div className="workspace-activity-card-head"><span className="workspace-code">{activity.code}</span><span className={`workspace-status ${statusClass(status)}`}>{generalStatusLabels[status]}</span></div>
+                      <h3>{activity.name}</h3><p className="workspace-activity-description">{activity.description || 'Sem descrição.'}</p>
+                      <div className="workspace-activity-facts"><span><small>Área</small><strong>{area?.name ?? 'Área removida'}</strong></span><span><small>Tipo</small><strong>{activityTypeLabels[activity.activity_type]}</strong></span><span><small>Responsável</small><strong>{activity.responsible_name || 'A definir'}</strong></span><span><small>Início</small><strong>{activity.start_date ? formatShortDate(activity.start_date) : '—'}</strong></span><span><small>Prazo</small><strong>{activity.due_date ? formatShortDate(activity.due_date) : '—'}</strong></span><span><small>Fluxo</small><strong>{activityFlowLabels[activity.flow_status]}</strong></span><span><small>Prioridade / esforço</small><strong>{activityPriorityLabels[activity.priority]} · {activity.effort_points === null ? 'não estimado' : `${activity.effort_points} ponto(s)`}</strong></span></div>
+                      {activity.flow_status === 'blocked' && <p className="activity-blocked-reason"><strong>Motivo do bloqueio:</strong> {activity.blocked_reason}</p>}
+                      {(activity.frequency || activity.execution_condition) && <p className="workspace-activity-extra"><strong>{activity.activity_type === 'rotina' ? activity.frequency : activity.execution_condition || activity.frequency}</strong></p>}
+                      {activity.expected_deliverable && <p className="workspace-activity-deliverable"><small>Entregável esperado</small>{activity.expected_deliverable}</p>}{activity.notes && <p className="workspace-activity-notes"><small>Observações</small>{activity.notes}</p>}
+                      {related.length > 0 && <ul className="activity-attachments" aria-label="Anexos da atividade">{related.map((attachment) => <li key={attachment.id}>{attachment.kind === 'drive_link' && attachment.drive_url ? <a href={attachment.drive_url} target="_blank" rel="noopener noreferrer"><ExternalLink size={13} aria-hidden="true" />{attachment.file_name}<span className="sr-only"> (abre em nova aba; acesso depende das permissões do Google)</span></a> : attachmentUrls[attachment.id] ? <a href={attachmentUrls[attachment.id]} target="_blank" rel="noopener noreferrer"><Paperclip size={13} aria-hidden="true" />{attachment.file_name}</a> : <span><Paperclip size={13} aria-hidden="true" />{attachment.file_name} (link temporariamente indisponível)</span>}</li>)}</ul>}
+                      <div className="workspace-activity-card-foot"><span>{canEdit ? 'Edição autorizada para seu perfil e área' : profile.role === 'reader' ? 'Perfil somente leitura' : 'Visualização; edição depende do perfil e da área'}</span>{canEdit && <div className="workspace-activity-actions"><button type="button" onClick={() => { setDialogError(''); setDialogActivity(activity); }}>Editar atividade</button>{confirmRemoveActivityId === activity.id ? <div className="workspace-activity-remove-confirm" role="group" aria-label={`Confirmar remoção de ${activity.code}`}><span>Remover?</span><button type="button" className="workspace-activity-confirm-remove" onClick={() => void removeActivity(activity)} disabled={removingActivityId === activity.id}><Check size={13} aria-hidden="true" />{removingActivityId === activity.id ? 'Removendo…' : 'Confirmar'}</button><button type="button" className="workspace-activity-cancel-remove" onClick={() => setConfirmRemoveActivityId(null)} disabled={removingActivityId === activity.id}><X size={13} aria-hidden="true" />Cancelar</button></div> : <button type="button" className="workspace-activity-remove" onClick={() => setConfirmRemoveActivityId(activity.id)}><Trash2 size={13} aria-hidden="true" />Remover</button>}</div>}</div>
+                    </article>;
                   })}
                 </div>
               )}
@@ -1016,11 +1217,12 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
           )}
 
           {(tab === 'files' || tab === 'announcements') && (
-            <SharedContentWorkspace client={client} mode={tab} userId={userId} isAdmin={profile.role === 'admin'} areas={areas} members={members} targetAnnouncementId={pushTarget?.type === 'announcement' ? pushTarget.itemId : undefined} />
+            <SharedContentWorkspace client={client} mode={tab} userId={userId} isAdmin={profile.role === 'admin'} areas={activeAreas} members={members} targetAnnouncementId={pushTarget?.type === 'announcement' ? pushTarget.itemId : undefined} />
           )}
           {tab === 'chat' && (
             <TeamChat client={client} userId={userId} isAdmin={profile.role === 'admin'} members={members} initialMessageId={pushTarget?.type === 'chat' ? pushTarget.messageId : undefined} initialConversationId={pushTarget?.type === 'chat' ? pushTarget.conversationId : undefined} initialConversationType={pushTarget?.type === 'chat' ? pushTarget.conversationType : undefined} />
           )}
+          {tab === 'availability' && <AvailabilityWorkspace client={client} userId={userId} profile={profile} />}
           {tab === 'calendar' && <TeamCalendar client={client} userId={userId} isAdmin={profile.role === 'admin'} initialDate={calendarFocusDate} initialEventId={pushTarget?.type === 'calendar' ? pushTarget.itemId : undefined} />}
           {tab === 'manual' && <ManualFunctions />}
           {tab === 'ai' && <AIShortcuts />}
@@ -1032,12 +1234,12 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
       {dialogActivity !== false && (
         <ActivityDialog
           activity={dialogActivity}
-          areas={areas}
+          areas={activityEditorAreas}
           members={members}
           busy={savingActivity}
           error={dialogError}
           onClose={() => { if (!savingActivity) { setDialogActivity(false); setDialogError(''); } }}
-          onSave={(form) => void saveActivity(form)}
+          onSave={(form, submission) => void saveActivity(form, submission)}
         />
       )}
       {periodDialogOpen && (
@@ -1134,12 +1336,16 @@ function ActivityDialog({
   busy: boolean;
   error: string;
   onClose: () => void;
-  onSave: (form: ActivityFormState) => void;
+  onSave: (form: ActivityFormState, submission: AttachmentSubmission) => void;
 }) {
   const [form, setForm] = useState<ActivityFormState>(() => makeFormState(activity, areas[0]?.id ?? ''));
+  const [files, setFiles] = useState<File[]>([]);
+  const [driveName, setDriveName] = useState('');
+  const [driveUrl, setDriveUrl] = useState('');
 
   useEffect(() => {
     setForm(makeFormState(activity, areas[0]?.id ?? ''));
+    setFiles([]); setDriveName(''); setDriveUrl('');
   }, [activity, areas]);
 
   function change<K extends keyof ActivityFormState>(key: K, value: ActivityFormState[K]) {
@@ -1148,7 +1354,7 @@ function ActivityDialog({
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    onSave(form);
+    onSave(form, { files, driveName, driveUrl });
   }
 
   const orderedMembers = [...members].sort((a, b) => a.full_name.localeCompare(b.full_name, 'pt-BR'));
@@ -1232,6 +1438,12 @@ function ActivityDialog({
           <label className="form-span-2"><span>Observações</span>
             <textarea rows={2} value={form.notes} onChange={(event) => change('notes', event.target.value)} />
           </label>
+          <label><span>Prioridade</span><select value={form.priority} onChange={(event) => change('priority', event.target.value as ActivityPriority)}>{(Object.keys(activityPriorityLabels) as ActivityPriority[]).map((priority) => <option key={priority} value={priority}>{activityPriorityLabels[priority]}</option>)}</select></label>
+          <label><span>Esforço (pontos simples)</span><input type="number" min="0" max="100" step="1" inputMode="numeric" value={form.effort_points} onChange={(event) => change('effort_points', event.target.value)} placeholder="Não estimado" /></label>
+          <label className="form-span-2"><span>Anexar arquivos (máx. 15 MiB por arquivo)</span><input type="file" multiple accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,application/pdf,text/plain,text/csv,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation" onChange={(event) => setFiles(Array.from(event.target.files ?? []))} />{files.length > 0 && <small>{files.map((file) => file.name).join(', ')}</small>}</label>
+          <label><span>Nome para link Drive/Docs</span><input maxLength={240} value={driveName} onChange={(event) => setDriveName(event.target.value)} placeholder="Ex.: Documento de planejamento" /></label>
+          <label><span>Link Google Drive/Docs</span><input type="url" value={driveUrl} onChange={(event) => setDriveUrl(event.target.value)} placeholder="https://drive.google.com/…" /></label>
+          <p className="workspace-period-help form-span-2">Links externos aceitam somente HTTPS nos hosts exatos drive.google.com ou docs.google.com. Abrirão em nova aba; o acesso depende das permissões configuradas no Google.</p>
           {error && <p className="workspace-dialog-error form-span-2" role="alert">{error}</p>}
           <div className="workspace-dialog-actions form-span-2">
             <button type="button" className="workspace-cancel-button" onClick={onClose} disabled={busy}>Cancelar</button>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowUpRight, Check, FolderOpen, Megaphone, Pin, PinOff, Plus, RefreshCw, Trash2, X } from 'lucide-react';
+import { ArrowUpRight, Check, FileText, FolderOpen, Link2, Megaphone, Pin, PinOff, Plus, RefreshCw, Trash2, X } from 'lucide-react';
 import type { Area, MemberProfile } from './domain';
 import { notifyWorkspacePush } from '../../lib/notifications';
 import './shared-content.css';
@@ -47,19 +47,46 @@ type AnnouncementReaction = {
   user_id: string;
   emoji: string;
 };
+type AnnouncementAttachment = { id: string; announcement_id: string; storage_path: string; file_name: string; content_type: string; file_size: number; uploaded_by: string };
+type AnnouncementDriveLink = { id: string; announcement_id: string; name: string; url: string; added_by: string };
+type PollOption = { id: string; label: string; votes: number };
+type AnnouncementPoll = { id: string; announcement_id: string; question: string; allow_multiple: boolean; closed_at: string | null; options: PollOption[]; my_option_ids: string[] };
 type FolderForm = { name: string; driveUrl: string; areaId: string };
-type AnnouncementForm = { title: string; message: string; areaId: string };
+type AnnouncementForm = { title: string; message: string; areaId: string; driveName: string; driveUrl: string; pollEnabled: boolean; question: string; options: string[]; allowMultiple: boolean };
 
 const emptyFolderForm: FolderForm = { name: '', driveUrl: '', areaId: '' };
-const emptyAnnouncementForm: AnnouncementForm = { title: '', message: '', areaId: '' };
+const emptyAnnouncementForm: AnnouncementForm = { title: '', message: '', areaId: '', driveName: '', driveUrl: '', pollEnabled: false, question: '', options: ['', ''], allowMultiple: false };
 const ANNOUNCEMENT_REACTIONS = ['👍', '❤️', '😂', '👏', '🔥'];
+const MAX_ANNOUNCEMENT_FILE_SIZE = 15 * 1024 * 1024;
+const ANNOUNCEMENT_FILE_EXTENSIONS: Record<string, string> = {
+  'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp', 'image/heic': 'heic', 'image/heif': 'heif',
+  'application/pdf': 'pdf', 'text/plain': 'txt', 'text/csv': 'csv', 'application/msword': 'doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx', 'application/vnd.ms-excel': 'xls',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx', 'application/vnd.ms-powerpoint': 'ppt',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx',
+};
+
+function parseDriveLink(value: string): URL | null {
+  try {
+    const url = new URL(value.trim());
+    if (url.protocol !== 'https:' || !['drive.google.com', 'docs.google.com'].includes(url.hostname) || url.username || url.password || url.port || !url.pathname.startsWith('/')) return null;
+    return url;
+  } catch { return null; }
+}
+
+function formatFileSize(size: number): string {
+  return size < 1024 * 1024 ? `${Math.max(1, Math.round(size / 1024))} KB` : `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 function errorMessage(error: unknown): string {
   if (!error || typeof error !== 'object') return 'Ocorreu um erro inesperado. Confira a conexão e tente novamente.';
   const candidate = error as { message?: string; code?: string };
   const message = candidate.message ?? '';
   if (candidate.code === '42501' || /row-level security|permission denied/i.test(message)) {
-    return 'O Supabase ainda está bloqueando essa ação. Confirme que a migração incremental da Etapa 5 foi aplicada no projeto certo; não desative o RLS.';
+    return 'O Supabase ainda está bloqueando essa ação. Confirme que as migrations incrementais estão aplicadas no projeto certo; não desative o RLS.';
+  }
+  if (['42P01', 'PGRST202', 'PGRST204', 'PGRST205'].includes(candidate.code ?? '') || /announcement_(attachments|drive_links|polls|poll_options).*not found/i.test(message)) {
+    return 'Anexos, links e enquetes de Comunicados ainda não estão habilitados neste banco. Aplique a migration 20261106194000_announcement_attachments_drive_polls.sql.';
   }
   if (['42P01', 'PGRST200', 'PGRST204', 'PGRST205'].includes(candidate.code ?? '') || /announcement_(replies|reactions).*not found/i.test(message)) {
     return 'As respostas e reações ainda não foram habilitadas neste banco. Aplique uma única vez a migration 20261104101500_announcement_replies_reactions.sql.';
@@ -100,6 +127,12 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
   const [interactionError, setInteractionError] = useState('');
   const [interactionsLoading, setInteractionsLoading] = useState(true);
   const [interactionBusy, setInteractionBusy] = useState<string | null>(null);
+  const [announcementAttachments, setAnnouncementAttachments] = useState<AnnouncementAttachment[]>([]);
+  const [announcementDriveLinks, setAnnouncementDriveLinks] = useState<AnnouncementDriveLink[]>([]);
+  const [announcementPolls, setAnnouncementPolls] = useState<Record<string, AnnouncementPoll>>({});
+  const [pollSelections, setPollSelections] = useState<Record<string, string[]>>({});
+  const [signedAttachmentUrls, setSignedAttachmentUrls] = useState<Record<string, string>>({});
+  const [announcementFiles, setAnnouncementFiles] = useState<File[]>([]);
 
   const loadContent = useCallback(async (initial = false) => {
     if (initial) setLoading(true);
@@ -169,6 +202,32 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
     }
   }, [client]);
 
+  const loadAnnouncementExtras = useCallback(async (ids: string[]) => {
+    if (!ids.length) {
+      setAnnouncementAttachments([]);
+      setAnnouncementDriveLinks([]);
+      setAnnouncementPolls({});
+      return;
+    }
+    const [fileResult, linkResult] = await Promise.all([
+      client.from('announcement_attachments').select('id,announcement_id,storage_path,file_name,content_type,file_size,uploaded_by').in('announcement_id', ids).order('created_at'),
+      client.from('announcement_drive_links').select('id,announcement_id,name,url,added_by').in('announcement_id', ids).order('created_at'),
+    ]);
+    if (fileResult.error) throw fileResult.error;
+    if (linkResult.error) throw linkResult.error;
+    setAnnouncementAttachments((fileResult.data ?? []) as AnnouncementAttachment[]);
+    setAnnouncementDriveLinks((linkResult.data ?? []) as AnnouncementDriveLink[]);
+    const summaries = await Promise.all(ids.map(async (id) => {
+      const { data, error: pollError } = await client.rpc('get_announcement_poll_results', { p_announcement_id: id });
+      if (pollError) throw pollError;
+      return data as AnnouncementPoll | null;
+    }));
+    const nextPolls: Record<string, AnnouncementPoll> = {};
+    summaries.forEach((poll) => { if (poll) nextPolls[poll.announcement_id] = poll; });
+    setAnnouncementPolls(nextPolls);
+    setPollSelections((current) => Object.fromEntries(Object.entries(current).filter(([announcementId]) => ids.includes(announcementId))));
+  }, [client]);
+
   useEffect(() => {
     if (mode !== 'announcements') return;
     const ids = announcementIds ? announcementIds.split(',') : [];
@@ -191,6 +250,12 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
       void client.removeChannel(channel);
     };
   }, [announcementIds, client, loadInteractions, mode, userId]);
+
+  useEffect(() => {
+    if (mode !== 'announcements') return;
+    const ids = announcementIds ? announcementIds.split(',') : [];
+    void loadAnnouncementExtras(ids).catch((loadError) => setInteractionError(errorMessage(loadError)));
+  }, [announcementIds, loadAnnouncementExtras, mode]);
 
   useEffect(() => {
     void loadContent(true);
@@ -288,29 +353,148 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
       setError('Preencha o título e a mensagem.');
       return;
     }
+    const driveName = announcementForm.driveName.trim();
+    const driveUrl = announcementForm.driveUrl.trim();
+    const parsedDriveUrl = driveUrl ? parseDriveLink(driveUrl) : null;
+    if ((driveName && !driveUrl) || (!driveName && driveUrl) || (driveUrl && !parsedDriveUrl)) {
+      setError('Informe nome e URL do link; use HTTPS em drive.google.com ou docs.google.com, sem usuário, senha ou porta personalizada.');
+      return;
+    }
+    if (announcementFiles.some((file) => !ANNOUNCEMENT_FILE_EXTENSIONS[file.type] || file.size < 1 || file.size > MAX_ANNOUNCEMENT_FILE_SIZE)) {
+      setError('Anexe apenas imagens ou documentos comuns aceitos, com até 15 MiB por arquivo.');
+      return;
+    }
+    const pollOptions = announcementForm.options.map((option) => option.trim()).filter(Boolean);
+    if (announcementForm.pollEnabled && (!announcementForm.question.trim() || pollOptions.length < 2 || pollOptions.length > 8 || pollOptions.length !== announcementForm.options.length || new Set(pollOptions.map((option) => option.toLocaleLowerCase('pt-BR'))).size !== pollOptions.length)) {
+      setError('Informe uma pergunta e de 2 a 8 opções distintas e preenchidas para a enquete.');
+      return;
+    }
     setSaving(true);
     setError('');
     setFeedback('');
+    let announcementId: string | null = null;
     try {
-      const { data, error: insertError } = await client.from('announcements').insert({
-        title,
-        message,
-        audience_area_id: announcementForm.areaId || null,
-      }).select('id').single();
-      if (insertError) throw insertError;
+      if (announcementForm.pollEnabled) {
+        const { data, error: publishError } = await client.rpc('publish_announcement_with_poll', {
+          p_title: title, p_message: message, p_audience_area_id: announcementForm.areaId || null,
+          p_question: announcementForm.question.trim(), p_options: pollOptions, p_allow_multiple: announcementForm.allowMultiple,
+        });
+        if (publishError) throw publishError;
+        announcementId = data as string;
+      } else {
+        const { data, error: insertError } = await client.from('announcements').insert({
+          title, message, audience_area_id: announcementForm.areaId || null,
+        }).select('id').single();
+        if (insertError) throw insertError;
+        announcementId = data.id;
+      }
+      if (parsedDriveUrl && announcementId) {
+        const { error: linkError } = await client.from('announcement_drive_links').insert({ announcement_id: announcementId, name: driveName, url: parsedDriveUrl.toString() });
+        if (linkError) throw linkError;
+      }
+      for (const file of announcementFiles) {
+        const extension = ANNOUNCEMENT_FILE_EXTENSIONS[file.type];
+        const storagePath = `${userId}/${announcementId}/${crypto.randomUUID()}.${extension}`;
+        const { error: uploadError } = await client.storage.from('announcement-attachments').upload(storagePath, file, { contentType: file.type, upsert: false });
+        if (uploadError) throw uploadError;
+        const { error: metadataError } = await client.from('announcement_attachments').insert({
+          announcement_id: announcementId, storage_path: storagePath, file_name: file.name, content_type: file.type, file_size: file.size,
+        });
+        if (metadataError) throw metadataError;
+      }
       setAnnouncementForm(emptyAnnouncementForm);
+      setAnnouncementFiles([]);
       setAnnouncementFormOpen(false);
       setFeedback('Comunicado publicado. O autor é identificado automaticamente pela sua conta.');
-      void notifyWorkspacePush(client, 'announcement_created', data.id).then((result) => {
+      void notifyWorkspacePush(client, 'announcement_created', announcementId!).then((result) => {
         if (result === 'failed') {
           setFeedback('Comunicado publicado, mas o push não foi enviado. O comunicado continua publicado.');
         }
       });
       await loadContent(false);
     } catch (saveError) {
+      if (announcementId) {
+        setFeedback('O comunicado foi publicado, mas algum link ou anexo não pôde ser concluído. Confira o acesso e tente novamente.');
+        await loadContent(false);
+      }
       setError(errorMessage(saveError));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function openAnnouncementAttachment(file: AnnouncementAttachment) {
+    const cached = signedAttachmentUrls[file.id];
+    if (cached) return;
+    setInteractionBusy(`file:${file.id}`);
+    try {
+      const { data, error: signedError } = await client.storage.from('announcement-attachments').createSignedUrl(file.storage_path, 60);
+      if (signedError) throw signedError;
+      setSignedAttachmentUrls((current) => ({ ...current, [file.id]: data.signedUrl }));
+    } catch (openError) {
+      setInteractionError(errorMessage(openError));
+    } finally {
+      setInteractionBusy(null);
+    }
+  }
+
+  async function removeAnnouncementAttachment(file: AnnouncementAttachment) {
+    setInteractionBusy(`file-remove:${file.id}`);
+    setInteractionError('');
+    try {
+      const { error: storageError } = await client.storage.from('announcement-attachments').remove([file.storage_path]);
+      if (storageError) throw storageError;
+      const { error: metadataError } = await client.rpc('remove_announcement_attachment', { p_attachment_id: file.id });
+      if (metadataError) throw metadataError;
+      await loadAnnouncementExtras(announcementIds ? announcementIds.split(',') : []);
+    } catch (removeError) {
+      setInteractionError(errorMessage(removeError));
+    } finally {
+      setInteractionBusy(null);
+    }
+  }
+
+  async function removeAnnouncementDriveLink(link: AnnouncementDriveLink) {
+    setInteractionBusy(`link-remove:${link.id}`);
+    setInteractionError('');
+    try {
+      const { error: linkError } = await client.from('announcement_drive_links').delete().eq('id', link.id);
+      if (linkError) throw linkError;
+      await loadAnnouncementExtras(announcementIds ? announcementIds.split(',') : []);
+    } catch (removeError) {
+      setInteractionError(errorMessage(removeError));
+    } finally {
+      setInteractionBusy(null);
+    }
+  }
+
+  async function voteInPoll(poll: AnnouncementPoll) {
+    const selected = pollSelections[poll.announcement_id] ?? poll.my_option_ids;
+    if (!selected.length) return;
+    setInteractionBusy(`poll-vote:${poll.id}`);
+    setInteractionError('');
+    try {
+      const { error: voteError } = await client.rpc('vote_announcement_poll', { p_poll_id: poll.id, p_option_ids: selected });
+      if (voteError) throw voteError;
+      await loadAnnouncementExtras(announcementIds ? announcementIds.split(',') : []);
+    } catch (voteError) {
+      setInteractionError(errorMessage(voteError));
+    } finally {
+      setInteractionBusy(null);
+    }
+  }
+
+  async function closePoll(poll: AnnouncementPoll) {
+    setInteractionBusy(`poll-close:${poll.id}`);
+    setInteractionError('');
+    try {
+      const { error: closeError } = await client.rpc('close_announcement_poll', { p_poll_id: poll.id });
+      if (closeError) throw closeError;
+      await loadAnnouncementExtras(announcementIds ? announcementIds.split(',') : []);
+    } catch (closeError) {
+      setInteractionError(errorMessage(closeError));
+    } finally {
+      setInteractionBusy(null);
     }
   }
 
@@ -423,6 +607,7 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
           <button className="workspace-refresh" type="button" onClick={() => {
             void loadContent(false);
             if (mode === 'announcements') void loadInteractions(announcementIds ? announcementIds.split(',') : []).catch((loadError) => setInteractionError(errorMessage(loadError)));
+            if (mode === 'announcements') void loadAnnouncementExtras(announcementIds ? announcementIds.split(',') : []).catch((loadError) => setInteractionError(errorMessage(loadError)));
           }} disabled={loading || refreshing}>
             <RefreshCw size={14} aria-hidden="true" />{refreshing ? 'Atualizando…' : 'Atualizar'}
           </button>
@@ -458,6 +643,22 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
           <label><span>Título <b>obrigatório</b></span><input required maxLength={180} value={announcementForm.title} onChange={(event) => setAnnouncementForm((current) => ({ ...current, title: event.target.value }))} placeholder="Um título claro para o aviso" /></label>
           <label><span>Mensagem <b>obrigatória</b></span><textarea required rows={5} maxLength={8000} value={announcementForm.message} onChange={(event) => setAnnouncementForm((current) => ({ ...current, message: event.target.value }))} placeholder="Escreva as informações para a equipe…" /></label>
           <label><span>Destinatário</span><select value={announcementForm.areaId} onChange={(event) => setAnnouncementForm((current) => ({ ...current, areaId: event.target.value }))}><option value="">Toda a equipe</option>{areas.map((area) => <option key={area.id} value={area.id}>{area.name}</option>)}</select></label>
+          <div className="shared-announcement-create-extra">
+            <strong><Link2 size={15} aria-hidden="true" /> Link compartilhável do Google Drive (opcional)</strong>
+            <label><span>Nome do link</span><input maxLength={180} value={announcementForm.driveName} onChange={(event) => setAnnouncementForm((current) => ({ ...current, driveName: event.target.value }))} placeholder="Ex.: Ata da reunião" /></label>
+            <label><span>URL (HTTPS)</span><input type="url" value={announcementForm.driveUrl} onChange={(event) => setAnnouncementForm((current) => ({ ...current, driveUrl: event.target.value }))} placeholder="https://drive.google.com/… ou https://docs.google.com/…" /></label>
+            <p className="shared-content-note">O link apenas abre o Drive em outra aba. O SolMar não baixa nem sincroniza arquivos, e não altera permissões de compartilhamento.</p>
+          </div>
+          <label><span>Anexar arquivos do dispositivo</span><input type="file" multiple accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,application/pdf,text/plain,text/csv,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation" onChange={(event) => setAnnouncementFiles(Array.from(event.currentTarget.files ?? []))} /></label>
+          {announcementFiles.length > 0 && <p className="shared-content-note">{announcementFiles.map((file) => `${file.name} (${formatFileSize(file.size)})`).join(' · ')} — limite de 15 MiB por arquivo.</p>}
+          <fieldset className="shared-poll-create">
+            <label className="shared-poll-enable"><input type="checkbox" checked={announcementForm.pollEnabled} onChange={(event) => setAnnouncementForm((current) => ({ ...current, pollEnabled: event.target.checked }))} /><span>Criar enquete junto com o comunicado</span></label>
+            {announcementForm.pollEnabled && <>
+              <label><span>Pergunta <b>obrigatória</b></span><input required maxLength={500} value={announcementForm.question} onChange={(event) => setAnnouncementForm((current) => ({ ...current, question: event.target.value }))} placeholder="O que precisamos decidir?" /></label>
+              <div className="shared-poll-option-editor"><span>Opções <b>2 a 8</b></span>{announcementForm.options.map((option, index) => <div key={index} className="shared-poll-option-row"><input aria-label={`Opção ${index + 1}`} required maxLength={240} value={option} onChange={(event) => setAnnouncementForm((current) => ({ ...current, options: current.options.map((value, optionIndex) => optionIndex === index ? event.target.value : value) }))} placeholder={`Opção ${index + 1}`} />{announcementForm.options.length > 2 && <button type="button" className="shared-close" aria-label={`Remover opção ${index + 1}`} onClick={() => setAnnouncementForm((current) => ({ ...current, options: current.options.filter((_, optionIndex) => optionIndex !== index) }))}><X size={15} /></button>}</div>)}{announcementForm.options.length < 8 && <button type="button" className="shared-poll-add-option" onClick={() => setAnnouncementForm((current) => ({ ...current, options: [...current.options, ''] }))}><Plus size={13} aria-hidden="true" /> Adicionar opção</button>}</div>
+              <label className="shared-poll-enable"><input type="checkbox" checked={announcementForm.allowMultiple} onChange={(event) => setAnnouncementForm((current) => ({ ...current, allowMultiple: event.target.checked }))} /><span>Permitir escolher mais de uma opção <small>(desmarcado: voto único)</small></span></label>
+            </>}
+          </fieldset>
           <div className="shared-content-form-actions"><button className="workspace-cancel-button" type="button" onClick={() => setAnnouncementFormOpen(false)} disabled={saving}>Cancelar</button><button className="workspace-save-button" type="submit" disabled={saving}>{saving ? 'Publicando…' : 'Publicar comunicado'}</button></div>
         </form>
       )}
@@ -506,6 +707,59 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
                   <div className="shared-announcement-meta"><span className="shared-audience">{item.audience_area_id ? areasById.get(item.audience_area_id) ?? 'Área' : 'Toda a equipe'}</span><span>{formatDate(item.created_at)}</span>{item.pinned_at && <span className="shared-pinned-label"><Pin size={12} aria-hidden="true" />Fixado</span>}</div>
                   <h3>{item.title}</h3>
                   <p className="shared-announcement-message">{item.message}</p>
+                  {(announcementAttachments.some((file) => file.announcement_id === item.id) || announcementDriveLinks.some((link) => link.announcement_id === item.id)) && (
+                    <div className="shared-announcement-files" aria-label="Arquivos e links do comunicado">
+                      {announcementAttachments.filter((file) => file.announcement_id === item.id).map((file) => {
+                        const canManage = isAdmin || item.author_id === userId;
+                        const signedUrl = signedAttachmentUrls[file.id];
+                        return <div className="shared-announcement-file" key={file.id}>
+                          <FileText size={15} aria-hidden="true" /><span><strong>{file.file_name}</strong><small>{formatFileSize(Number(file.file_size))}</small></span>
+                          {signedUrl ? <a href={signedUrl} target="_blank" rel="noopener noreferrer">Abrir arquivo</a> : <button type="button" onClick={() => void openAnnouncementAttachment(file)} disabled={interactionBusy !== null}>{interactionBusy === `file:${file.id}` ? 'Preparando…' : 'Gerar link seguro'}</button>}
+                          {canManage && <button type="button" className="is-danger" onClick={() => void removeAnnouncementAttachment(file)} disabled={interactionBusy !== null} aria-label={`Remover anexo ${file.file_name}`}><Trash2 size={13} aria-hidden="true" />Remover</button>}
+                        </div>;
+                      })}
+                      {announcementDriveLinks.filter((link) => link.announcement_id === item.id).map((link) => (
+                        <div className="shared-announcement-file" key={link.id}>
+                          <Link2 size={15} aria-hidden="true" /><span><strong>{link.name}</strong><small>Link externo do Google Drive</small></span>
+                          <a href={link.url} target="_blank" rel="noopener noreferrer">Abrir link</a>
+                          {(isAdmin || item.author_id === userId) && <button type="button" className="is-danger" onClick={() => void removeAnnouncementDriveLink(link)} disabled={interactionBusy !== null} aria-label={`Remover link ${link.name}`}><Trash2 size={13} aria-hidden="true" />Remover</button>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {announcementPolls[item.id] && (() => {
+                    const poll = announcementPolls[item.id];
+                    const selected = pollSelections[item.id] ?? poll.my_option_ids;
+                    const totalVotes = poll.options.reduce((sum, option) => sum + option.votes, 0);
+                    const canClose = isAdmin || item.author_id === userId;
+                    return <section className={`shared-announcement-poll${poll.closed_at ? ' is-closed' : ''}`} aria-label={`Enquete: ${poll.question}`}>
+                      <div className="shared-poll-heading"><div><span>ENQUETE</span><h4>{poll.question}</h4></div><span className="shared-poll-status">{poll.closed_at ? 'Encerrada' : 'Aberta'}</span></div>
+                      <div className="shared-poll-options">
+                        {poll.options.map((option) => {
+                          const checked = selected.includes(option.id);
+                          const percentage = totalVotes ? Math.round(option.votes / totalVotes * 100) : 0;
+                          return <label className={`shared-poll-option${checked ? ' is-selected' : ''}`} key={option.id}>
+                            <input type={poll.allow_multiple ? 'checkbox' : 'radio'} name={`poll-${poll.id}`} checked={checked} disabled={Boolean(poll.closed_at) || interactionBusy !== null} onChange={(event) => {
+                              setPollSelections((current) => {
+                                const currentSelected = current[item.id] ?? poll.my_option_ids;
+                                const next = poll.allow_multiple
+                                  ? event.target.checked ? [...currentSelected, option.id] : currentSelected.filter((id) => id !== option.id)
+                                  : [option.id];
+                                return { ...current, [item.id]: next };
+                              });
+                            }} />
+                            <span className="shared-poll-option-copy"><strong>{option.label}</strong><span className="shared-poll-result-track"><span style={{ width: `${percentage}%` }} /></span></span>
+                            <small>{option.votes} · {percentage}%</small>
+                          </label>;
+                        })}
+                      </div>
+                      <div className="shared-poll-footer"><span>{totalVotes} {totalVotes === 1 ? 'voto' : 'votos'} · {poll.allow_multiple ? 'múltipla escolha' : 'voto único'}{selected.length ? ' · você votou' : ''}</span>
+                        {!poll.closed_at && <button type="button" onClick={() => void voteInPoll(poll)} disabled={interactionBusy !== null || selected.length === 0}>{interactionBusy === `poll-vote:${poll.id}` ? 'Registrando…' : selected.length ? 'Registrar / trocar voto' : 'Escolha uma opção'}</button>}
+                        {!poll.closed_at && canClose && <button type="button" className="is-danger" onClick={() => void closePoll(poll)} disabled={interactionBusy !== null}>{interactionBusy === `poll-close:${poll.id}` ? 'Encerrando…' : 'Encerrar enquete'}</button>}
+                      </div>
+                      {poll.closed_at && <p className="shared-content-note">Enquete encerrada em {new Date(poll.closed_at).toLocaleString('pt-BR')}.</p>}
+                    </section>;
+                  })()}
                   <div className="shared-announcement-footer"><span>Publicado por <strong>{membersById.get(item.author_id ?? '') || 'Integrante ativo'}</strong></span><div className="shared-card-actions">
                     <button type="button" onClick={() => void togglePin(item)} disabled={saving}>{item.pinned_at ? <PinOff size={13} aria-hidden="true" /> : <Pin size={13} aria-hidden="true" />}{item.pinned_at ? 'Desafixar' : 'Fixar'}</button>
                     {confirmAnnouncementId === item.id ? <div className="shared-confirm-actions"><span>Remover comunicado?</span><button type="button" className="is-danger" onClick={() => void removeAnnouncement(item)} disabled={saving}><Check size={13} aria-hidden="true" />Confirmar</button><button type="button" onClick={() => setConfirmAnnouncementId(null)} disabled={saving}><X size={13} aria-hidden="true" />Cancelar</button></div> : <button type="button" className="is-danger" onClick={() => setConfirmAnnouncementId(item.id)}><Trash2 size={13} aria-hidden="true" />Remover</button>}

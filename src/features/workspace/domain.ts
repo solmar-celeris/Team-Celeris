@@ -1,4 +1,6 @@
 export type ActivityType = 'marco' | 'pontual' | 'rotina' | 'condicional';
+export type ActivityFlowStatus = 'backlog' | 'ready' | 'in_progress' | 'blocked' | 'done';
+export type ActivityPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type WeeklyStatus = 'completed' | 'in_progress' | 'pending' | 'not_applicable' | 'not_started';
 export type GeneralStatus = WeeklyStatus | 'overdue';
 
@@ -17,10 +19,28 @@ export type Activity = {
   due_date: string | null;
   expected_deliverable: string;
   notes: string;
+  flow_status: ActivityFlowStatus;
+  priority: ActivityPriority;
+  effort_points: number | null;
+  blocked_reason: string;
   created_at: string;
   updated_at: string;
   archived_at: string | null;
 };
+
+export type ActivityAttachment = {
+  id: string;
+  activity_id: string;
+  kind: 'file' | 'drive_link';
+  storage_path: string | null;
+  content_type: string | null;
+  file_name: string;
+  file_size: number | null;
+  drive_url: string | null;
+  created_at: string;
+};
+
+export type ActivityWipLimit = { area_id: string; flow_status: ActivityFlowStatus; limit_count: number | null };
 
 export type Area = {
   id: string;
@@ -71,6 +91,14 @@ export const activityTypeLabels: Record<ActivityType, string> = {
   pontual: 'Pontual',
   rotina: 'Rotina',
   condicional: 'Condicional',
+};
+
+export const activityFlowStages: ActivityFlowStatus[] = ['backlog', 'ready', 'in_progress', 'blocked', 'done'];
+export const activityFlowLabels: Record<ActivityFlowStatus, string> = {
+  backlog: 'Backlog', ready: 'Pronta', in_progress: 'Em andamento', blocked: 'Bloqueada', done: 'Concluída',
+};
+export const activityPriorityLabels: Record<ActivityPriority, string> = {
+  low: 'Baixa', medium: 'Média', high: 'Alta', urgent: 'Urgente',
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;

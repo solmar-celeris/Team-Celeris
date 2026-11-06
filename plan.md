@@ -2,7 +2,7 @@
 
 ## Escopo e arquitetura
 
-Converter o protótipo recebido (`SolMar_Celeris_App.html`, com 58 atividades) em um app de equipe em português brasileiro, mantendo as cinco áreas de uso e as regras funcionais descritas no pedido. O visual será mobile-first, com modo claro/escuro e PWA instalável.
+Converter o protótipo recebido (`SolMar_Celeris_App.html`, com 58 atividades) em um app de equipe em português brasileiro, mantendo os módulos operacionais atuais e as regras funcionais descritas no pedido. O visual será mobile-first, com modo claro/escuro e PWA instalável.
 
 - **Front-end:** React + TypeScript + Vite, organizado em módulos; reutilizar a identidade, paleta e comportamento do protótipo em vez de redesenhá-lo do zero.
 - **Dados, login e atualização em tempo real:** Supabase (PostgreSQL, Auth e Realtime), escolha explicitamente aprovada pelo usuário. O front-end usará apenas `VITE_SUPABASE_URL` e a chave pública/publishable do projeto. Nenhuma `service_role` ou credencial privilegiada será incluída no bundle.
@@ -13,7 +13,7 @@ Converter o protótipo recebido (`SolMar_Celeris_App.html`, com 58 atividades) e
 
 ## Modelo de dados
 
-1. `areas`: nome, sigla, núcleo, ativa e informação funcional. Núcleos e áreas iniciais vêm do pedido; TI também presta suporte ao Núcleo de Gestão e Projetos consolida o acompanhamento.
+1. `areas`: nome, sigla, ativa e informação funcional. As seis áreas diretas são GP, AF, Marketing, MEC, Elétrica e TEL; TI é apoio transversal. “Projetos” permanece apenas como área histórica inativa. Núcleos internos antigos não definem mais a navegação do produto.
 2. `profiles`: referência ao usuário do Supabase Auth, nome, área, papel (`admin`, `area_lead`, `member`, `reader`), situação (`pending`, `active`, `suspended`) e datas/ator de aprovação; a migração incremental acrescentará somente o caminho do avatar privado. O e-mail fica apenas no Auth; somente a Edge Function consulta esses e-mails para notificações.
 3. `activities`: código automático, núcleo/área, nome, descrição, tipo, frequência, condição, responsável, início, prazo, entregável, observações e autoria/datas. O status geral é derivado dos registros semanais e regras de prazo.
 4. `weekly_updates`: atividade, início da semana, status, justificativa, autor e data/hora; unicidade por atividade/semana. Justificativa obrigatória se `Pendente`. `Não se aplica` é um registro explícito, excluído dos cálculos de conclusão e cobrança.
@@ -21,9 +21,9 @@ Converter o protótipo recebido (`SolMar_Celeris_App.html`, com 58 atividades) e
 6. `drive_folders`: nome, URL validada, área opcional (nulo = Geral), indicação da pasta principal, autoria, remoção e confirmação.
 7. `announcements`: título, mensagem, audiência (equipe/área), autor, data/hora, fixação e remoção.
 8. `audit_log`: tipo e ID do registro, ator, horário, ação e diff mínimo de campos relevantes; sem guardar tokens, senhas ou conteúdo integral de arquivos do Drive.
-9. `team_chat_messages`: mensagens de texto com `group_id` nulo para a sala geral compartilhada ou preenchido para um grupo; autor/data derivados da sessão/banco, RLS por associação ao grupo e remoção administrativa que substitui o corpo pelo marcador de remoção; sem anexos ou expiração automática.
-10. `team_chat_groups`: grupos com nome, criador e data; criados por perfis ativos.
-11. `team_chat_group_members`: associação de cada grupo com contas ativas e autoria/data da inclusão. Membros e Administradores podem ver mensagens do grupo; pessoas de fora e contas não ativas não podem ler.
+9. `team_chat_messages`: mensagens da sala SolMarZap ou de grupo/DM, com anexos locais privados e links Drive nomeados quando aplicáveis; autor/data derivados da sessão/banco, RLS por contexto e remoção administrativa que substitui o corpo pelo marcador de remoção.
+10. `team_chat_groups`: grupos com nome, criador, data e caminho opcional de foto privada; criados por perfis ativos.
+11. `team_chat_group_members` e `team_chat_message_reads`: participantes autorizados e recibos de leitura coletivos. Integrantes do grupo consultam quem leu/não leu as mensagens do grupo; Admin pode moderar conteúdo sem contar como destinatário quando não pertence; DMs continuam visíveis apenas aos participantes.
 
 Todas as tabelas privadas terão RLS `default-deny`. Políticas distinguem pessoa ativa, Administrador, Líder da área e Membro responsável. Qualquer perfil ativo pode ler, cadastrar e remover pastas, definir a principal, e publicar/fixar/desafixar/remover comunicados de todas as áreas; visitantes e contas não ativas continuam bloqueados. Qualquer perfil ativo pode ler/enviar na sala geral e criar grupos; participantes de um grupo podem adicionar outras contas ativas. Mensagens de grupo ficam restritas a participantes e Administradores; apenas Administradores ativos podem remover mensagens. Só a pessoa ativa pode alterar o próprio nome/avatar; papel, área e estado não são editáveis pelo cliente. Aprovação de conta, se mantida, é feita por função segura e interface Administrador; políticas impedem promoção de papel.
 
@@ -35,15 +35,15 @@ Atividade esperada por semana: semanal todas; quinzenal em semanas alternadas de
 
 - `src/App.tsx` e `src/main.tsx`: montagem da aplicação, sessão, tela de login e entrada no espaço autenticado.
 - `src/features/auth/`: login/cadastro, aprovação, recuperação de senha e transição de sessão.
-- `src/features/workspace/TeamWorkspace.tsx`: topbar, navegação com ícones na ordem Chat, Comunicados, Semana, Atividades, Arquivos; `domain.ts` contém regras tipadas de semana/atividade.
+- `src/features/workspace/TeamWorkspace.tsx`: topbar, nove abas, incluindo SolMarZap e Disponibilidades; `domain.ts` contém regras tipadas de semana/atividade.
 - `src/features/workspace/SharedContentWorkspace.tsx` e `shared-content.css`: pastas Drive e comunicados com as permissões RLS aprovadas.
-- `src/features/workspace/TeamChat.tsx` e `team-chat.css`: sala geral e canais de grupo em tempo real, com seleção de participantes e remoção exclusiva de Administrador.
+- `src/features/workspace/TeamChat.tsx` e `team-chat.css`: experiência SolMarZap azul, lista/painel de conversas, criação de grupos e DMs, foto privada de grupo, mensagens em tempo real e recibos de leitura.
 - `src/features/profile/ProfileMenu.tsx` e `profile-menu.css`: nome, avatar, configurações pessoais e foto privada Supabase Storage.
 - `src/features/dashboard/`: prévia demonstrativa; painel operacional com gráficos reais permanece futuro.
 - `src/lib/supabase.ts`: cliente do front-end com somente URL/chave publishable.
 - `src/styles/global.css`, `src/features/workspace/workspace.css` e estilos por módulo: tema, responsividade e modo claro/escuro.
 - `public/assets/`: login e workspace referenciam a logo original compartilhada `celeris-logo.png`; não criar nem substituir assets de marca. Manter o arquivo original intacto, o manifest e `manus-routes.json`.
-- `supabase/migrations/`: esquema inicial, permissões de Arquivos/Comunicados, Chat, perfil/Storage/notificações e migration incremental de grupos.
+- `supabase/migrations/`: esquema inicial, regras de Arquivos/Comunicados/Chat, disponibilidade, grupos/avatares, anexos, fluxo Scrumban/PERT, siglas oficiais e Storage privado.
 - `supabase/functions/notify-activity/`: envio server-side de e-mail invocado pelo cliente após uma gravação bem-sucedida; a função valida a sessão/perfil ativo e usa a chave de serviço somente no servidor.
 - `src/lib/notifications.ts`: chamada autenticada e com flag pública desligada por padrão até a função e o provedor estarem configurados; a verificação JWT padrão permanece habilitada.
 - `docs/`, `INSTRUCOES_NETLIFY_SUPABASE.md`: passos separados para atualizar o mesmo deploy Netlify, aplicar somente migrações pendentes e configurar opcionalmente a Edge Function/provedor de e-mail.
@@ -55,7 +55,7 @@ Atividade esperada por semana: semanal todas; quinzenal em semanas alternadas de
 3. Atividades/semana: 58 atividades, validações e regras de acompanhamento; código implementado e conectado ao perfil responsável.
 4. Painel: indicadores e gráficos reais; permanece futuro. A tela demo não deve ser apresentada como dado ao vivo.
 5. Arquivos/comunicados: links Drive e regras de permissão confirmadas por qualquer perfil ativo; código/migração estão prontos, o usuário aplica o SQL incremental.
-6. Chat: preservar a sala geral; criar canais de grupo com nome e pessoas, entrada de integrantes ativos, leitura/escrita em tempo real por membros, RLS para impedir leitura externa e remoção só por Administrador. A interface usa os ícones/ordem pedidos; migration incremental é entregue para aplicação consciente pelo usuário.
+6. Chat: SolMarZap com lista de conversas, sala compartilhada, DMs privadas e grupos; botões explícitos para iniciar privado/grupo; uploads de foto de grupo em bucket privado, leitura coletiva detalhada sob RLS, anexos locais/Drive/áudio e remoção de mensagens só por Administrador. As migrations incrementais são entregues para aplicação consciente pelo usuário.
 7. Perfil e notificações: permitir edição do próprio nome/foto privada; após cada gravação de atividade/semana no site, invocar a Edge Function com a sessão autenticada. A função valida o ator/evento no servidor e envia somente ao responsável atualmente vinculado quando houver e aos Administradores ativos, excluindo o ator; nenhum e-mail de Chat. O usuário ainda não tem provedor, então o envio fica preparado e inativo até configurar Resend ou alternativa, domínio remetente e segredos.
 8. Publicação/PWA: atualizar o mesmo site Netlify via GitHub, sem criar outro projeto; PWA continua pendente. Dados permanecem no Supabase remoto e não são armazenados em cache offline.
 
@@ -79,3 +79,30 @@ Atividade esperada por semana: semanal todas; quinzenal em semanas alternadas de
 - **Período do projeto:** substituir o término derivado do contador fixo pelo intervalo inclusivo `cycle_start`–`cycle_end`. Padrão `2026-11-09` a `2027-12-22`; aceitar qualquer data inicial. Agrupar registros nas semanas civis de segunda a domingo, exibir o primeiro bloco parcial começando na data inicial configurada e limitar a última semana à data final. O Administrador ativo pode editar início e fim pela interface. A migration incremental adiciona `cycle_end`; não refazer a migration inicial nem abrir permissões RLS.
 - **Aba IA:** manter o design clean e a marca original SolMar. Exibir os quatro logotipos nos endereços fornecidos pelo usuário e um atalho Canva separado. Os links abrem serviços externos; o site não armazena credenciais nem promete autenticação Google automática.
 - **Biblioteca documental:** manter em arquivos Markdown no código os dois prompts completos e as instruções comuns de identificação/armazenamento. Cada prompt pode ser lido e copiado integralmente; preservar templates oficiais, URLs, campos, regras de conteúdo, identificação, nomenclatura DOCX, destinos previstos e limites de acesso ao Drive.
+
+## Incremento aprovado — organograma v2.2, anexos e fluxo Scrumban (06/11/2026)
+
+A implementação reutiliza React/Vite e Supabase do projeto. A aba Manual será alinhada ao DOCX v2.2 e ao organograma recebido: Coordenação Geral é composta somente pelos professores; não recebe atividades pré-atribuídas. Gestão de Pessoas, Administrativo-Financeiro, Marketing, Mecânica Naval, Elétrica e Telemetria são áreas diretas; Produtos e Redes Sociais são frentes internas de Marketing; TI é apoio transversal, sem autoridade hierárquica nem substituição da responsabilidade técnica da área demandante. A Coordenação pode acompanhar o fluxo integrado, sem ser tratada como uma equipe executora. Os agrupamentos visuais legados de núcleos e a área “Projetos” deixam de definir o fluxo de trabalho; mudanças de dados serão incrementais, preservando históricos e códigos existentes.
+
+As atividades passam a oferecer quadro Scrumban além da lista: Backlog → Pronta → Em andamento → Bloqueada/Concluída, prioridade, estimativa simples e motivo de bloqueio. O avanço será pull-based, autorizado por perfil e vínculo à área/tarefa. O quadro visualizará limites WIP por etapa; como o artigo recomenda calibrá-los após observar o fluxo e decidir em equipe, os limites serão configuráveis e não assumirão um número arbitrário definitivo. A movimentação no quadro não substitui o registro semanal existente. Coordenação supervisiona prioridades e dependências integradas; líderes gerem as tarefas de sua área; integrantes atualizam tarefas atribuídas; pedidos de apoio de TI continuam associados à área demandante e não transferem a responsabilidade técnica.
+
+Anexos de comunicados e tarefas usarão buckets privados do Supabase Storage e tabelas de metadados, com limites e tipos permitidos, validação de autorização em RLS e links assinados após autorização. A leitura respeita o acesso ao registro pai; a remoção lógica do pai não deve expor anexos. Nenhuma chave privilegiada será adicionada ao frontend.
+
+Estrutura principal existente: `src/features/workspace/ManualFunctions.tsx` (manual); `TeamWorkspace.tsx` e `domain.ts` (atividades/fluxo); `SharedContentWorkspace.tsx` e `shared-content.css` (comunicados); `supabase/migrations/` (alterações incrementais seguras); `docs/` e `TODO.md` (orientação de aplicação/publicação). O estilo visual atual será mantido.
+
+
+## Escopo adicional — PERT/CPM, disponibilidade e links externos (06/11/2026)
+
+As atividades do tipo Marco terão planejamento PERT/CPM: estimativas otimista, mais provável e pessimista em dias; dependências antecessora/sucessora; tempo esperado PERT; cálculo de folgas e caminho crítico sobre a rede acíclica. Relações inválidas e ciclos serão rejeitados no banco. Esta modelagem não atribui atividades a professores; responsáveis de execução continuam vinculados às áreas de trabalho.
+
+Anexos locais existentes do Chat devem permanecer compatíveis. Comunicados, atividades e Chat também aceitarão referências do Google Drive como links, sem importar conteúdo, controlar permissões do Drive ou incluir credenciais Google. Os anexos locais permanecerão em buckets privados do Supabase.
+
+Nova aba Disponibilidades: cada pessoa cadastra seus próprios horários semanais recorrentes de segunda a sexta em slots de 1 hora, das 07:00 às 21:00, no fuso de Brasília. O quadro fica visível apenas internamente a perfis ativos e mostra totais individuais. Uma ação separada monta escalas manuais por data/turno; a atribuição deve respeitar os slots disponíveis. A montagem segue o controle de acesso atual do aplicativo.
+
+Referências para o desenho Scrumban (consultadas em 06/11/2026): a Atlassian descreve o fluxo visual, cartões, pull, fluxo contínuo e WIP como componentes do Scrumban; recomenda que a equipe defina e ajuste os limites conforme observa o fluxo. Fontes: https://www.atlassian.com/br/agile/project-management/scrumban e https://www.atlassian.com/agile/kanban/wip-limits.
+
+## Incremento aprovado — SolMarZap e identificação de setor (06/11/2026)
+
+A aba do Chat adotará a marca SolMarZap e um fluxo de mensageiro familiar — lista de conversas, painel da conversa ativa e compositor na base, responsivo para celular — usando a paleta azul já aprovada e sem assets da marca WhatsApp. Dois controles explícitos iniciarão conversas privadas ou conversas em grupo; a foto de grupo será atualizável por participante/admin e visível apenas em URLs assinadas de um bucket privado. Em mensagens de grupos e na sala da equipe, o autor poderá abrir os detalhes de leitura e identificar quem leu e quem ainda não leu. RLS restringirá a lista de recibos ao contexto da própria conversa; DMs mantêm visibilidade somente aos participantes.
+
+As siglas oficiais serão exibidas junto aos nomes e códigos de novas atividades: Gestão de Pessoas - GP; Marketing - MKT; Administrativo Financeiro - AF; Mecânica Naval - MEC; Elétrica - ELE; Telemetria - TEL. Prefixos antigos em códigos e vínculos históricos não serão reescritos; “Projetos (histórico)” permanece inativo e a nova área Elétrica usa ELE. Alterações usam migrations incrementais após a limpeza de áreas.

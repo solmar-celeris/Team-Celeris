@@ -172,3 +172,28 @@ Os pushes incluem parâmetros internos de navegação. Ao tocar: Chat abre a con
 4. Faça testes com duas contas autorizadas e pushes novos. Toque em cada tipo de aviso e confirme a aba, o item e a mensagem/data. Para um push antigo que não carregue os dados de destino, o app não consegue adivinhar o registro; gere um novo teste depois de publicar as Edge Functions.
 
 O front-end consulta o conteúdo pelo Supabase autenticado e não confia em URL/ID como prova de acesso. Se o usuário não puder ler aquela conversa/registro, as políticas RLS devem continuar bloqueando-o. Nenhum SQL remoto, deploy de site ou publicação de Edge Function foi executado por este pacote.
+
+## 14. Manual, tarefas Scrumban, PERT/CPM, anexos, enquetes e disponibilidades
+Esta versão inclui o Manual de funções alinhado ao organograma informado; o quadro Scrumban e anexos de tarefas; a subvista PERT/CPM para marcos; anexos locais, links do Google Drive/Docs e enquetes nos Comunicados; links do Drive no Chat; e a nova aba de Disponibilidades e escalas. O app usa os papéis já existentes: não há papel novo de Coordenação; os professores mantêm a configuração atual e não recebem tarefas operacionais automaticamente. A antiga área Projetos fica inativa no catálogo para novas tarefas, mas seus registros e códigos históricos são preservados como “Projetos (histórico)”; Energia passa a “Elétrica”.
+
+### Aplicar as migrations
+No projeto Supabase ligado ao site, confira primeiro o histórico de migrations já aplicadas. Aplique **somente as que faltarem**, uma única vez cada, na ordem abaixo (não cole o esquema inicial novamente):
+
+1. `supabase/migrations/20261106193000_availability.sql` — disponibilidade recorrente por pessoa, grade interna e escalas, com slots de segunda a sexta, 07:00–21:00, em blocos de uma hora.
+2. `supabase/migrations/20261106194000_announcement_attachments_drive_polls.sql` — anexos privados e links Drive nos comunicados, mais enquetes com votos e resultados agregados.
+3. `supabase/migrations/20261106195000_chat_drive_links.sql` — metadados de links Drive/Docs nas mensagens de Chat; os uploads locais atuais do Chat continuam em bucket privado.
+4. `supabase/migrations/20261106195800_activity_flow_attachments.sql` — estágios Scrumban, configuração WIP por etapa/área, controle de transição, anexos privados e links Drive em atividades.
+5. `supabase/migrations/20261106195900_pert_dependencies.sql` — estimativas PERT e relações predecessor/sucessor entre marcos, cálculo da rede e prevenção de ciclos.
+6. `supabase/migrations/20261106201000_org_area_cleanup.sql` — “Projetos” deixa de ser uma área ativa e “Energia” é renomeada para “Elétrica”; vínculos e tarefas antigas permanecem preservados como histórico somente para leitura.
+7. `supabase/migrations/20261106202000_chat_group_photos_read_receipts.sql` — avatares privados dos grupos e detalhe dos recibos de leitura; membros autorizados veem quem leu/não leu mensagens coletivas, sem ampliar acesso a conversas diretas.
+8. `supabase/migrations/20261106203000_area_sector_abbreviations.sql` — rótulos e prefixos oficiais GP, MKT, AF, MEC, ELE e TEL para novas tarefas, sem reescrever códigos históricos.
+
+As migrations de anexos criam buckets Supabase Storage **privados**, com limite de 15 MiB e formatos permitidos. Não torne `activity-attachments`, `announcement-attachments`, `team-chat-attachments`, `team-chat-audio` ou `team-chat-group-photos` públicos, não desative RLS e não coloque `service_role` em Netlify/Vite ou no navegador. No Scrumban, os limites WIP começam sem número configurado; a Administração pode configurar limite por etapa e área após observar o fluxo, sem limite arbitrário fixo. O estágio do quadro é separado do status semanal. O Chat passa a se chamar SolMarZap e oferece botões de conversa privada e em grupo, foto de grupo JPEG/PNG/WebP de até 3 MiB em bucket privado, e detalhes de leitura em mensagens coletivas: autor/membros autorizados veem nomes de leitores e pendentes. Recibos de DMs seguem restritos aos participantes e não são listados para terceiros.
+
+### Publicar o front-end
+Depois de aplicar as migrations no Supabase correto, publique o código atualizado no GitHub ligado ao mesmo site Netlify e aguarde o build `pnpm build`. Não crie outro site nem altere variáveis de ambiente para estes recursos. Esta atualização não requer nova chave OneSignal nem alteração das Edge Functions de push.
+
+### SolMarZap, Drive, enquetes e escalas
+O campo Drive aceita apenas links HTTPS com host `drive.google.com` ou `docs.google.com`; o aplicativo não baixa/sincroniza o arquivo nem consegue conceder permissão Google. Configure o compartilhamento no Drive separadamente e siga a política da equipe antes de usar “qualquer pessoa com o link”. Votos da enquete são contabilizados em resultados agregados, sem a identidade de quem votou. Cada pessoa preenche apenas sua própria disponibilidade; a escala mostra horas disponíveis e escaladas separadamente e a atribuição a uma pessoa é validada contra os horários declarados. Perfis ativos veem o quadro interno; Administração e Líderes de área podem montar/editar escalas.
+
+Nenhuma dessas migrations foi executada no seu Supabase remoto e nenhum deploy foi feito por esta atualização. Enviar os arquivos ao GitHub/Netlify sozinho não altera o banco; o novo front-end deve ser publicado em coordenação com as migrations aplicadas.

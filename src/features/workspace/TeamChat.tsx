@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowUp, Camera, Download, FileText, Image as ImageIcon, Mic, MessageCircle, Paperclip, RefreshCw, ShieldCheck, Square, Trash2, UserPlus, UsersRound, Plus, Search, X } from 'lucide-react';
+import { ArrowUp, Camera, Download, ExternalLink, FileText, Image as ImageIcon, Link2, Mic, MessageCircle, Paperclip, RefreshCw, ShieldCheck, Square, Trash2, UserPlus, UsersRound, Plus, Search, X } from 'lucide-react';
 import { Mp3Encoder } from '@breezystack/lamejs';
 import { notifyChatMessagePush } from '../../lib/notifications';
 import type { MemberProfile } from './domain';
@@ -11,10 +11,11 @@ type TeamChatMessage = {
   id: string; sender_id: string | null; group_id: string | null; dm_conversation_id: string | null;
   body: string; audio_path: string | null; audio_content_type: string | null;
   attachment_path: string | null; attachment_content_type: string | null; attachment_name: string | null; attachment_size: number | null;
+  drive_url: string | null; drive_name: string | null;
   created_at: string; removed_at: string | null; removed_by: string | null;
 };
 type TeamChatRead = { message_id: string; user_id: string; read_at: string };
-type TeamChatGroup = { id: string; name: string; created_by: string | null; created_at: string };
+type TeamChatGroup = { id: string; name: string; created_by: string | null; created_at: string; avatar_path: string | null };
 type TeamChatGroupMember = { group_id: string; user_id: string };
 type DirectConversation = { id: string; user_a_id: string; user_b_id: string; created_at: string };
 type GroupDialogMode = 'create' | 'add-members';
@@ -25,8 +26,11 @@ type TeamChatProps = {
 };
 const PAGE_SIZE = 50;
 const MESSAGE_LIMIT = 2000;
-const MESSAGE_COLUMNS = 'id,sender_id,group_id,dm_conversation_id,body,audio_path,audio_content_type,attachment_path,attachment_content_type,attachment_name,attachment_size,created_at,removed_at,removed_by';
+const DRIVE_LINK_ONLY_BODY = '[Link do Drive]';
+const MESSAGE_COLUMNS = 'id,sender_id,group_id,dm_conversation_id,body,audio_path,audio_content_type,attachment_path,attachment_content_type,attachment_name,attachment_size,drive_url,drive_name,created_at,removed_at,removed_by';
 const CHAT_FILE_LIMIT = 15 * 1024 * 1024;
+const CHAT_DRIVE_NAME_LIMIT = 240;
+const CHAT_DRIVE_URL_LIMIT = 2048;
 const CHAT_FILE_ACCEPT = 'image/*,.pdf,.txt,.csv,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp3,.m4a,.wav,.aac,.ogg,.webm';
 const MIME_BY_EXTENSION: Record<string, string> = {
   jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', heic: 'image/heic', heif: 'image/heif',
@@ -37,6 +41,22 @@ const MIME_BY_EXTENSION: Record<string, string> = {
   mp4: 'audio/mp4', wav: 'audio/wav', aac: 'audio/aac', ogg: 'audio/ogg', webm: 'audio/webm',
 };
 const ALLOWED_CHAT_MIME = new Set(Object.values(MIME_BY_EXTENSION));
+function validateDriveAttachment(nameValue: string, urlValue: string): { name: string; url: string } | null {
+  const name = nameValue.trim();
+  const rawUrl = urlValue.trim();
+  if (!name && !rawUrl) return null;
+  if (!name || !rawUrl) throw new Error('Informe o nome e o link do arquivo do Drive.');
+  if (Array.from(name).length > CHAT_DRIVE_NAME_LIMIT) throw new Error(`O nome do arquivo do Drive pode ter até ${CHAT_DRIVE_NAME_LIMIT} caracteres.`);
+  if (rawUrl.length > CHAT_DRIVE_URL_LIMIT || /[\u0000-\u0020\u007f]/.test(rawUrl)) throw new Error('Confira o link HTTPS do Google Drive e tente novamente.');
+  let parsed: URL;
+  try { parsed = new URL(rawUrl); } catch { throw new Error('Informe um link HTTPS válido do Google Drive ou Google Docs.'); }
+  const authority = rawUrl.match(/^https:\/\/([^/?#]*)/i)?.[1]?.toLowerCase();
+  if (parsed.protocol !== 'https:' || !['drive.google.com', 'docs.google.com'].includes(parsed.hostname) || parsed.username || parsed.password || parsed.port || authority !== parsed.hostname) {
+    throw new Error('Use um link HTTPS de drive.google.com ou docs.google.com, sem credenciais.');
+  }
+  if (parsed.href.length > CHAT_DRIVE_URL_LIMIT) throw new Error(`O link do Drive pode ter até ${CHAT_DRIVE_URL_LIMIT} caracteres.`);
+  return { name, url: parsed.href };
+}
 function attachmentMime(file: File): string | null {
   const declared = file.type.toLowerCase().split(';')[0];
   if (ALLOWED_CHAT_MIME.has(declared)) return declared;
@@ -94,7 +114,7 @@ async function convertToMp3(source: Blob): Promise<Blob> {
 function chatError(error: unknown): string {
   if (!error || typeof error !== 'object') return 'Não foi possível concluir a operação. Tente novamente.';
   const details = error as { code?: string; message?: string };
-  if (['42P01', '42703', 'PGRST204', 'PGRST205', 'PGRST202'].includes(details.code ?? '')) return 'As funções recentes do Chat ainda não estão configuradas no Supabase. Confira as migrations de Chat privado/calendário, áudio/leitura e anexos incluídas no ZIP e aplique somente as que ainda faltam.';
+  if (['42P01', '42703', 'PGRST204', 'PGRST205', 'PGRST202'].includes(details.code ?? '')) return 'As funções recentes do Chat ainda não estão configuradas no Supabase. Confira as migrations de Chat privado/calendário, áudio/leitura, anexos, links do Drive, fotos de grupo e recibos incluídas no ZIP e aplique somente as que ainda faltam.';
   if (details.code === '42501') return 'O Supabase bloqueou a operação pelas regras de acesso. Confirme que sua conta está ativa e pertence à conversa.';
   if (details.code === '23514') return 'Confira os dados informados e tente novamente.';
   if (details.code === '23505') return 'Essa conversa ou participante já existe. Atualize a lista de conversas.';
@@ -114,6 +134,9 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   const [showMobileConversations, setShowMobileConversations] = useState(false);
   const [memberSearch, setMemberSearch] = useState('');
   const [draft, setDraft] = useState('');
+  const [driveFormOpen, setDriveFormOpen] = useState(false);
+  const [driveName, setDriveName] = useState('');
+  const [driveUrl, setDriveUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
@@ -131,6 +154,9 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   const [attachmentDownloadUrls, setAttachmentDownloadUrls] = useState<Record<string, string>>({});
   const [pendingAttachment, setPendingAttachment] = useState<File | null>(null);
   const [readByMessage, setReadByMessage] = useState<Record<string, string[]>>({});
+  const [readDetailsMessageId, setReadDetailsMessageId] = useState<string | null>(null);
+  const [groupAvatarUrls, setGroupAvatarUrls] = useState<Record<string, string>>({});
+  const [savingGroupPhoto, setSavingGroupPhoto] = useState(false);
   const [recording, setRecording] = useState(false);
   const [recordedAudio, setRecordedAudio] = useState<Blob | null>(null);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
@@ -138,6 +164,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   const [cameraError, setCameraError] = useState('');
   const recorderRef = useRef<MediaRecorder | null>(null);
   const attachmentInputRef = useRef<HTMLInputElement | null>(null);
+  const groupPhotoInputRef = useRef<HTMLInputElement | null>(null);
   const cameraVideoRef = useRef<HTMLVideoElement | null>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
   const recordingStreamRef = useRef<MediaStream | null>(null);
@@ -164,7 +191,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   const availableGroupMembers = useMemo(() => members.filter((member) => !activeGroupMemberIds.has(member.user_id)), [activeGroupMemberIds, members]);
   const dialogMembers = useMemo(() => groupDialogMode === 'create' ? members.filter((member) => member.user_id !== userId) : groupDialogMode === 'add-members' ? availableGroupMembers : [], [availableGroupMembers, groupDialogMode, members, userId]);
   const canWrite = !activeGroupId || activeGroupMemberIds.has(userId);
-  const conversationLabel = activeDirectMember?.full_name || activeGroup?.name || 'Chat da equipe';
+  const conversationLabel = activeDirectMember?.full_name || activeGroup?.name || 'SolMarZap';
   const activeKey = activeDirectId ?? activeGroupId ?? 'team';
   const activeConversationRef = useRef(activeKey);
   activeConversationRef.current = activeKey;
@@ -194,13 +221,20 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   const loadLists = useCallback(async () => {
     try {
       const [groupResult, memberResult, directResult] = await Promise.all([
-        client.from('team_chat_groups').select('id,name,created_by,created_at').order('name', { ascending: true }),
+        client.from('team_chat_groups').select('id,name,created_by,created_at,avatar_path').order('name', { ascending: true }),
         client.from('team_chat_group_members').select('group_id,user_id'),
         client.from('team_chat_direct_conversations').select('id,user_a_id,user_b_id,created_at').order('created_at', { ascending: false }),
       ]);
       const failure = groupResult.error ?? memberResult.error ?? directResult.error;
       if (failure) throw failure;
-      setGroups((groupResult.data ?? []) as unknown as TeamChatGroup[]);
+      const nextGroups = (groupResult.data ?? []) as unknown as TeamChatGroup[];
+      const groupPhotos = await Promise.all(nextGroups.map(async (group) => {
+        if (!group.avatar_path) return [group.id, ''] as const;
+        const { data, error: photoError } = await client.storage.from('team-chat-group-photos').createSignedUrl(group.avatar_path, 3600);
+        return [group.id, photoError ? '' : data.signedUrl] as const;
+      }));
+      setGroups(nextGroups);
+      setGroupAvatarUrls(Object.fromEntries(groupPhotos.filter(([, url]) => Boolean(url))));
       setGroupMembers((memberResult.data ?? []) as unknown as TeamChatGroupMember[]);
       setDirects((directResult.data ?? []) as unknown as DirectConversation[]);
     } catch (loadError) { setError(chatError(loadError)); }
@@ -387,6 +421,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
         }
         return next;
       });
+      if (activeGroupId && !activeGroupMemberIds.has(userId)) return;
       const existing = new Set(receipts.filter((receipt) => receipt.user_id === userId).map((receipt) => receipt.message_id));
       const unread = messages.filter((message) => message.sender_id !== userId && !existing.has(message.id) && !readMarkedRef.current.has(message.id));
       if (!unread.length) return;
@@ -406,12 +441,12 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
     }
     void syncReadReceipts();
     return () => { cancelled = true; };
-  }, [client, messages, userId]);
+  }, [activeGroupId, activeGroupMemberIds, client, messages, userId]);
 
   useEffect(() => {
     if (recorderRef.current && recorderRef.current.state !== 'inactive') recorderRef.current.stop();
-    setRecordedAudio(null); setPendingAttachment(null); setRecordingSeconds(0); setReadByMessage({}); setAudioUrls({}); setAudioDownloadUrls({}); setAttachmentUrls({}); setAttachmentDownloadUrls({});
-    setMessages([]); setHasOlder(false); setDraft(''); setConfirmRemoveId(null); setError(''); setFeedback('');
+    setRecordedAudio(null); setPendingAttachment(null); setRecordingSeconds(0); setReadByMessage({}); setReadDetailsMessageId(null); setAudioUrls({}); setAudioDownloadUrls({}); setAttachmentUrls({}); setAttachmentDownloadUrls({});
+    setMessages([]); setHasOlder(false); setDraft(''); setDriveFormOpen(false); setDriveName(''); setDriveUrl(''); setConfirmRemoveId(null); setError(''); setFeedback('');
     eventRevisionRef.current = 0; void loadLists(); void loadLatest();
     const channel = client.channel(`team-chat-${userId}-${activeKey}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_chat_messages' }, (payload) => {
@@ -436,7 +471,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
           [receipt.message_id]: [...new Set([...(current[receipt.message_id] ?? []), receipt.user_id])],
         }));
       })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_chat_groups' }, () => { void loadLists(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'team_chat_groups' }, () => { void loadLists(); })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_chat_group_members' }, () => { void loadLists(); })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_chat_direct_conversations' }, () => { void loadLists(); })
       .subscribe((status) => {
@@ -545,11 +580,14 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); const text = draft.trim();
     if (recordedAudio && pendingAttachment) { setError('Envie a gravação ou o arquivo selecionado em mensagens separadas.'); return; }
-    if (!text && !recordedAudio && !pendingAttachment) { setError('Escreva uma mensagem, grave um áudio ou anexe um arquivo antes de enviar.'); return; }
+    let driveAttachment: { name: string; url: string } | null;
+    try { driveAttachment = validateDriveAttachment(driveName, driveUrl); }
+    catch (validationError) { setError(validationError instanceof Error ? validationError.message : 'Confira os dados do link do Drive.'); return; }
+    if (!text && !recordedAudio && !pendingAttachment && !driveAttachment) { setError('Escreva uma mensagem, grave um áudio, anexe um arquivo ou adicione um link do Drive antes de enviar.'); return; }
     const pendingMime = pendingAttachment ? attachmentMime(pendingAttachment) : null;
     const audioSource = recordedAudio ?? (pendingAttachment && pendingMime?.startsWith('audio/') ? pendingAttachment : null);
     const attachmentFile = pendingAttachment && !audioSource ? pendingAttachment : null;
-    const body = text || (audioSource ? 'Mensagem de áudio' : `Arquivo anexado: ${pendingAttachment?.name ?? 'arquivo'}`);
+    const body = text || (audioSource ? 'Mensagem de áudio' : attachmentFile ? `Arquivo anexado: ${attachmentFile.name}` : driveAttachment ? DRIVE_LINK_ONLY_BODY : '');
     if (Array.from(body).length > MESSAGE_LIMIT) { setError(`A mensagem pode ter até ${MESSAGE_LIMIT} caracteres.`); return; }
     if (!canWrite) { setError('Você não participa deste grupo. Peça a um integrante para adicionar sua conta.'); return; }
     setSending(true); setError(''); setFeedback('');
@@ -577,11 +615,11 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
         if (uploadError) throw uploadError;
       }
       const { data, error: insertError } = await client.from('team_chat_messages')
-        .insert({ body, group_id: activeDirectId ? null : activeGroupId, dm_conversation_id: activeDirectId ? activeDirectId : activeGroupId ? null : null, audio_path: audioPath, audio_content_type: audioContentType, attachment_path: attachmentPath, attachment_content_type: attachmentContentType, attachment_name: attachmentName, attachment_size: attachmentSize })
+        .insert({ body, group_id: activeDirectId ? null : activeGroupId, dm_conversation_id: activeDirectId ? activeDirectId : activeGroupId ? null : null, audio_path: audioPath, audio_content_type: audioContentType, attachment_path: attachmentPath, attachment_content_type: attachmentContentType, attachment_name: attachmentName, attachment_size: attachmentSize, drive_url: driveAttachment?.url ?? null, drive_name: driveAttachment?.name ?? null })
         .select(MESSAGE_COLUMNS).single();
       if (insertError) throw insertError;
       const message = data as unknown as TeamChatMessage;
-      setMessages((current) => mergeMessages(current, [message])); autoScrollRef.current = true; setDraft(''); setRecordedAudio(null); setPendingAttachment(null); setRecordingSeconds(0);
+      setMessages((current) => mergeMessages(current, [message])); autoScrollRef.current = true; setDraft(''); setRecordedAudio(null); setPendingAttachment(null); setDriveName(''); setDriveUrl(''); setDriveFormOpen(false); setRecordingSeconds(0);
       void notifyChatMessagePush(client, message.id).then((outcome) => { if (outcome === 'failed') setFeedback('Mensagem enviada. O aviso no celular não foi confirmado; confira a configuração do OneSignal.'); });
     } catch (sendError) { setError(chatError(sendError)); }
     finally { setSending(false); }
@@ -595,6 +633,34 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
       removedIdsRef.current.add(messageId); setMessages((current) => current.filter((message) => message.id !== messageId)); setConfirmRemoveId(null); setFeedback('Mensagem removida pelo administrador.');
     } catch (removeError) { setError(chatError(removeError)); }
     finally { setRemovingId(null); }
+  }
+
+  async function uploadGroupPhoto(file: File) {
+    if (!activeGroup || !(isAdmin || activeGroupMemberIds.has(userId)) || savingGroupPhoto) return;
+    const mime = file.type.toLowerCase();
+    const extensions: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+    if (!extensions[mime]) { setError('A foto do grupo deve ser JPEG, PNG ou WebP.'); return; }
+    if (file.size <= 0 || file.size > 3 * 1024 * 1024) { setError('A foto do grupo deve ter até 3 MB.'); return; }
+    setSavingGroupPhoto(true); setError(''); setFeedback('');
+    const path = `${activeGroup.id}/${crypto.randomUUID()}.${extensions[mime]}`;
+    let uploaded = false;
+    let saved = false;
+    try {
+      const { error: uploadError } = await client.storage.from('team-chat-group-photos').upload(path, file, { contentType: mime, upsert: false });
+      if (uploadError) throw uploadError;
+      uploaded = true;
+      const { error: updateError } = await client.from('team_chat_groups').update({ avatar_path: path }).eq('id', activeGroup.id);
+      if (updateError) throw updateError;
+      saved = true;
+      if (activeGroup.avatar_path) await client.storage.from('team-chat-group-photos').remove([activeGroup.avatar_path]);
+      setFeedback('Foto do grupo atualizada.');
+      await loadLists();
+    } catch (photoError) {
+      setError(chatError(photoError));
+    } finally {
+      if (uploaded && !saved) await client.storage.from('team-chat-group-photos').remove([path]);
+      setSavingGroupPhoto(false);
+    }
   }
 
   async function startDirect(otherUserId: string) {
@@ -639,24 +705,30 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
     return <span className={`team-chat-avatar is-${size}`}>{photo ? <img src={photo} alt={`Foto de ${name}`} /> : <span aria-hidden="true">{Array.from(name.trim())[0]?.toLocaleUpperCase('pt-BR') || '?'}</span>}</span>;
   };
 
+  const groupAvatar = (group: TeamChatGroup, size: 'sm' | 'md' = 'sm') => {
+    const photo = groupAvatarUrls[group.id];
+    return <span className={`team-chat-avatar is-${size} is-group-avatar`}>{photo ? <img src={photo} alt={`Foto do grupo ${group.name}`} /> : <span aria-hidden="true">{Array.from(group.name.trim())[0]?.toLocaleUpperCase('pt-BR') || 'G'}</span>}</span>;
+  };
+
   return (
     <section className="team-chat" aria-labelledby="team-chat-title">
       <div className="team-chat-heading">
-        <div><p className="workspace-kicker">{activeDirectId ? 'CONVERSA PRIVADA' : activeGroupId ? 'GRUPO PRIVADO' : 'SALA COMPARTILHADA'}</p>
-          <h2 id="team-chat-title"><MessageCircle aria-hidden="true" /> {activeDirectId ? conversationLabel : activeGroup?.name ?? 'Chat da equipe'}</h2>
-          <p>{activeDirectId ? 'Conversa visível somente para você e esta pessoa.' : activeGroupId ? 'Mensagens visíveis somente aos integrantes do grupo.' : 'Converse com todos os integrantes ativos. As mensagens chegam em tempo real.'}</p></div>
+        <div><p className="workspace-kicker">{activeDirectId ? 'CONVERSA PRIVADA' : activeGroupId ? 'SOLMARZAP · GRUPO' : 'SOLMARZAP · EQUIPE'}</p>
+          <h2 id="team-chat-title">{activeGroup ? groupAvatar(activeGroup, 'md') : <MessageCircle aria-hidden="true" />} {activeDirectId ? conversationLabel : activeGroup?.name ?? 'SolMarZap'}</h2>
+          <p>{activeDirectId ? 'Conversa privada, visível somente para as duas contas participantes.' : activeGroupId ? 'Mensagens e informações de leitura restritas aos integrantes do grupo.' : 'Converse com a equipe em tempo real no SolMarZap.'}</p></div>
         <div className="team-chat-heading-actions">
           <button className="team-chat-mobile-toggle" type="button" onClick={() => setShowMobileConversations(true)} aria-expanded={showMobileConversations}><MessageCircle aria-hidden="true" /> Conversas</button>
           {isAdmin && <span className="team-chat-admin-badge"><ShieldCheck aria-hidden="true" /> Administrador</span>}
-          {activeGroupId && (activeGroupMemberIds.has(userId) || isAdmin) && <button className="workspace-refresh" type="button" onClick={() => { setGroupDialogError(''); setGroupDialogMode('add-members'); }} disabled={availableGroupMembers.length === 0}><UserPlus aria-hidden="true" /> Adicionar pessoas</button>}
-          <button className="team-chat-create-group" type="button" onClick={() => { setGroupDialogError(''); setGroupDialogMode('create'); }}><UsersRound aria-hidden="true" /> Criar grupo</button>
+          {activeGroupId && (activeGroupMemberIds.has(userId) || isAdmin) && <><input ref={groupPhotoInputRef} className="team-chat-hidden-input" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void uploadGroupPhoto(file); event.currentTarget.value = ''; }} /><button className="team-chat-secondary-action" type="button" onClick={() => groupPhotoInputRef.current?.click()} disabled={savingGroupPhoto} aria-label="Alterar foto do grupo"><Camera aria-hidden="true" /> {savingGroupPhoto ? 'Salvando foto…' : 'Foto do grupo'}</button><button className="workspace-refresh" type="button" onClick={() => { setGroupDialogError(''); setGroupDialogMode('add-members'); }} disabled={availableGroupMembers.length === 0}><UserPlus aria-hidden="true" /> Adicionar pessoas</button></>}
+          <button className="team-chat-secondary-action" type="button" onClick={() => { setShowNewDirect(true); setMemberSearch(''); setShowMobileConversations(true); }}><MessageCircle aria-hidden="true" /> Conversa privada</button>
+          <button className="team-chat-create-group" type="button" onClick={() => { setGroupDialogError(''); setGroupDialogMode('create'); }}><UsersRound aria-hidden="true" /> Conversa em grupo</button>
           <button className="workspace-refresh" type="button" onClick={() => { void loadLatest(true); void loadLists(); }} disabled={refreshing || loading}><RefreshCw aria-hidden="true" /> {refreshing ? 'Atualizando…' : 'Atualizar'}</button>
         </div>
       </div>
       <div className="team-chat-shell">
         {showMobileConversations && <button className="team-chat-drawer-backdrop" type="button" aria-label="Fechar lista de conversas" onClick={() => setShowMobileConversations(false)} />}
         <nav className={`team-chat-channels${showMobileConversations ? ' is-mobile-open' : ''}`} aria-label="Conversas do Chat">
-          <p className="team-chat-channels-title">CONVERSAS</p>
+          <p className="team-chat-channels-title">SOLMARZAP · CONVERSAS</p>
           <div className="team-chat-channel-list">
             <button type="button" className={`team-chat-channel${!activeGroupId && !activeDirectId ? ' is-active' : ''}`} onClick={() => { setActiveGroupId(null); setActiveDirectId(null); setShowMobileConversations(false); }}><MessageCircle aria-hidden="true" /><span>Equipe</span><small>Todos</small></button>
             <div className="team-chat-channel-heading"><span>PRIVADAS</span><button type="button" title="Nova conversa privada" aria-label="Iniciar conversa privada" onClick={() => setShowNewDirect((value) => !value)}><Plus aria-hidden="true" /></button></div>
@@ -672,7 +744,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
               const groupIds = groupMembers.filter((member) => member.group_id === group.id).map((member) => member.user_id);
               const count = groupIds.length;
               return <button type="button" className={`team-chat-channel${activeGroupId === group.id ? ' is-active' : ''}`} key={group.id} onClick={() => { setActiveDirectId(null); setActiveGroupId(group.id); setShowMobileConversations(false); }}>
-                <span className="team-chat-group-avatars">{groupIds.slice(0, 2).map((id) => avatar(id, memberNames.get(id) || 'Integrante', 'sm'))}<UsersRound aria-hidden="true" /></span><span>{group.name}</span><small>{count}</small></button>;
+                {groupAvatar(group, 'sm')}<span>{group.name}</span><small>{count}</small></button>;
             })}
             {directs.length === 0 && groups.length === 0 && <p className="team-chat-no-groups">Inicie uma conversa privada ou crie um grupo.</p>}
           </div>
@@ -685,14 +757,15 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
               {hasOlder && messages.length > 0 && <button className="team-chat-older" type="button" onClick={() => void loadOlder()} disabled={loadingOlder}>{loadingOlder ? 'Carregando…' : 'Carregar mensagens anteriores'}</button>}
               {loading && messages.length === 0 ? <div className="team-chat-empty" role="status">Carregando conversa…</div> : messages.length === 0 ? <div className="team-chat-empty"><MessageCircle aria-hidden="true" /><strong>A conversa começa aqui.</strong><span>Envie a primeira mensagem.</span></div> : messages.map((message, index) => {
                 const sender = getMember(message.sender_id); const senderName = message.sender_id === userId && !activeGroupId ? 'Você' : sender?.full_name || (message.sender_id === userId ? 'Você' : 'Integrante da equipe');
-                const readers = (readByMessage[message.id] ?? []).filter((readerId) => readerId !== userId);
+                const readers = (readByMessage[message.id] ?? []).filter((readerId) => readerId !== userId && memberById.has(readerId) && (!activeGroupId || activeGroupMemberIds.has(readerId)));
                 const readCount = readers.length;
                 const previous = messages[index - 1]; const showDay = !previous || new Date(previous.created_at).toDateString() !== new Date(message.created_at).toDateString();
                 return <div className="team-chat-message-row-wrap" key={message.id}>{showDay && <div className="team-chat-day-divider"><span>{dayLabel(message.created_at)}</span></div>}
                   <div className={`team-chat-message-row${message.sender_id === userId ? ' is-own' : ''}`}>{!activeDirectId && avatar(message.sender_id, senderName, 'md')}
                     <article id={`chat-message-${message.id}`} className={`team-chat-message${message.sender_id === userId ? ' is-own' : ''}${initialMessageId === message.id ? ' is-push-target' : ''}`}>
                       {!activeDirectId && <div className="team-chat-message-meta"><strong>{senderName}</strong></div>}
-                      {message.body !== 'Mensagem de áudio' && <p>{message.body}</p>}
+                      {message.body && message.body !== 'Mensagem de áudio' && !(message.drive_url && message.body === DRIVE_LINK_ONLY_BODY) && <p>{message.body}</p>}
+                      {message.drive_url && message.drive_name && <a className="team-chat-drive-link" href={message.drive_url} target="_blank" rel="noopener noreferrer"><Link2 aria-hidden="true" /><span>{message.drive_name}</span><ExternalLink aria-hidden="true" /></a>}
                       {message.audio_path && (audioUrls[message.id]
                         ? <div className="team-chat-audio-row"><audio className="team-chat-audio-player" controls preload="none" src={audioUrls[message.id]} aria-label={`Mensagem de áudio de ${senderName}`} />{audioDownloadUrls[message.id] && <a className="team-chat-audio-download" href={audioDownloadUrls[message.id]} aria-label="Baixar áudio" title="Baixar áudio"><Download aria-hidden="true" /><span>Baixar</span></a>}</div>
                         : <span className="team-chat-audio-loading">Carregando áudio…</span>)}
@@ -701,6 +774,25 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
                         : <span className="team-chat-audio-loading">Carregando anexo…</span>)}
                       {message.body === 'Mensagem de áudio' && !message.audio_path && <p>Mensagem de áudio indisponível.</p>}
                       <div className="team-chat-message-time"><time dateTime={message.created_at}>{timeLabel(message.created_at)}</time>{message.sender_id === userId && <span className={readCount ? 'is-read' : ''} aria-label={readCount ? (activeGroupId ? `Lida por ${readCount} integrante(s)` : 'Lida') : 'Enviada'} title={readCount ? (activeGroupId ? `Lida por ${readCount} integrante(s)` : 'Lida') : 'Enviada'}>{readCount ? '✓✓' : '✓'}{readCount > 0 && <small>{activeGroupId ? `Lida por ${readCount}` : 'Lida'}</small>}</span>}</div>
+                      {message.sender_id === userId && (activeGroupId ? activeGroupMemberIds.has(userId) : !activeDirectId) && (() => {
+                        const recipientIds = (activeGroupId
+                          ? groupMembers.filter((item) => item.group_id === activeGroupId).map((item) => item.user_id)
+                          : members.map((item) => item.user_id)).filter((id) => id !== message.sender_id && memberById.has(id));
+                        const readIds = new Set(readByMessage[message.id] ?? []);
+                        const readMembers = recipientIds.filter((id) => readIds.has(id));
+                        const unreadMembers = recipientIds.filter((id) => !readIds.has(id));
+                        const detailsId = `read-details-${message.id}`;
+                        const expanded = readDetailsMessageId === message.id;
+                        return <div className="team-chat-read-details-wrap">
+                          <button className="team-chat-read-details-trigger" type="button" aria-expanded={expanded} aria-controls={detailsId} onClick={() => setReadDetailsMessageId((current) => current === message.id ? null : message.id)}>
+                            <span aria-hidden="true">✓✓</span> {readMembers.length} de {recipientIds.length} leram <span aria-hidden="true">{expanded ? '−' : '+'}</span>
+                          </button>
+                          {expanded && <section className="team-chat-read-details" id={detailsId} aria-label={`Leitura da mensagem de ${senderName}`}>
+                            <div><strong>Leram ({readMembers.length})</strong>{readMembers.length ? <ul>{readMembers.map((id) => <li key={id}>{memberNames.get(id) || 'Integrante'}</li>)}</ul> : <p>Ninguém leu ainda.</p>}</div>
+                            <div><strong>Ainda não leram ({unreadMembers.length})</strong>{unreadMembers.length ? <ul>{unreadMembers.map((id) => <li key={id}>{memberNames.get(id) || 'Integrante'}</li>)}</ul> : <p>Todas as pessoas destinatárias já leram.</p>}</div>
+                          </section>}
+                        </div>;
+                      })()}
                       {isAdmin && <div className="team-chat-message-actions">{confirmRemoveId === message.id ? <><span>Remover esta mensagem?</span><button type="button" className="team-chat-confirm-remove" onClick={() => void removeMessage(message.id)} disabled={removingId === message.id}>{removingId === message.id ? 'Removendo…' : 'Confirmar remoção'}</button><button type="button" className="team-chat-cancel-remove" onClick={() => setConfirmRemoveId(null)} disabled={removingId === message.id}>Cancelar</button></> : <button type="button" className="team-chat-remove" onClick={() => setConfirmRemoveId(message.id)} aria-label={`Remover mensagem de ${senderName}`}><Trash2 aria-hidden="true" /> Remover</button>}</div>}
                     </article></div></div>;
               })}
@@ -709,10 +801,11 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
             <form className="team-chat-composer" onSubmit={(event) => void sendMessage(event)}>
               <input ref={attachmentInputRef} className="team-chat-hidden-input" type="file" accept={CHAT_FILE_ACCEPT} onChange={(event) => { handleAttachmentSelection(event.currentTarget.files?.[0]); event.currentTarget.value = ''; }} />
               {pendingAttachment && <div className="team-chat-attachment-pending" role="status">{attachmentMime(pendingAttachment)?.startsWith('image/') ? <ImageIcon aria-hidden="true" /> : <FileText aria-hidden="true" />}<span>{pendingAttachment.name}<small>{(pendingAttachment.size / (1024 * 1024)).toFixed(1)} MB</small></span><button type="button" onClick={() => setPendingAttachment(null)} aria-label="Remover arquivo selecionado"><X aria-hidden="true" /></button></div>}
-              <textarea aria-label="Sua mensagem" id="team-chat-message" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={canWrite ? 'Escreva uma mensagem…' : 'Você não participa deste grupo.'} rows={1} maxLength={MESSAGE_LIMIT} disabled={sending || !canWrite} />
+              {driveFormOpen && <div className="team-chat-drive-fields" id="team-chat-drive-fields"><label><span>Nome do arquivo no Drive</span><input type="text" value={driveName} onChange={(event) => setDriveName(event.target.value)} maxLength={CHAT_DRIVE_NAME_LIMIT} placeholder="Ex.: Planejamento da equipe" disabled={sending || !canWrite} /></label><label><span>Link HTTPS do Drive ou Google Docs</span><input type="url" value={driveUrl} onChange={(event) => setDriveUrl(event.target.value)} maxLength={CHAT_DRIVE_URL_LIMIT} placeholder="https://drive.google.com/..." disabled={sending || !canWrite} /></label><div><small>Use links de drive.google.com ou docs.google.com. O acesso ao arquivo continua sujeito às permissões definidas no Google.</small><button type="button" onClick={() => { setDriveName(''); setDriveUrl(''); }} disabled={sending || (!driveName && !driveUrl)}>Limpar link</button></div></div>}
+              <textarea aria-label="Sua mensagem" id="team-chat-message" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={canWrite ? 'Escreva uma mensagem…' : 'Você não participa deste grupo.'} rows={1} maxLength={MESSAGE_LIMIT} disabled={sending || !canWrite} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} />
               {recording && <div className="team-chat-audio-state is-recording"><span className="team-chat-record-dot" aria-hidden="true" />Gravando áudio · {Math.floor(recordingSeconds / 60)}:{String(recordingSeconds % 60).padStart(2, '0')}<button type="button" onClick={stopAudioRecording} aria-label="Parar gravação"><Square aria-hidden="true" /> Parar</button></div>}
               {recordedAudio && !recording && <div className="team-chat-audio-state"><span>Áudio gravado · {Math.floor(recordingSeconds / 60)}:{String(recordingSeconds % 60).padStart(2, '0')}</span><button type="button" onClick={discardRecordedAudio} aria-label="Descartar áudio gravado"><X aria-hidden="true" /> Descartar</button></div>}
-              <div className="team-chat-compose-footer"><span>{Array.from(draft).length}/{MESSAGE_LIMIT} · {activeDirectId ? 'Conversa privada' : activeGroupId ? 'Somente participantes do grupo' : 'Visível para os integrantes ativos'}</span><div className="team-chat-compose-actions"><button className="team-chat-attach-button" type="button" onClick={() => attachmentInputRef.current?.click()} aria-label="Anexar imagem, documento ou áudio" title="Anexar imagem, documento ou áudio" disabled={sending || !canWrite}><Paperclip aria-hidden="true" /></button><button className="team-chat-camera-button" type="button" onClick={() => void openCamera()} aria-label="Abrir câmera e tirar foto" title="Abrir câmera e tirar foto" disabled={sending || !canWrite}><Camera aria-hidden="true" /></button><button className="team-chat-record-button" type="button" onClick={() => void startAudioRecording()} aria-label="Gravar áudio" title="Gravar áudio" disabled={sending || recording || !canWrite}><Mic aria-hidden="true" /></button><button type="submit" aria-label={sending ? 'Enviando mensagem' : recordedAudio || (pendingAttachment && attachmentMime(pendingAttachment)?.startsWith('audio/')) ? 'Enviar áudio' : 'Enviar mensagem'} title={sending ? 'Enviando…' : 'Enviar'} disabled={sending || (!draft.trim() && !recordedAudio && !pendingAttachment) || !canWrite}><ArrowUp aria-hidden="true" /></button></div></div>
+              <div className="team-chat-compose-footer"><span>{Array.from(draft).length}/{MESSAGE_LIMIT} · {activeDirectId ? 'Conversa privada' : activeGroupId ? 'Somente participantes do grupo' : 'Visível para os integrantes ativos'}</span><div className="team-chat-compose-actions"><button className="team-chat-attach-button" type="button" onClick={() => attachmentInputRef.current?.click()} aria-label="Anexar imagem, documento ou áudio" title="Anexar imagem, documento ou áudio" disabled={sending || !canWrite}><Paperclip aria-hidden="true" /></button><button className="team-chat-drive-button" type="button" onClick={() => setDriveFormOpen((open) => !open)} aria-label="Adicionar link do Google Drive" aria-expanded={driveFormOpen} aria-controls="team-chat-drive-fields" title="Adicionar link do Google Drive" disabled={sending || !canWrite}><Link2 aria-hidden="true" /></button><button className="team-chat-camera-button" type="button" onClick={() => void openCamera()} aria-label="Abrir câmera e tirar foto" title="Abrir câmera e tirar foto" disabled={sending || !canWrite}><Camera aria-hidden="true" /></button><button className="team-chat-record-button" type="button" onClick={() => void startAudioRecording()} aria-label="Gravar áudio" title="Gravar áudio" disabled={sending || recording || !canWrite}><Mic aria-hidden="true" /></button><button type="submit" aria-label={sending ? 'Enviando mensagem' : recordedAudio || (pendingAttachment && attachmentMime(pendingAttachment)?.startsWith('audio/')) ? 'Enviar áudio' : 'Enviar mensagem'} title={sending ? 'Enviando…' : 'Enviar'} disabled={sending || (!draft.trim() && !recordedAudio && !pendingAttachment && !driveUrl.trim() && !driveName.trim()) || !canWrite}><ArrowUp aria-hidden="true" /></button></div></div>
             </form>
           </div>
           {cameraOpen && <div className="team-chat-camera-backdrop" role="presentation"><section className="team-chat-camera-dialog" role="dialog" aria-modal="true" aria-labelledby="team-chat-camera-title"><header><div><p className="workspace-kicker">CÂMERA DO COMPUTADOR</p><h3 id="team-chat-camera-title">Tirar foto</h3></div><button type="button" onClick={closeCamera} aria-label="Fechar câmera"><X aria-hidden="true" /></button></header><video ref={cameraVideoRef} autoPlay muted playsInline aria-label="Pré-visualização da câmera" />{cameraError && <p className="team-chat-camera-error" role="alert">{cameraError}</p>}<footer><button type="button" className="team-chat-camera-cancel" onClick={closeCamera}>Cancelar</button><button type="button" className="team-chat-camera-capture" onClick={captureCameraPhoto} disabled={Boolean(cameraError)}><Camera aria-hidden="true" /> Capturar foto</button></footer></section></div>}
