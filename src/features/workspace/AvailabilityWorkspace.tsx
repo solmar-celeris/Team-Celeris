@@ -81,6 +81,21 @@ function durationHours(start: string, end: string): number {
   return (Number(end.slice(0, 2)) * 60 + Number(end.slice(3, 5)) - Number(start.slice(0, 2)) * 60 - Number(start.slice(3, 5))) / 60;
 }
 
+function unavailableHoursForShift(
+  shift: Pick<TeamShift, 'assigned_user_id' | 'shift_date' | 'start_time' | 'end_time'>,
+  slots: AvailabilitySlot[],
+): number[] {
+  if (!shift.assigned_user_id) return [];
+  const weekday = new Date(`${shift.shift_date}T00:00:00.000Z`).getUTCDay();
+  const available = new Set(slots
+    .filter((slot) => slot.user_id === shift.assigned_user_id && slot.weekday === weekday)
+    .map((slot) => normalizedTime(slot.hour_start)));
+  const startHour = Number(normalizedTime(shift.start_time).slice(0, 2));
+  const endHour = Number(normalizedTime(shift.end_time).slice(0, 2));
+  return Array.from({ length: Math.max(0, endHour - startHour) }, (_, index) => startHour + index)
+    .filter((hour) => !available.has(hourLabel(hour)));
+}
+
 function prettyDate(value: string): string {
   return new Date(`${value}T00:00:00.000Z`).toLocaleDateString('pt-BR', {
     weekday: 'long', day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC',
@@ -93,8 +108,11 @@ function errorMessage(error: unknown): string {
   if (value.code === '42501' || /row-level security|permission denied/i.test(value.message ?? '')) {
     return 'O banco recusou a operação. Confirme que a migration 20261106193000_availability.sql foi aplicada e mantenha o RLS ativo.';
   }
+  if (value.code === '23514' && /não possui disponibilidade|disponibilidade para todos/i.test(value.message ?? '')) {
+    return 'Aplique a migration 20261106204000_special_event_shift_exceptions.sql para permitir escalas especiais fora da disponibilidade semanal.';
+  }
   if (value.code === '23514' || /availability|disponibilidade|slot/i.test(value.message ?? '')) {
-    return 'A pessoa selecionada não tem todos os horários desta escala disponíveis, ou os dados estão fora dos limites permitidos.';
+    return 'Confira se a data é um dia útil, os horários são cheios entre 07:00 e 21:00 e a pessoa atribuída tem perfil ativo.';
   }
   if (value.code === '23505') return 'Esse horário já existe. Atualize a página para conferir a versão mais recente.';
   return value.message || 'Ocorreu um erro inesperado. Confira sua conexão e tente novamente.';
@@ -233,6 +251,7 @@ export default function AvailabilityWorkspace({ client, userId, profile }: Avail
     setSavingShift(true);
     setError('');
     setFeedback('');
+    let conflictWarning = '';
     try {
       if (draft.assigned_user_id) {
         const { data, error: availabilityError } = await client.from('member_availability_slots')
@@ -244,8 +263,8 @@ export default function AvailabilityWorkspace({ client, userId, profile }: Avail
         const missing = Array.from({ length: endHour - startHour }, (_, index) => startHour + index)
           .filter((hour) => !available.has(slotKey(weekday, hour)));
         if (missing.length) {
-          setError(`A pessoa selecionada não tem disponibilidade em: ${missing.map(hourLabel).join(', ')}. Ajuste os horários ou escolha outra pessoa.`);
-          return;
+          const personName = memberNames.get(draft.assigned_user_id) ?? 'A pessoa selecionada';
+          conflictWarning = `Escala salva como ocasião especial. Atenção: ${personName} não informou disponibilidade habitual em ${missing.map(hourLabel).join(', ')}.`;
         }
       }
       const values = {
@@ -262,7 +281,7 @@ export default function AvailabilityWorkspace({ client, userId, profile }: Avail
       if (result.error) throw result.error;
       setFormOpen(false);
       setDraft(emptyDraft());
-      setFeedback(draft.id ? 'Escala atualizada.' : 'Escala montada.');
+      setFeedback(conflictWarning || (draft.id ? 'Escala atualizada.' : 'Escala montada.'));
       await loadData(false);
     } catch (saveError) {
       setError(errorMessage(saveError));
@@ -380,14 +399,18 @@ export default function AvailabilityWorkspace({ client, userId, profile }: Avail
         <div className="availability-section-heading"><div><p className="workspace-kicker">ESCALAS MANUAIS</p><h2 id="availability-shifts-heading">Escalas do time</h2></div><span className="availability-member-count">{shifts.length} escalas · {assignedHours} h</span></div>
         {loading ? <p className="availability-loading">Carregando escalas…</p> : sortedShifts.length === 0 ? <p className="availability-empty">Nenhuma escala cadastrada.{canManage ? ' Use “Montar escalas” para adicionar a primeira.' : ''}</p> : (
           <div className="availability-shift-list">
-            {sortedShifts.map((shift) => <article className="availability-shift-card" key={shift.id}>
-              <div className="availability-shift-date"><CalendarDays size={16} aria-hidden="true" /><span>{prettyDate(shift.shift_date)}</span></div>
-              <div className="availability-shift-main"><h3>{shift.title}</h3><p><Clock3 size={14} aria-hidden="true" /> {normalizedTime(shift.start_time)}–{normalizedTime(shift.end_time)} <b>{durationHours(shift.start_time, shift.end_time)} h</b></p>
-                {shift.assigned_user_id && <span className="availability-assignee">{memberNames.get(shift.assigned_user_id) ?? 'Pessoa indisponível'}</span>}
-                {shift.notes && <p className="availability-shift-notes">{shift.notes}</p>}
-              </div>
-              {canManage && <div className="availability-shift-actions"><button type="button" onClick={() => beginEditShift(shift)} aria-label={`Editar escala ${shift.title}`}><Pencil size={15} /> Editar</button><button className="is-danger" type="button" onClick={() => void deleteShift(shift)} disabled={deletingShiftId === shift.id} aria-label={`Excluir escala ${shift.title}`}><Trash2 size={15} /> Excluir</button></div>}
-            </article>)}
+            {sortedShifts.map((shift) => {
+              const unavailableHours = unavailableHoursForShift(shift, slots);
+              return <article className="availability-shift-card" key={shift.id}>
+                <div className="availability-shift-date"><CalendarDays size={16} aria-hidden="true" /><span>{prettyDate(shift.shift_date)}</span></div>
+                <div className="availability-shift-main"><h3>{shift.title}</h3><p><Clock3 size={14} aria-hidden="true" /> {normalizedTime(shift.start_time)}–{normalizedTime(shift.end_time)} <b>{durationHours(shift.start_time, shift.end_time)} h</b></p>
+                  {shift.assigned_user_id && <span className="availability-assignee">{memberNames.get(shift.assigned_user_id) ?? 'Pessoa indisponível'}</span>}
+                  {shift.notes && <p className="availability-shift-notes">{shift.notes}</p>}
+                  {unavailableHours.length > 0 && <p className="availability-shift-conflict"><strong>Atenção:</strong> fora da disponibilidade habitual em {unavailableHours.map(hourLabel).join(', ')}. A escala foi mantida como exceção.</p>}
+                </div>
+                {canManage && <div className="availability-shift-actions"><button type="button" onClick={() => beginEditShift(shift)} aria-label={`Editar escala ${shift.title}`}><Pencil size={15} /> Editar</button><button className="is-danger" type="button" onClick={() => void deleteShift(shift)} disabled={deletingShiftId === shift.id} aria-label={`Excluir escala ${shift.title}`}><Trash2 size={15} /> Excluir</button></div>}
+              </article>;
+            })}
           </div>
         )}
       </section>
@@ -395,7 +418,7 @@ export default function AvailabilityWorkspace({ client, userId, profile }: Avail
       {formOpen && canManage && <div className="availability-dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !savingShift) setFormOpen(false); }}>
         <section className="availability-dialog" role="dialog" aria-modal="true" aria-labelledby="availability-form-title">
           <div className="availability-dialog-heading"><div><p className="workspace-kicker">{draft.id ? 'ATUALIZAÇÃO' : 'NOVA ESCALA'}</p><h2 id="availability-form-title">{draft.id ? 'Editar escala' : 'Montar escalas'}</h2></div><button type="button" onClick={() => setFormOpen(false)} aria-label="Fechar" disabled={savingShift}><X size={19} /></button></div>
-          <p className="availability-helper">Atribuições são conferidas com os horários recorrentes da pessoa selecionada, aqui e no banco.</p>
+          <p className="availability-helper">A disponibilidade é uma referência semanal. Escalas para ocasiões especiais, como a SEPEX, podem incluir horários diferentes; o sistema avisa sobre a diferença, mas não bloqueia a escala.</p>
           <form className="availability-shift-form" onSubmit={(event) => void saveShift(event)}>
             <label><span>Nome da escala</span><input required maxLength={160} value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} placeholder="Ex.: Plantão de atendimento" /></label>
             <label><span>Data útil</span><input required type="date" value={draft.shift_date} onChange={(event) => setDraft({ ...draft, shift_date: event.target.value })} /></label>

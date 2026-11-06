@@ -60,6 +60,8 @@
 .availability-shift-main > p b { color: var(--ocean); }
 .availability-assignee { display: inline-flex; margin-top: 8px; padding: 4px 7px; border: 1px solid color-mix(in srgb, var(--blue) 20%, var(--line)); border-radius: 99px; color: var(--ocean); background: color-mix(in srgb, var(--sky) 8%, var(--card)); font-size: 9px; font-weight: 780; }
 .availability-shift-main .availability-shift-notes { display: block; margin-top: 8px; color: var(--muted); line-height: 1.5; overflow-wrap: anywhere; }
+.availability-shift-conflict { display: block; margin: 9px 0 0; padding: 8px 10px; border: 1px solid color-mix(in srgb, #b76a10 25%, var(--line)); border-radius: 8px; color: #80500c; background: color-mix(in srgb, #f0b950 12%, var(--card)); font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
+.availability-shift-conflict strong { font-weight: 800; }
 .availability-shift-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
 .availability-shift-actions button { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 0 9px; border: 1px solid var(--line); border-radius: 7px; color: var(--ocean); background: var(--card); cursor: pointer; font-size: 9px; font-weight: 780; }
 .availability-shift-actions button:disabled { opacity: .6; cursor: wait; }
@@ -88,6 +90,7 @@
 :root[data-theme="dark"] .availability-hour-row > strong { background: #0d1726; }
 :root[data-theme="dark"] .availability-member-count { border-color: #2a3d55; color: #a8c6d8; background: #0d1726; }
 :root[data-theme="dark"] .availability-assignee { border-color: rgba(56,182,255,.32); color: #b9ddff; background: rgba(1,75,137,.13); }
+:root[data-theme="dark"] .availability-shift-conflict { border-color: rgba(246,190,88,.28); color: #ffda98; background: rgba(140,91,21,.14); }
 @media (max-width: 760px) {
   .availability-heading { align-items: flex-start; flex-direction: column; }
   .availability-heading-actions { justify-content: flex-start; }
