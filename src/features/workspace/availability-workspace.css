@@ -27,7 +27,7 @@
 .availability-section-heading h2 { margin: 0; color: var(--ink); font-size: clamp(17px, 2.1vw, 22px); letter-spacing: -.035em; }
 .availability-helper { margin: 7px 0 14px; color: var(--muted); font-size: 10px; line-height: 1.5; }
 .availability-editor-scroll { overflow-x: auto; padding-bottom: 3px; }
-.availability-editor { display: grid; min-width: 620px; grid-template-columns: 68px repeat(5, minmax(92px, 1fr)); border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+.availability-editor { display: grid; min-width: 668px; grid-template-columns: 104px repeat(5, minmax(92px, 1fr)); border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
 .availability-editor-corner, .availability-day-header, .availability-hour-row > strong, .availability-slot { display: flex; align-items: center; justify-content: center; min-height: 35px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .availability-editor-corner, .availability-day-header { flex-direction: column; gap: 2px; color: var(--ink); background: color-mix(in srgb, var(--surface) 72%, var(--card)); font-size: 10px; font-weight: 800; }
 .availability-day-header small { display: none; color: var(--muted); }
@@ -49,7 +49,7 @@
 .availability-person-day { min-width: 0; min-height: 51px; padding: 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); }
 .availability-person-day > small { display: block; margin-bottom: 5px; color: var(--muted); font-size: 9px; font-weight: 800; }
 .availability-hour-chips { display: flex; flex-wrap: wrap; gap: 4px; }
-.availability-hour-chips span { padding: 3px 5px; border-radius: 5px; color: #07583e; background: color-mix(in srgb, #42ad7e 12%, var(--card)); font-size: 9px; font-variant-numeric: tabular-nums; font-weight: 760; }
+.availability-hour-chips span { padding: 3px 5px; border-radius: 5px; color: #07583e; background: color-mix(in srgb, #42ad7e 12%, var(--card)); font-size: 9px; font-variant-numeric: tabular-nums; font-weight: 760; white-space: nowrap; }
 :root[data-theme="dark"] .availability-hour-chips span { color: #a8e5cf; background: rgba(44,179,133,.16); }
 .availability-no-hours { color: color-mix(in srgb, var(--muted) 65%, transparent); font-size: 10px; }
 .availability-shift-card { display: grid; grid-template-columns: minmax(150px, .6fr) minmax(0, 1.4fr) auto; align-items: start; gap: 14px; padding: 13px; border: 1px solid var(--line); border-radius: 11px; background: color-mix(in srgb, var(--surface) 38%, var(--card)); }

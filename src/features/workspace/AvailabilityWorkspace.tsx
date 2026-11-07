@@ -37,6 +37,7 @@ const weekdays = [
   { id: 5, label: 'Sexta', short: 'Sex.' },
 ] as const;
 const hours = Array.from({ length: 14 }, (_, index) => index + 7);
+const availabilitySlotStarts = Array.from({ length: 28 }, (_, index) => 7 * 60 + index * 30);
 const startTimes = hours.map((hour) => `${String(hour).padStart(2, '0')}:00`);
 const endTimes = Array.from({ length: 14 }, (_, index) => `${String(index + 8).padStart(2, '0')}:00`);
 
@@ -73,27 +74,65 @@ function normalizedTime(value: string): string {
   return value.slice(0, 5);
 }
 
-function hourLabel(hour: number): string {
-  return `${String(hour).padStart(2, '0')}:00`;
+function timeLabel(minutes: number): string {
+  const hour = Math.floor(minutes / 60);
+  const minute = minutes % 60;
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+}
+
+function timeToMinutes(value: string): number {
+  const [hour, minute] = normalizedTime(value).split(':').map(Number);
+  return hour * 60 + minute;
+}
+
+function intervalLabel(startMinutes: number): string {
+  return `${timeLabel(startMinutes)} - ${timeLabel(startMinutes + 30)}`;
+}
+
+function formatHours(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+}
+
+function availabilityRangesForDay(slots: AvailabilitySlot[], weekday: number): string[] {
+  const starts = [...new Set(slots
+    .filter((slot) => slot.weekday === weekday)
+    .map((slot) => timeToMinutes(slot.hour_start)))].sort((a, b) => a - b);
+  if (!starts.length) return [];
+  const ranges: string[] = [];
+  let rangeStart = starts[0];
+  let rangeEnd = rangeStart + 30;
+  for (const start of starts.slice(1)) {
+    if (start === rangeEnd) rangeEnd += 30;
+    else {
+      ranges.push(`${timeLabel(rangeStart)} - ${timeLabel(rangeEnd)}`);
+      rangeStart = start;
+      rangeEnd = start + 30;
+    }
+  }
+  ranges.push(`${timeLabel(rangeStart)} - ${timeLabel(rangeEnd)}`);
+  return ranges;
 }
 
 function durationHours(start: string, end: string): number {
   return (Number(end.slice(0, 2)) * 60 + Number(end.slice(3, 5)) - Number(start.slice(0, 2)) * 60 - Number(start.slice(3, 5))) / 60;
 }
 
-function unavailableHoursForShift(
+function unavailableIntervalsForShift(
   shift: Pick<TeamShift, 'assigned_user_id' | 'shift_date' | 'start_time' | 'end_time'>,
   slots: AvailabilitySlot[],
-): number[] {
+): string[] {
   if (!shift.assigned_user_id) return [];
   const weekday = new Date(`${shift.shift_date}T00:00:00.000Z`).getUTCDay();
   const available = new Set(slots
     .filter((slot) => slot.user_id === shift.assigned_user_id && slot.weekday === weekday)
     .map((slot) => normalizedTime(slot.hour_start)));
-  const startHour = Number(normalizedTime(shift.start_time).slice(0, 2));
-  const endHour = Number(normalizedTime(shift.end_time).slice(0, 2));
-  return Array.from({ length: Math.max(0, endHour - startHour) }, (_, index) => startHour + index)
-    .filter((hour) => !available.has(hourLabel(hour)));
+  const startMinutes = timeToMinutes(shift.start_time);
+  const endMinutes = timeToMinutes(shift.end_time);
+  const missing: string[] = [];
+  for (let start = startMinutes; start < endMinutes; start += 30) {
+    if (!available.has(timeLabel(start))) missing.push(intervalLabel(start));
+  }
+  return missing;
 }
 
 function prettyDate(value: string): string {
@@ -111,6 +150,9 @@ function errorMessage(error: unknown): string {
   if (value.code === '23514' && /não possui disponibilidade|disponibilidade para todos/i.test(value.message ?? '')) {
     return 'Aplique a migration 20261106204000_special_event_shift_exceptions.sql para permitir escalas especiais fora da disponibilidade semanal.';
   }
+  if (value.code === '23514' && /member_availability_slots_(hour|half_hour)_range/i.test(value.message ?? '')) {
+    return 'Aplique a migration 20261106205000_availability_half_hour_slots.sql para habilitar os intervalos de 30 minutos.';
+  }
   if (value.code === '23514' || /availability|disponibilidade|slot/i.test(value.message ?? '')) {
     return 'Confira se a data é um dia útil, os horários são cheios entre 07:00 e 21:00 e a pessoa atribuída tem perfil ativo.';
   }
@@ -118,8 +160,8 @@ function errorMessage(error: unknown): string {
   return value.message || 'Ocorreu um erro inesperado. Confira sua conexão e tente novamente.';
 }
 
-function slotKey(weekday: number, hour: number): string {
-  return `${weekday}-${hourLabel(hour)}`;
+function slotKey(weekday: number, startMinutes: number): string {
+  return `${weekday}-${timeLabel(startMinutes)}`;
 }
 
 export default function AvailabilityWorkspace({ client, userId, profile }: AvailabilityWorkspaceProps) {
@@ -176,6 +218,8 @@ export default function AvailabilityWorkspace({ client, userId, profile }: Avail
 
   const memberNames = useMemo(() => new Map(members.map(({ user_id, full_name }) => [user_id, full_name || 'Integrante sem nome'])), [members]);
   const ownSlotCount = useMemo(() => slots.filter(({ user_id }) => user_id === userId).length, [slots, userId]);
+  const totalAvailableHours = slots.length / 2;
+  const ownAvailableHours = ownSlotCount / 2;
   const assignedHours = useMemo(() => shifts.reduce((total, shift) => total + durationHours(shift.start_time, shift.end_time), 0), [shifts]);
   const sortedShifts = useMemo(() => [...shifts].sort((a, b) => a.shift_date.localeCompare(b.shift_date) || a.start_time.localeCompare(b.start_time)), [shifts]);
 
@@ -260,11 +304,13 @@ export default function AvailabilityWorkspace({ client, userId, profile }: Avail
         const available = new Set(((data ?? []) as Pick<AvailabilitySlot, 'weekday' | 'hour_start'>[])
           .map(({ weekday, hour_start }) => `${weekday}-${normalizedTime(hour_start)}`));
         const weekday = new Date(`${draft.shift_date}T00:00:00.000Z`).getUTCDay();
-        const missing = Array.from({ length: endHour - startHour }, (_, index) => startHour + index)
-          .filter((hour) => !available.has(slotKey(weekday, hour)));
+        const startMinutes = timeToMinutes(draft.start_time);
+        const endMinutes = timeToMinutes(draft.end_time);
+        const missing = Array.from({ length: (endMinutes - startMinutes) / 30 }, (_, index) => startMinutes + index * 30)
+          .filter((start) => !available.has(slotKey(weekday, start)));
         if (missing.length) {
           const personName = memberNames.get(draft.assigned_user_id) ?? 'A pessoa selecionada';
-          conflictWarning = `Escala salva como ocasião especial. Atenção: ${personName} não informou disponibilidade habitual em ${missing.map(hourLabel).join(', ')}.`;
+          conflictWarning = `Escala salva como ocasião especial. Atenção: ${personName} não informou disponibilidade habitual em ${missing.map(intervalLabel).join(', ')}.`;
         }
       }
       const values = {
@@ -334,9 +380,9 @@ export default function AvailabilityWorkspace({ client, userId, profile }: Avail
       {feedback && <div className="availability-message availability-success" role="status">{feedback}</div>}
 
       <div className="availability-summary" aria-label="Resumo semanal">
-        <article className="availability-stat"><span className="availability-stat-icon"><Clock3 size={17} /></span><span><small>Horas disponíveis por semana</small><strong>{loading ? '…' : `${slots.length} h`}</strong></span><span className="availability-stat-context">time ativo</span></article>
-        <article className="availability-stat availability-stat-scheduled"><span className="availability-stat-icon"><CalendarDays size={17} /></span><span><small>Horas escaladas</small><strong>{loading ? '…' : `${assignedHours} h`}</strong></span><span className="availability-stat-context">soma das escalas</span></article>
-        <article className="availability-stat"><span className="availability-stat-icon"><Users size={17} /></span><span><small>Sua disponibilidade</small><strong>{loading ? '…' : `${ownSlotCount} h`}</strong></span><span className="availability-stat-context">por semana</span></article>
+        <article className="availability-stat"><span className="availability-stat-icon"><Clock3 size={17} /></span><span><small>Horas disponíveis por semana</small><strong>{loading ? '…' : `${formatHours(totalAvailableHours)} h`}</strong></span><span className="availability-stat-context">time ativo</span></article>
+        <article className="availability-stat availability-stat-scheduled"><span className="availability-stat-icon"><CalendarDays size={17} /></span><span><small>Horas escaladas</small><strong>{loading ? '…' : `${formatHours(assignedHours)} h`}</strong></span><span className="availability-stat-context">soma das escalas</span></article>
+        <article className="availability-stat"><span className="availability-stat-icon"><Users size={17} /></span><span><small>Sua disponibilidade</small><strong>{loading ? '…' : `${formatHours(ownAvailableHours)} h`}</strong></span><span className="availability-stat-context">por semana</span></article>
       </div>
 
       <section className="availability-section" aria-labelledby="availability-own-heading">
@@ -346,23 +392,23 @@ export default function AvailabilityWorkspace({ client, userId, profile }: Avail
             <Save size={15} aria-hidden="true" /> {savingAvailability ? 'Salvando…' : 'Salvar meus horários'}
           </button>
         </div>
-        <p className="availability-helper">Cada opção corresponde a um bloco de uma hora. Somente sua disponibilidade pode ser alterada por você.</p>
+        <p className="availability-helper">Cada opção corresponde a um bloco de 30 minutos. Horários consecutivos aparecem agrupados em intervalos no quadro; somente sua disponibilidade pode ser alterada por você.</p>
         {loading ? <p className="availability-loading">Carregando horários do time…</p> : (
           <div className="availability-editor-scroll">
             <div className="availability-editor" role="group" aria-label="Grade de disponibilidade semanal">
-              <div className="availability-editor-corner">Hora</div>
+              <div className="availability-editor-corner">Intervalo</div>
               {weekdays.map((day) => <div className="availability-day-header" key={day.id}><span>{day.label}</span><small>{day.short}</small></div>)}
-              {hours.map((hour) => <div className="availability-hour-row" key={hour}>
-                <strong>{hourLabel(hour)}</strong>
+              {availabilitySlotStarts.map((startMinutes) => <div className="availability-hour-row" key={startMinutes}>
+                <strong>{intervalLabel(startMinutes)}</strong>
                 {weekdays.map((day) => {
-                  const selected = ownKeys.has(slotKey(day.id, hour));
+                  const selected = ownKeys.has(slotKey(day.id, startMinutes));
                   return <button
                     className={`availability-slot${selected ? ' is-selected' : ''}`}
                     key={day.id}
                     type="button"
                     aria-pressed={selected}
-                    aria-label={`${day.label}, ${hourLabel(hour)}–${hourLabel(hour + 1)}: ${selected ? 'disponível' : 'indisponível'}`}
-                    onClick={() => toggleSlot(day.id, hour)}
+                    aria-label={`${day.label}, ${intervalLabel(startMinutes)}: ${selected ? 'disponível' : 'indisponível'}`}
+                    onClick={() => toggleSlot(day.id, startMinutes)}
                   >{selected ? 'Disponível' : '—'}</button>;
                 })}
               </div>)}
@@ -378,14 +424,14 @@ export default function AvailabilityWorkspace({ client, userId, profile }: Avail
           <div className="availability-team-list">
             {members.map((member) => {
               const personSlots = slots.filter(({ user_id }) => user_id === member.user_id);
-              const total = personSlots.length;
+              const totalHours = personSlots.length / 2;
               return <article className="availability-person-card" key={member.user_id}>
-                <div className="availability-person-heading"><strong>{member.full_name || 'Integrante sem nome'}</strong><span>{total} h/semana</span></div>
+                <div className="availability-person-heading"><strong>{member.full_name || 'Integrante sem nome'}</strong><span>{formatHours(totalHours)} h/semana</span></div>
                 <div className="availability-person-days">
                   {weekdays.map((day) => {
-                    const dayHours = personSlots.filter((slot) => slot.weekday === day.id).map((slot) => Number(normalizedTime(slot.hour_start).slice(0, 2))).sort((a, b) => a - b);
+                    const dayRanges = availabilityRangesForDay(personSlots, day.id);
                     return <div className="availability-person-day" key={day.id}><small>{day.short}</small>
-                      {dayHours.length ? <div className="availability-hour-chips">{dayHours.map((hour) => <span key={hour}>{hourLabel(hour)}</span>)}</div> : <span className="availability-no-hours">—</span>}
+                      {dayRanges.length ? <div className="availability-hour-chips">{dayRanges.map((range) => <span key={range}>{range}</span>)}</div> : <span className="availability-no-hours">—</span>}
                     </div>;
                   })}
                 </div>
@@ -400,13 +446,13 @@ export default function AvailabilityWorkspace({ client, userId, profile }: Avail
         {loading ? <p className="availability-loading">Carregando escalas…</p> : sortedShifts.length === 0 ? <p className="availability-empty">Nenhuma escala cadastrada.{canManage ? ' Use “Montar escalas” para adicionar a primeira.' : ''}</p> : (
           <div className="availability-shift-list">
             {sortedShifts.map((shift) => {
-              const unavailableHours = unavailableHoursForShift(shift, slots);
+              const unavailableIntervals = unavailableIntervalsForShift(shift, slots);
               return <article className="availability-shift-card" key={shift.id}>
                 <div className="availability-shift-date"><CalendarDays size={16} aria-hidden="true" /><span>{prettyDate(shift.shift_date)}</span></div>
                 <div className="availability-shift-main"><h3>{shift.title}</h3><p><Clock3 size={14} aria-hidden="true" /> {normalizedTime(shift.start_time)}–{normalizedTime(shift.end_time)} <b>{durationHours(shift.start_time, shift.end_time)} h</b></p>
                   {shift.assigned_user_id && <span className="availability-assignee">{memberNames.get(shift.assigned_user_id) ?? 'Pessoa indisponível'}</span>}
                   {shift.notes && <p className="availability-shift-notes">{shift.notes}</p>}
-                  {unavailableHours.length > 0 && <p className="availability-shift-conflict"><strong>Atenção:</strong> fora da disponibilidade habitual em {unavailableHours.map(hourLabel).join(', ')}. A escala foi mantida como exceção.</p>}
+                  {unavailableIntervals.length > 0 && <p className="availability-shift-conflict"><strong>Atenção:</strong> fora da disponibilidade habitual em {unavailableIntervals.join(', ')}. A escala foi mantida como exceção.</p>}
                 </div>
                 {canManage && <div className="availability-shift-actions"><button type="button" onClick={() => beginEditShift(shift)} aria-label={`Editar escala ${shift.title}`}><Pencil size={15} /> Editar</button><button className="is-danger" type="button" onClick={() => void deleteShift(shift)} disabled={deletingShiftId === shift.id} aria-label={`Excluir escala ${shift.title}`}><Trash2 size={15} /> Excluir</button></div>}
               </article>;

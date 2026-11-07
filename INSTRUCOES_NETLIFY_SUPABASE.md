@@ -179,7 +179,7 @@ Esta versão inclui o Manual de funções alinhado ao organograma informado; o q
 ### Aplicar as migrations
 No projeto Supabase ligado ao site, confira primeiro o histórico de migrations já aplicadas. Aplique **somente as que faltarem**, uma única vez cada, na ordem abaixo (não cole o esquema inicial novamente):
 
-1. `supabase/migrations/20261106193000_availability.sql` — disponibilidade recorrente por pessoa, quadro interno para perfis ativos e escalas, com slots de segunda a sexta, 07:00–21:00, em blocos de uma hora.
+1. `supabase/migrations/20261106193000_availability.sql` — disponibilidade recorrente por pessoa, quadro interno para perfis ativos e escalas, com slots de segunda a sexta, 07:00–21:00.
 2. `supabase/migrations/20261106194000_announcement_attachments_drive_polls.sql` — anexos privados e links Drive nos comunicados, mais enquetes com votos e resultados agregados.
 3. `supabase/migrations/20261106195000_chat_drive_links.sql` — metadados de links Drive/Docs nas mensagens de Chat; os uploads locais atuais do Chat continuam em bucket privado.
 4. `supabase/migrations/20261106195800_activity_flow_attachments.sql` — estágios Scrumban, configuração WIP por etapa/área, controle de transição, anexos privados e links Drive em atividades.
@@ -188,6 +188,7 @@ No projeto Supabase ligado ao site, confira primeiro o histórico de migrations 
 7. `supabase/migrations/20261106202000_chat_group_photos_read_receipts.sql` — avatares privados dos grupos e detalhe dos recibos de leitura; membros autorizados veem quem leu/não leu mensagens coletivas, sem ampliar acesso a conversas diretas.
 8. `supabase/migrations/20261106203000_area_sector_abbreviations.sql` — rótulos e prefixos oficiais GP, MKT, AF, MEC, ELE e TEL para novas tarefas, sem reescrever códigos históricos.
 9. `supabase/migrations/20261106204000_special_event_shift_exceptions.sql` — permite escalas de ocasiões especiais fora da disponibilidade semanal, mantendo a validação de perfil ativo e os limites de dia útil e horário.
+10. `supabase/migrations/20261106205000_availability_half_hour_slots.sql` — permite marcar disponibilidades em blocos de 30 minutos, mantendo válidos os horários antigos.
 
 As migrations de anexos criam buckets Supabase Storage **privados**, com limite de 15 MiB e formatos permitidos. Não torne `activity-attachments`, `announcement-attachments`, `team-chat-attachments`, `team-chat-audio` ou `team-chat-group-photos` públicos, não desative RLS e não coloque `service_role` em Netlify/Vite ou no navegador. No Scrumban, os limites WIP começam sem número configurado; a Administração pode configurar limite por etapa e área após observar o fluxo, sem limite arbitrário fixo. O estágio do quadro é separado do status semanal. O Chat passa a se chamar SolMarZap e oferece botões de conversa privada e em grupo, foto de grupo JPEG/PNG/WebP de até 3 MiB em bucket privado, e detalhes de leitura em mensagens coletivas: autor/membros autorizados veem nomes de leitores e pendentes. Recibos de DMs seguem restritos aos participantes e não são listados para terceiros.
 
