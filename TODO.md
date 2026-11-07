@@ -223,3 +223,18 @@
 
 ## 27. Kanban com quatro colunas e cartões arrastáveis (06/11/2026)
 - [x] O quadro tem exatamente quatro colunas: Backlog, A fazer, Fazendo e Feito. Atividades bloqueadas aparecem em Fazendo identificadas como Bloqueadas, sem perder estado/WIP do banco. O estágio deve poder ser alterado no cartão e, para pessoas autorizadas, por arraste do mouse entre quaisquer colunas. O Supabase valida permissões, limites WIP e exige motivo para Bloqueada, sem exigir passagem sequencial por todas as etapas. Manter edição e opção de exclusão/arquivamento no cartão, com confirmação.
+
+## 28. PERT/CPM — colunas explicativas e cronograma visual (07/11/2026)
+- [x] Os cabeçalhos mostram nomes por extenso: Otimista O (dias), Mais provável M (dias), Pessimista P (dias), Duração PERT (dias), Início mais cedo ES, Término mais cedo EF, Início mais tarde LS, Término mais tarde LF e Folga total; a interface explica a leitura dos acrônimos.
+- [x] Incluir visualização gráfica do cronograma relativo do projeto com barras ES–EF, setas das dependências, caminho crítico destacado somente quando a rede calculável estiver completa e marcos com dados incompletos assinalados como pendentes; quando incompleto, identificar os valores visíveis como subgrafo/estimativa parcial, sem afirmar duração final ou caminho crítico definitivo; preservar a tabela e torná-la acessível e responsiva.
+
+## 29. Reuniões online ao vivo — Jitsi público
+- [x] A plataforma aprovada é o serviço público meet.jit.si, incorporado pela API IFrame. A aba permite iniciar sala com nome aleatório, entrar por código/link, copiar convite e usa os controles nativos de áudio, vídeo, compartilhamento de tela e efeitos disponíveis. Áudio e vídeo iniciam desligados. Informar autenticação do organizador, moderação para todos, limite de 95 minutos, uso de serviço externo e link como convite; pedir confirmação antes de navegar para outra aba ou encerrar sessão enquanto houver sala aberta; não prometer paridade integral com Microsoft Teams.
+
+## 30. Identidade visual e preferências de interface (07/11/2026)
+- [x] Usar a nova marca abstrata sem wordmark como ícone do app; no espaço autenticado, manter a logo oficial SolMar Celeris no canto superior esquerdo e colocar somente o símbolo do app em branco no canto superior direito.
+- [x] Na tela de login, manter a logo oficial SolMar Celeris no cabeçalho e exibir a versão colorida com “Team Celeris” acima do título “O próximo marco começa aqui.”; remover a linha “ENERGIA SOLAR · PROJETO SOLMAR”.
+- [x] No rodapé, mostrar a logo oficial SolMar Celeris junto ao texto exato “SOLMAR CELERIS WORKSPACE”.
+- [x] Substituir o gatilho atual de perfil por um botão de três linhas que abra as configurações de perfil e ofereça controles acessíveis de modo claro e escuro, preservando os recursos existentes do perfil.
+
+**Evidência:** `pnpm typecheck` e `pnpm build` aprovados; logos transparentes conferidas e ícones PWA atualizados. Alterações estão no código-fonte; a publicação no Netlify não foi executada.

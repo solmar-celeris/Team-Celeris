@@ -6,6 +6,7 @@ import { supabase, supabaseConfigured } from '../../lib/supabase';
 import TeamWorkspace from '../workspace/TeamWorkspace';
 
 type AuthMode = 'login' | 'signup' | 'reset' | 'update-password';
+type AppTheme = 'light' | 'dark';
 type MemberRole = 'admin' | 'area_lead' | 'member' | 'reader';
 type MemberStatus = 'pending' | 'active' | 'suspended';
 type MemberProfile = {
@@ -15,6 +16,7 @@ type MemberProfile = {
   area_id: string | null;
 };
 type AccessState = MemberStatus | 'missing' | 'error' | null;
+type AuthPanelProps = { theme: AppTheme; onThemeChange: (theme: AppTheme) => void };
 
 async function readMemberProfile(client: SupabaseClient, userId: string) {
   const { data, error } = await client
@@ -69,7 +71,7 @@ function getAuthError(input: string | { message?: string; code?: string; status?
   return `Falha não classificada ao autenticar (${reference}). O administrador deve conferir Authentication → Logs no Supabase.`;
 }
 
-export default function AuthPanel() {
+export default function AuthPanel({ theme, onThemeChange }: AuthPanelProps) {
   const [mode, setMode] = useState<AuthMode>('login');
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<MemberProfile | null>(null);
@@ -363,6 +365,8 @@ export default function AuthPanel() {
         client={supabase}
         userId={session.user.id}
         profile={{ ...profile, user_id: session.user.id, status: 'active' }}
+        theme={theme}
+        onThemeChange={onThemeChange}
         onLogout={() => void handleLogout()}
       />
     );

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type DragEvent, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { BookOpen, CalendarDays, Check, ClipboardList, Clock3, Folder, GripVertical, Megaphone, MessageCircle, Sparkles, Trash2, X, Paperclip, ExternalLink, Users, type LucideIcon } from 'lucide-react';
+import { BookOpen, CalendarDays, Check, ClipboardList, Clock3, Folder, GripVertical, Megaphone, MessageCircle, Sparkles, Trash2, X, Paperclip, ExternalLink, Users, Video, type LucideIcon } from 'lucide-react';
 import {
   activityTypeLabels,
   activityFlowLabels,
@@ -38,6 +38,7 @@ import ManualFunctions from './ManualFunctions';
 import AIShortcuts from './AIShortcuts';
 import AvailabilityWorkspace from './AvailabilityWorkspace';
 import PERTCPMWorkspace from './PERTCPMWorkspace';
+import MeetingsWorkspace from './MeetingsWorkspace';
 import { flushPendingWorkspacePushEvents, notifyActivityChange, notifyWorkspacePush } from '../../lib/notifications';
 import './workspace.css';
 
@@ -45,6 +46,8 @@ type TeamWorkspaceProps = {
   client: SupabaseClient;
   userId: string;
   profile: MemberProfile;
+  theme: 'light' | 'dark';
+  onThemeChange: (theme: 'light' | 'dark') => void;
   onLogout: () => void;
 };
 
@@ -93,7 +96,7 @@ type ActivityFormState = {
 };
 type AttachmentSubmission = { files: File[]; driveName: string; driveUrl: string };
 type WeeklyDraft = { status: WeeklyStatus; justification: string };
-type WorkspaceTab = 'week' | 'activities' | 'files' | 'announcements' | 'chat' | 'calendar' | 'availability' | 'manual' | 'ai';
+type WorkspaceTab = 'week' | 'activities' | 'files' | 'announcements' | 'chat' | 'meetings' | 'calendar' | 'availability' | 'manual' | 'ai';
 type PushDeepLink =
   | { type: 'chat'; messageId: string; conversationId: string | null; conversationType: 'team' | 'group' | 'direct' }
   | { type: 'announcement' | 'activity'; itemId: string }
@@ -109,6 +112,7 @@ type WeekCalendarEvent = {
 };
 const workspaceTabs: { id: WorkspaceTab; label: string; mobileLabel: string; icon: LucideIcon }[] = [
   { id: 'chat', label: 'SolMarZap', mobileLabel: 'Zap', icon: MessageCircle },
+  { id: 'meetings', label: 'Reuniões ao vivo', mobileLabel: 'Reuniões', icon: Video },
   { id: 'announcements', label: 'Comunicados', mobileLabel: 'Avisos', icon: Megaphone },
   { id: 'week', label: 'Semana', mobileLabel: 'Sem.', icon: Clock3 },
   { id: 'activities', label: 'Atividades', mobileLabel: 'Ativ.', icon: ClipboardList },
@@ -317,12 +321,10 @@ function safeDriveUrl(value: string): string | null {
   } catch { return null; }
 }
 
-export default function TeamWorkspace({ client, userId, profile, onLogout }: TeamWorkspaceProps) {
+export default function TeamWorkspace({ client, userId, profile, theme, onThemeChange, onLogout }: TeamWorkspaceProps) {
   const [pushTarget] = useState<PushDeepLink | null>(() => parsePushDeepLink());
   const [tab, setTab] = useState<WorkspaceTab>(() => tabForPush(pushTarget));
-  const [theme, setTheme] = useState<'light' | 'dark'>(() =>
-    document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light',
-  );
+  const [jitsiRoomActive, setJitsiRoomActive] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [activityAttachments, setActivityAttachments] = useState<ActivityAttachment[]>([]);
   const [attachmentUrls, setAttachmentUrls] = useState<Record<string, string>>({});
@@ -993,21 +995,20 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
         </a>
         <div className="workspace-top-actions">
           <span className="workspace-role"><i aria-hidden="true" />{roleLabels[profile.role]}</span>
-          <button
-            className="workspace-icon-button"
-            type="button"
-            onClick={() => setTheme((current) => current === 'light' ? 'dark' : 'light')}
-            aria-label={theme === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'}
-            title={theme === 'light' ? 'Modo escuro' : 'Modo claro'}
-          >{theme === 'light' ? '☾' : '☼'}</button>
           <ProfileMenu
             client={client}
             userId={userId}
             fallbackName={displayName}
             photoUrl={avatarUrl}
+            theme={theme}
+            onThemeChange={onThemeChange}
             onUpdated={handleProfileUpdated}
           />
-          <button className="workspace-logout" type="button" onClick={onLogout}>Sair</button>
+          <button className="workspace-logout" type="button" onClick={() => {
+            if (jitsiRoomActive && !window.confirm('Você está em uma reunião. Sair do Team Celeris desconectará sua chamada. Deseja continuar?')) return;
+            onLogout();
+          }}>Sair</button>
+          <img className="workspace-app-mark" src="/assets/teamceleris-app-mark-white.png" alt="Símbolo do app Team Celeris" />
         </div>
       </header>
 
@@ -1016,7 +1017,11 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
           <p className="workspace-sidebar-label">ROTINA DA EQUIPE</p>
           <nav className="workspace-nav">
             {workspaceTabs.map(({ id, label, mobileLabel, icon: Icon }) => (
-              <button key={id} type="button" title={label} aria-label={label} className={tab === id ? 'is-active' : ''} onClick={() => setTab(id)} aria-current={tab === id ? 'page' : undefined}>
+              <button key={id} type="button" title={label} aria-label={label} className={tab === id ? 'is-active' : ''} onClick={() => {
+                if (jitsiRoomActive && id !== tab && !window.confirm('Você está em uma reunião. Sair desta aba desconectará sua chamada. Deseja sair mesmo assim?')) return;
+                if (jitsiRoomActive && id !== tab) setJitsiRoomActive(false);
+                setTab(id);
+              }} aria-current={tab === id ? 'page' : undefined}>
                 <span className="workspace-nav-icon"><Icon aria-hidden="true" /></span>
                 <span className="workspace-nav-label">{label}</span>
                 <span className="workspace-nav-mobile-label" aria-hidden="true">{mobileLabel}</span>
@@ -1028,8 +1033,8 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
         <main className={`workspace-main${tab === 'chat' ? ' is-chat-page' : ''}`} id="workspace">
           <div className="workspace-page-heading">
             <div>
-              <p className="workspace-kicker">{tab === 'week' ? 'ACOMPANHAMENTO SEMANAL' : tab === 'activities' ? 'CADASTRO DA EQUIPE' : tab === 'files' ? 'LINKS COMPARTILHADOS' : tab === 'announcements' ? 'MURAL DA EQUIPE' : tab === 'calendar' ? 'AGENDA DA EQUIPE' : tab === 'availability' ? 'DISPONIBILIDADES E ESCALAS' : tab === 'manual' ? 'CARGOS E CAPACITAÇÃO' : tab === 'ai' ? 'FERRAMENTAS EXTERNAS' : 'SOLMARZAP · MENSAGENS'}</p>
-              <h1>{tab === 'week' ? 'Semana em movimento.' : tab === 'activities' ? 'Atividades da equipe.' : tab === 'files' ? 'Arquivos da equipe.' : tab === 'announcements' ? 'Comunicados da equipe.' : tab === 'calendar' ? 'Calendário de eventos.' : tab === 'availability' ? 'Disponibilidades da equipe.' : tab === 'manual' ? 'Manual de funções.' : tab === 'ai' ? 'Atalhos de IA.' : 'SolMarZap'}</h1>
+              <p className="workspace-kicker">{tab === 'week' ? 'ACOMPANHAMENTO SEMANAL' : tab === 'activities' ? 'CADASTRO DA EQUIPE' : tab === 'files' ? 'LINKS COMPARTILHADOS' : tab === 'announcements' ? 'MURAL DA EQUIPE' : tab === 'meetings' ? 'CHAMADAS AO VIVO · JITSI MEET' : tab === 'calendar' ? 'AGENDA DA EQUIPE' : tab === 'availability' ? 'DISPONIBILIDADES E ESCALAS' : tab === 'manual' ? 'CARGOS E CAPACITAÇÃO' : tab === 'ai' ? 'FERRAMENTAS EXTERNAS' : 'SOLMARZAP · MENSAGENS'}</p>
+              <h1>{tab === 'week' ? 'Semana em movimento.' : tab === 'activities' ? 'Atividades da equipe.' : tab === 'files' ? 'Arquivos da equipe.' : tab === 'announcements' ? 'Comunicados da equipe.' : tab === 'meetings' ? 'Reuniões da equipe.' : tab === 'calendar' ? 'Calendário de eventos.' : tab === 'availability' ? 'Disponibilidades da equipe.' : tab === 'manual' ? 'Manual de funções.' : tab === 'ai' ? 'Atalhos de IA.' : 'SolMarZap'}</h1>
               <p className="workspace-subtitle">{tab === 'week'
                 ? 'Registre o que avançou e sinalize o que precisa de atenção.'
                 : tab === 'activities'
@@ -1038,7 +1043,9 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
                     ? 'Acesse atalhos visuais para as pastas compartilhadas.'
                     : tab === 'announcements'
                       ? 'Compartilhe avisos com toda a equipe ou com uma área.'
-                      : tab === 'availability'
+                      : tab === 'meetings'
+                        ? 'Inicie uma reunião incorporada ou entre em uma sala do Jitsi e convide participantes pelo link.'
+                        : tab === 'availability'
                         ? 'Informe seus horários semanais e consulte as disponibilidades ou escalas do time.'
                         : tab === 'manual'
                         ? 'Consulte as responsabilidades de cada área e as competências a desenvolver.'
@@ -1290,12 +1297,19 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
           {tab === 'chat' && (
             <TeamChat client={client} userId={userId} isAdmin={profile.role === 'admin'} members={members} initialMessageId={pushTarget?.type === 'chat' ? pushTarget.messageId : undefined} initialConversationId={pushTarget?.type === 'chat' ? pushTarget.conversationId : undefined} initialConversationType={pushTarget?.type === 'chat' ? pushTarget.conversationType : undefined} />
           )}
+          {tab === 'meetings' && <MeetingsWorkspace displayName={displayName} onRoomActiveChange={setJitsiRoomActive} />}
           {tab === 'availability' && <AvailabilityWorkspace client={client} userId={userId} profile={profile} />}
           {tab === 'calendar' && <TeamCalendar client={client} userId={userId} isAdmin={profile.role === 'admin'} initialDate={calendarFocusDate} initialEventId={pushTarget?.type === 'calendar' ? pushTarget.itemId : undefined} />}
           {tab === 'manual' && <ManualFunctions />}
           {tab === 'ai' && <AIShortcuts />}
 
-          <footer className="workspace-footer"><span>UFCI/RJ</span><i />SolMar Celeris <small>· DADOS DO SUPABASE</small></footer>
+          <footer className="workspace-footer" aria-label="Identidade do projeto">
+            <img src="/assets/solmar-celeris-site-logo.png" alt="Logo oficial SolMar Celeris" />
+            <strong>SOLMAR CELERIS WORKSPACE</strong>
+            <i />
+            <span>UFCI/RJ</span>
+            <small>· DADOS DO SUPABASE</small>
+          </footer>
         </main>
       </div>
 

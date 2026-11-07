@@ -18,6 +18,39 @@
 .pert-summary i { width: 1px; height: 19px; margin: 0 5px; background: var(--pert-line); }
 .pert-method-note, .pert-footer-note { margin: 0 0 14px; padding: 11px 13px; border: 1px solid var(--pert-line); border-radius: 10px; color: var(--pert-muted); background: var(--pert-card); font-size: 11px; line-height: 1.5; }
 .pert-method-note b { color: var(--pert-ink); }
+.pert-visual-section { margin: 14px 0; padding: 14px; border: 1px solid var(--pert-line); border-radius: 12px; background: var(--pert-card); }
+.pert-visual-heading { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px 18px; margin-bottom: 9px; }
+.pert-visual-heading h2 { margin: 0; color: var(--pert-ink); font-size: 14px; }
+.pert-visual-heading p, .pert-graph-note { margin: 4px 0 0; color: var(--pert-muted); font-size: 10px; line-height: 1.5; }
+.pert-visual-legend { display: flex; flex-wrap: wrap; gap: 9px 14px; color: var(--pert-muted); font-size: 9px; }
+.pert-visual-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.pert-legend-bar { width: 17px; height: 8px; border-radius: 4px; background: #2992d1; }
+.pert-legend-bar.is-critical { background: #cf4e49; }
+.pert-legend-arrow { position: relative; width: 18px; height: 1px; background: #71889c; }
+.pert-legend-arrow::after { position: absolute; top: -3px; right: 0; width: 0; height: 0; border-top: 4px solid transparent; border-bottom: 4px solid transparent; border-left: 5px solid #71889c; content: ''; }
+.pert-timeline-scroll { overflow: auto; max-width: 100%; border: 1px solid var(--pert-line); border-radius: 8px; background: var(--pert-bg); scrollbar-width: thin; }
+.pert-timeline { display: block; max-width: none; }
+.pert-axis-title { fill: var(--pert-muted); font-size: 8px; font-weight: 850; letter-spacing: .12em; }
+.pert-axis-label { fill: var(--pert-muted); font-size: 9px; font-weight: 700; }
+.pert-grid-line { stroke: var(--pert-line); stroke-dasharray: 3 4; stroke-width: 1; }
+.pert-row-shade { fill: color-mix(in srgb, var(--pert-card) 75%, var(--pert-bg)); }
+.pert-row-shade.is-alt { fill: color-mix(in srgb, var(--pert-bg) 80%, var(--pert-card)); }
+.pert-row-code { fill: var(--ocean, #014b89); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9px; font-weight: 850; }
+.pert-row-name { fill: var(--pert-ink); font-size: 9px; }
+.pert-dependency-line { fill: none; stroke: #71889c; stroke-width: 1.5; opacity: .78; }
+.pert-dependency-line.is-critical { stroke: #cf4e49; stroke-width: 2.2; opacity: 1; }
+#pert-arrow-normal { fill: #71889c; }
+#pert-arrow-critical { fill: #cf4e49; }
+.pert-task-bar { fill: #2992d1; stroke: #1476b1; stroke-width: 1; }
+.pert-task-bar.is-critical { fill: #df6a58; stroke: #bd3e39; }
+.pert-bar-label { fill: #fff; font-size: 8px; font-weight: 850; pointer-events: none; }
+.pert-pending-bar { fill: color-mix(in srgb, #8996a3 18%, var(--pert-card)); stroke: #8996a3; stroke-dasharray: 3 2; }
+.pert-pending-label { fill: var(--pert-muted); font-size: 7px; font-weight: 750; }
+.pert-graph-note { margin-top: 8px; }
+.pert-glossary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px 10px; margin: 12px 0; padding: 10px; border: 1px solid var(--pert-line); border-radius: 10px; background: color-mix(in srgb, var(--pert-bg) 65%, var(--pert-card)); }
+.pert-glossary > div { display: flex; align-items: flex-start; gap: 7px; color: var(--pert-muted); font-size: 9px; line-height: 1.45; }
+.pert-glossary b { flex: 0 0 auto; min-width: 38px; color: var(--ocean, #014b89); font-weight: 850; }
+:root[data-theme="dark"] .pert-glossary b, :root[data-theme="dark"] .pert-row-code { color: #9dd5ff; }
 .pert-alert, .pert-feedback, .pert-loading, .pert-empty { margin: 12px 0; padding: 11px 13px; border: 1px solid var(--pert-line); border-radius: 10px; color: var(--pert-ink); background: var(--pert-card); font-size: 11px; line-height: 1.5; }
 .pert-alert { border-color: color-mix(in srgb, #b52d2d 34%, var(--pert-line)); color: #8e2424; background: color-mix(in srgb, #e54444 7%, var(--pert-card)); }
 :root[data-theme="dark"] .pert-alert { color: #ffb1a9; }
@@ -73,4 +106,6 @@
   .pert-summary { align-self: flex-start; }
   .pert-table-scroll { border-radius: 9px; }
   .pert-method-note { font-size: 10px; }
+  .pert-visual-section { padding: 10px; }
+  .pert-glossary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

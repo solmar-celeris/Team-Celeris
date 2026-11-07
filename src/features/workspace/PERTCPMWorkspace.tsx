@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { canManageActivity, type Activity, type MemberProfile } from './domain';
 import { calculatePertSchedule, type PertDependency, type PertEstimate } from './pert-cpm';
+import PertTimeline from './PertTimeline';
 import './pert-cpm.css';
 
 type PERTCPMWorkspaceProps = {
@@ -115,6 +116,8 @@ export default function PERTCPMWorkspace({ client, activities, profile }: PERTCP
     marcoActivities.map((activity) => ({ id: activity.id, ...(estimates[activity.id] ?? toEstimate(activity)) })),
     dependencies.map((edge) => ({ predecessorId: edge.predecessorId, successorId: edge.successorId } as PertDependency)),
   ), [marcoActivities, estimates, dependencies]);
+  const networkComplete = !loading && marcoActivities.length > 0
+    && marcoActivities.every((activity) => schedule.get(activity.id)?.status === 'ready');
 
   function updateEstimate(activityId: string, key: EstimateKey, rawValue: string) {
     setEstimates((current) => ({
@@ -224,7 +227,7 @@ export default function PERTCPMWorkspace({ client, activities, profile }: PERTCP
         </div>
       </header>
 
-      <p className="pert-method-note"><b>PERT:</b> (O + 4 × M + P) ÷ 6, em dias. A rede parte do dia 0; o caminho crítico corresponde a folga total zero. Datas de calendário não são inferidas.</p>
+      <p className="pert-method-note"><b>Duração PERT</b> = (O + 4 × M + P) ÷ 6 dias. ES/EF são os tempos mais cedo; LS/LF são os tempos mais tarde sem atrasar o fim do projeto. Folga é o atraso que a atividade ainda suporta; folga zero indica caminho crítico. O cronograma começa no dia 0 e não infere datas do calendário.</p>
       {loadError && <div className="pert-alert" role="alert">{loadError}</div>}
       {error && <div className="pert-alert" role="alert">{error}</div>}
       {feedback && <div className="pert-feedback" role="status">{feedback}</div>}
@@ -232,28 +235,39 @@ export default function PERTCPMWorkspace({ client, activities, profile }: PERTCP
 
       {!loading && marcoActivities.length === 0 && <div className="pert-empty">Não há marcos ativos disponíveis.</div>}
       {marcoActivities.length > 0 && (
+        <>
+        {!loading && <PertTimeline activities={marcoActivities} schedule={schedule} dependencies={dependencies} />}
+        <div className="pert-glossary" aria-label="Significado das siglas da tabela">
+          <div><b>O</b><span>Otimista: duração se tudo correr bem.</span></div>
+          <div><b>M</b><span>Mais provável: duração esperada no cenário realista.</span></div>
+          <div><b>P</b><span>Pessimista: duração se houver dificuldades.</span></div>
+          <div><b>ES / EF</b><span>Início / término mais cedo permitidos pelas dependências.</span></div>
+          <div><b>LS / LF</b><span>Início / término mais tarde sem atrasar o projeto.</span></div>
+          <div><b>Folga</b><span>Dias que a atividade pode atrasar; zero indica caminho crítico.</span></div>
+        </div>
         <div className="pert-table-scroll" role="region" aria-label="Tabela PERT e CPM; role horizontal para ver todas as colunas" tabIndex={0}>
           <table className="pert-table">
             <thead>
               <tr>
                 <th scope="col">Marco</th>
-                <th scope="col">O (dias)</th>
-                <th scope="col">M (dias)</th>
-                <th scope="col">P (dias)</th>
-                <th scope="col">Duração PERT</th>
-                <th scope="col">ES</th>
-                <th scope="col">EF</th>
-                <th scope="col">LS</th>
-                <th scope="col">LF</th>
-                <th scope="col">Folga</th>
+                <th scope="col" title="Estimativa otimista: duração se tudo correr bem.">Otimista O<br />(dias)</th>
+                <th scope="col" title="Estimativa mais provável: duração realista.">Mais provável M<br />(dias)</th>
+                <th scope="col" title="Estimativa pessimista: duração se houver dificuldades.">Pessimista P<br />(dias)</th>
+                <th scope="col" title="Duração esperada calculada por (O + 4 × M + P) ÷ 6.">Duração PERT<br />(dias)</th>
+                <th scope="col" title="Early Start: início mais cedo permitido pelas predecessoras.">Início mais cedo ES</th>
+                <th scope="col" title="Early Finish: término mais cedo, igual a ES mais a duração PERT.">Término mais cedo EF</th>
+                <th scope="col" title="Late Start: início mais tarde sem atrasar o prazo do projeto.">Início mais tarde LS</th>
+                <th scope="col" title="Late Finish: término mais tarde sem atrasar o prazo do projeto.">Término mais tarde LF</th>
+                <th scope="col" title="Tempo que a atividade pode atrasar sem alterar o prazo final.">Folga total<br />(dias)</th>
                 <th scope="col">Predecessoras / sucessoras</th>
-                <th scope="col">Ação</th>
+                <th scope="col">Ações</th>
               </tr>
             </thead>
             <tbody>
               {marcoActivities.map((activity) => {
                 const estimate = estimates[activity.id] ?? toEstimate(activity);
                 const result = schedule.get(activity.id);
+                const showCriticalPath = networkComplete && result?.status === 'ready' && result.critical;
                 const currentPreds = predecessorIds[activity.id] ?? [];
                 const currentSuccs = successorIds[activity.id] ?? [];
                 const editable = canManageActivity(profile, activity.area_id);
@@ -262,14 +276,18 @@ export default function PERTCPMWorkspace({ client, activities, profile }: PERTCP
                   && canManageActivity(profile, candidate.area_id)
                   && editable);
                 return (
-                  <tr key={activity.id} className={result?.critical ? 'pert-critical-row' : undefined}>
+                  <tr key={activity.id} className={showCriticalPath ? 'pert-critical-row' : undefined}>
                     <th scope="row" className="pert-activity-cell">
                       <span className="pert-code">{activity.code}</span>
                       <strong title={activity.name}>{activity.name}</strong>
                       <small>{activity.area_id === profile.area_id ? 'Sua área' : `Área ${activity.area_id.slice(0, 8)}`}</small>
                       {result?.status === 'pending'
                         ? <span className="pert-status is-pending" title={result.reason}>Pendente</span>
-                        : result?.critical && <span className="pert-status is-critical">Caminho crítico</span>}
+                        : showCriticalPath
+                          ? <span className="pert-status is-critical">Caminho crítico</span>
+                          : !loading && !networkComplete && result?.status === 'ready'
+                            ? <span className="pert-status is-pending" title="Há marcos sem estimativas válidas na rede; criticidade e folga ainda não são definitivas.">Rede parcial</span>
+                            : null}
                     </th>
                     {estimateFields.map((field) => (
                       <td key={field.key}>
@@ -290,10 +308,10 @@ export default function PERTCPMWorkspace({ client, activities, profile }: PERTCP
                     <td className="pert-calc-cell">{result?.status === 'ready' ? `${formatDays(result.expectedDays)} d` : 'Pendente'}</td>
                     <td>{result?.status === 'ready' ? formatDayIndex(result.earlyStart) : '—'}</td>
                     <td>{result?.status === 'ready' ? formatDayIndex(result.earlyFinish) : '—'}</td>
-                    <td>{result?.status === 'ready' ? formatDayIndex(result.lateStart) : '—'}</td>
-                    <td>{result?.status === 'ready' ? formatDayIndex(result.lateFinish) : '—'}</td>
-                    <td className={result?.status === 'ready' && result.critical ? 'pert-zero-slack' : ''}>
-                      {result?.status === 'ready' ? `${formatDayIndex(result.totalSlack)} d` : '—'}
+                    <td>{networkComplete && result?.status === 'ready' ? formatDayIndex(result.lateStart) : '—'}</td>
+                    <td>{networkComplete && result?.status === 'ready' ? formatDayIndex(result.lateFinish) : '—'}</td>
+                    <td className={showCriticalPath ? 'pert-zero-slack' : ''}>
+                      {networkComplete && result?.status === 'ready' ? `${formatDayIndex(result.totalSlack)} d` : '—'}
                     </td>
                     <td className="pert-links-cell">
                       <div className="pert-link-group"><b>Precedem</b>
@@ -346,8 +364,9 @@ export default function PERTCPMWorkspace({ client, activities, profile }: PERTCP
             </tbody>
           </table>
         </div>
+        </>
       )}
-      <footer className="pert-footer-note">Os campos ES/EF e LS/LF são tempos relativos em dias e são calculados somente quando o marco e toda a cadeia de predecessoras têm estimativas válidas.</footer>
+      <footer className="pert-footer-note">ES/EF podem ser calculados quando o marco e suas predecessoras têm estimativas válidas. LS/LF, folgas e caminho crítico só são apresentados quando a rede completa de marcos tem estimativas válidas; caso contrário, os resultados são parciais.</footer>
     </section>
   );
 }
