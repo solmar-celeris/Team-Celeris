@@ -238,3 +238,18 @@
 - [x] Substituir o gatilho atual de perfil por um botão de três linhas que abra as configurações de perfil e ofereça controles acessíveis de modo claro e escuro, preservando os recursos existentes do perfil.
 
 **Evidência:** `pnpm typecheck` e `pnpm build` aprovados; logos transparentes conferidas e ícones PWA atualizados. Alterações estão no código-fonte; a publicação no Netlify não foi executada.
+
+
+## 31. Marca dos rodapés e provedor das reuniões (07/11/2026)
+
+- [x] Nos rodapés da tela de entrada e do workspace, substituir a logo oficial SolMar Celeris pelo símbolo colorido do app Team Celeris, mantendo o rótulo “SOLMAR CELERIS WORKSPACE”.
+- [x] No workspace, remover o símbolo branco do canto superior direito e manter a logo oficial SolMar Celeris no canto superior esquerdo.
+- [x] Esclarecer que a sala Jitsi é incorporada no workspace, mas usa a hospedagem pública meet.jit.si; o código não contém temporizador de cinco minutos. Não provisionar servidor próprio sem confirmação do usuário.
+**Evidência:** Usuário confirmou manter `meet.jit.si` incorporado no workspace. Componente existente usa IFrame API de `meet.jit.si` e não contém temporizador de cinco minutos; build TypeScript e Vite aprovados após os ajustes de marca.
+
+
+## 32. Navegação mobile — abas legíveis sem rolagem (07/11/2026)
+
+
+- [x] Na versão mobile, manter as dez abas em uma única fileira, todas visíveis sem rolagem horizontal; usar ícones maiores que a versão anterior e abreviações curtas legíveis que caibam em telas estreitas.
+**Evidência:** A barra mobile apresenta as dez abas em uma única linha, com overflow oculto, ícones de 16–18 px e rótulos curtos de 7.5–9 px; `pnpm typecheck` e `pnpm build` aprovados.

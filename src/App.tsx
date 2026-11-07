@@ -72,7 +72,7 @@ export default function App() {
       </main>
 
       <footer className="page-footer" aria-label="Identidade do projeto">
-        <img className="page-footer-logo" src="/assets/solmar-celeris-site-logo.png" alt="Logo oficial SolMar Celeris" />
+        <img className="page-footer-logo" src="/assets/teamceleris-app-mark.png" alt="Símbolo do app Team Celeris" />
         <span className="footer-workspace-label">SOLMAR CELERIS WORKSPACE</span>
         <span className="footer-line" />
         <span className="footer-institution">UFCI/RJ</span>

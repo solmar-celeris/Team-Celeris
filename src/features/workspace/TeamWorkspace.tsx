@@ -111,15 +111,15 @@ type WeekCalendarEvent = {
   location: string;
 };
 const workspaceTabs: { id: WorkspaceTab; label: string; mobileLabel: string; icon: LucideIcon }[] = [
-  { id: 'chat', label: 'SolMarZap', mobileLabel: 'Zap', icon: MessageCircle },
-  { id: 'meetings', label: 'Reuniões ao vivo', mobileLabel: 'Reuniões', icon: Video },
-  { id: 'announcements', label: 'Comunicados', mobileLabel: 'Avisos', icon: Megaphone },
+  { id: 'chat', label: 'SolMarZap', mobileLabel: 'Chat', icon: MessageCircle },
+  { id: 'meetings', label: 'Reuniões ao vivo', mobileLabel: 'Reu.', icon: Video },
+  { id: 'announcements', label: 'Comunicados', mobileLabel: 'Avis.', icon: Megaphone },
   { id: 'week', label: 'Semana', mobileLabel: 'Sem.', icon: Clock3 },
   { id: 'activities', label: 'Atividades', mobileLabel: 'Ativ.', icon: ClipboardList },
   { id: 'files', label: 'Arquivos', mobileLabel: 'Arq.', icon: Folder },
-  { id: 'calendar', label: 'Calendário de eventos', mobileLabel: 'Eventos', icon: CalendarDays },
+  { id: 'calendar', label: 'Calendário de eventos', mobileLabel: 'Evt.', icon: CalendarDays },
   { id: 'availability', label: 'Disponibilidades', mobileLabel: 'Disp.', icon: Users },
-  { id: 'manual', label: 'Manual de funções', mobileLabel: 'Manual', icon: BookOpen },
+  { id: 'manual', label: 'Manual de funções', mobileLabel: 'Man.', icon: BookOpen },
   { id: 'ai', label: 'IA', mobileLabel: 'IA', icon: Sparkles },
 ];
 
@@ -1008,7 +1008,6 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             if (jitsiRoomActive && !window.confirm('Você está em uma reunião. Sair do Team Celeris desconectará sua chamada. Deseja continuar?')) return;
             onLogout();
           }}>Sair</button>
-          <img className="workspace-app-mark" src="/assets/teamceleris-app-mark-white.png" alt="Símbolo do app Team Celeris" />
         </div>
       </header>
 
@@ -1304,7 +1303,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           {tab === 'ai' && <AIShortcuts />}
 
           <footer className="workspace-footer" aria-label="Identidade do projeto">
-            <img src="/assets/solmar-celeris-site-logo.png" alt="Logo oficial SolMar Celeris" />
+            <img src="/assets/teamceleris-app-mark.png" alt="Símbolo do app Team Celeris" />
             <strong>SOLMAR CELERIS WORKSPACE</strong>
             <i />
             <span>UFCI/RJ</span>

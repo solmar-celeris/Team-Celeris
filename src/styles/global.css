@@ -100,7 +100,7 @@ h1 em { color: var(--ink); font-style: normal; }
 .access-message-warning strong { color: var(--ink); }
 .member-state > .eyebrow { margin-top: 5px; }
 .page-footer { display: flex; align-items: center; flex-wrap: wrap; gap: 11px; width: min(100% - 48px, 1120px); margin: auto auto 0; padding: 18px 0 24px; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .12em; }
-.page-footer-logo { display: block; width: 48px; height: 40px; object-fit: contain; }
+.page-footer-logo { display: block; width: 40px; height: 40px; object-fit: contain; }
 .footer-institution, .footer-workspace-label { color: var(--ocean); font-weight: 850; }
 .footer-workspace-label { font-size: 10px; letter-spacing: .1em; }
 .footer-line { width: 32px; height: 1px; background: var(--line); }
@@ -120,7 +120,7 @@ h1 em { color: var(--ink); font-style: normal; }
   .auth-panel { width: 100%; flex-basis: auto; padding: 24px 20px; border-radius: 16px; }
   .auth-panel-top { margin-bottom: 20px; }
   .page-footer { justify-content: center; width: min(100% - 28px, 480px); gap: 7px; font-size: 9px; }
-  .page-footer-logo { width: 38px; height: 32px; }
+  .page-footer-logo { width: 32px; height: 32px; }
   .footer-workspace-label { font-size: 9px; }
 }
 
