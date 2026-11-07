@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type DragEvent, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { BookOpen, CalendarDays, Check, ClipboardList, Clock3, Folder, Megaphone, MessageCircle, Sparkles, Trash2, X, Paperclip, ExternalLink, Users, type LucideIcon } from 'lucide-react';
+import { BookOpen, CalendarDays, Check, ClipboardList, Clock3, Folder, GripVertical, Megaphone, MessageCircle, Sparkles, Trash2, X, Paperclip, ExternalLink, Users, type LucideIcon } from 'lucide-react';
 import {
   activityTypeLabels,
   activityFlowLabels,
@@ -169,6 +169,25 @@ const defaultCycleStart = '2026-11-09';
 const defaultCycleEnd = '2027-12-22';
 const defaultCycleWeeks = 60;
 
+const kanbanColumnDefinitions: { key: string; label: string; statuses: ActivityFlowStatus[] }[] = [
+  { key: 'backlog', label: 'Backlog', statuses: ['backlog'] },
+  { key: 'ready', label: 'A fazer', statuses: ['ready'] },
+  { key: 'in_progress', label: 'Fazendo', statuses: ['in_progress', 'blocked'] },
+  { key: 'done', label: 'Feito', statuses: ['done'] },
+];
+
+const activityFlowTransitions: Record<ActivityFlowStatus, ActivityFlowStatus[]> = {
+  backlog: ['ready', 'in_progress', 'blocked', 'done'],
+  ready: ['backlog', 'in_progress', 'blocked', 'done'],
+  in_progress: ['backlog', 'ready', 'blocked', 'done'],
+  blocked: ['backlog', 'ready', 'in_progress', 'done'],
+  done: ['backlog', 'ready', 'in_progress', 'blocked'],
+};
+
+function kanbanColumnForStatus(status: ActivityFlowStatus): string {
+  return kanbanColumnDefinitions.find((column) => column.statuses.includes(status))?.key ?? 'backlog';
+}
+
 function errorText(error: unknown): string {
   if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
     return error.message;
@@ -278,10 +297,6 @@ function validateActivity(form: ActivityFormState): string | null {
   return null;
 }
 
-function statusClass(status: GeneralStatus | WeeklyStatus): string {
-  return `status-${status}`;
-}
-
 const ACTIVITY_FILE_TYPES: Record<string, { mime: string; extension: string }> = {
   'image/jpeg': { mime: 'image/jpeg', extension: 'jpg' }, 'image/png': { mime: 'image/png', extension: 'png' },
   'image/gif': { mime: 'image/gif', extension: 'gif' }, 'image/webp': { mime: 'image/webp', extension: 'webp' },
@@ -312,8 +327,10 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
   const [activityAttachments, setActivityAttachments] = useState<ActivityAttachment[]>([]);
   const [attachmentUrls, setAttachmentUrls] = useState<Record<string, string>>({});
   const [wipLimits, setWipLimits] = useState<ActivityWipLimit[]>([]);
-  const [activityView, setActivityView] = useState<'list' | 'board' | 'pert'>('list');
+  const [activityView, setActivityView] = useState<'board' | 'pert'>('board');
   const [savingFlowId, setSavingFlowId] = useState<string | null>(null);
+  const [draggedActivityId, setDraggedActivityId] = useState<string | null>(null);
+  const [dragOverColumnId, setDragOverColumnId] = useState<string | null>(null);
   const [flowTargetById, setFlowTargetById] = useState<Record<string, ActivityFlowStatus | ''>>({});
   const [blockedReasonById, setBlockedReasonById] = useState<Record<string, string>>({});
   const [wipAreaEditor, setWipAreaEditor] = useState('');
@@ -645,34 +662,40 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
     card?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [loading, pushTarget, tab, visibleActivities]);
 
-  const boardColumns = activityFlowStages.map((stage) => {
+  const boardColumns = kanbanColumnDefinitions.map((column) => {
     const boardActivities = activities.filter((activity) => isAreaActive(activity.area_id) && (!filters.area || activity.area_id === filters.area));
-    const cards = visibleActivities.filter((activity) => isAreaActive(activity.area_id) && activity.flow_status === stage);
+    const inColumn = (activity: Activity) => column.statuses.includes(activity.flow_status);
+    const cards = visibleActivities.filter((activity) => isAreaActive(activity.area_id) && inColumn(activity));
     const areaIds = [...new Set(boardActivities.map((activity) => activity.area_id))];
-    const wipCount = boardActivities.filter((activity) => activity.flow_status === stage).length;
-    const exceededAreas = areaIds.flatMap((areaId) => {
+    const wipCount = boardActivities.filter(inColumn).length;
+    const exceededAreas = areaIds.flatMap((areaId) => column.statuses.flatMap((stage) => {
       const count = boardActivities.filter((activity) => activity.area_id === areaId && activity.flow_status === stage).length;
       const setting = wipLimits.find((item) => item.area_id === areaId && item.flow_status === stage);
       return setting?.limit_count !== null && setting?.limit_count !== undefined && count > setting.limit_count
-        ? [{ areaId, count, limit: setting.limit_count }] : [];
-    });
-    const configured = areaIds.map((areaId) => wipLimits.find((item) => item.area_id === areaId && item.flow_status === stage)?.limit_count).filter((value): value is number => value !== null && value !== undefined);
-    return { stage, cards, wipCount, exceededAreas, configuredLimit: configured.length ? configured.reduce((sum, value) => sum + value, 0) : null };
+        ? [{ areaId, count, limit: setting.limit_count, stage }] : [];
+    }));
+    const configured = areaIds.flatMap((areaId) => column.statuses.map((stage) => wipLimits.find((item) => item.area_id === areaId && item.flow_status === stage)?.limit_count)).filter((value): value is number => value !== null && value !== undefined);
+    return { ...column, cards, wipCount, exceededAreas, configuredLimit: configured.length ? configured.reduce((sum, value) => sum + value, 0) : null };
   });
 
   function renderFlowCard(activity: Activity) {
     const area = areasById.get(activity.area_id);
     const canFlow = mayUpdateActivity(activity);
     const canEdit = isAreaActive(activity.area_id) && canManageActivity(profile, activity.area_id);
-    const transitions: Record<ActivityFlowStatus, ActivityFlowStatus[]> = {
-      backlog: ['ready'], ready: ['in_progress'], in_progress: ['blocked', 'done'],
-      blocked: ['ready', 'in_progress'], done: ['in_progress'],
-    };
     const related = activityAttachments.filter((attachment) => attachment.activity_id === activity.id);
     const selectedTarget = flowTargetById[activity.id] ?? '';
+    const isDragging = draggedActivityId === activity.id;
     return (
-      <article id={`activity-card-${activity.id}`} className={`activity-board-card${pushTarget?.type === 'activity' && pushTarget.itemId === activity.id ? ' is-push-target' : ''}`} key={activity.id}>
-        <div className="activity-board-card-top"><span className="workspace-code">{activity.code}</span><span className={`activity-priority priority-${activity.priority}`}>{activityPriorityLabels[activity.priority]}</span></div>
+      <article
+        id={`activity-card-${activity.id}`}
+        className={`activity-board-card postit-priority-${activity.priority}${canFlow ? ' is-draggable' : ''}${isDragging ? ' is-dragging' : ''}${pushTarget?.type === 'activity' && pushTarget.itemId === activity.id ? ' is-push-target' : ''}`}
+        key={activity.id}
+        draggable={canFlow && savingFlowId !== activity.id}
+        title={canFlow ? 'Arraste este cartão para mudar de etapa' : undefined}
+        onDragStart={(event) => handleActivityDragStart(event, activity)}
+        onDragEnd={() => { setDraggedActivityId(null); setDragOverColumnId(null); }}
+      >
+        <div className="activity-board-card-top"><span className="workspace-code">{activity.code}</span><div className="activity-board-card-badges">{canFlow && <span className="activity-card-drag-indicator" aria-hidden="true" title="Arraste o cartão"><GripVertical size={14} /></span>}{activity.flow_status === 'blocked' && <span className="activity-board-blocked-badge">Bloqueada</span>}<span className={`activity-priority priority-${activity.priority}`}>{activityPriorityLabels[activity.priority]}</span></div></div>
         <h3>{activity.name}</h3>
         <p className="activity-board-card-area">{area?.name ?? 'Área'}{activity.due_date ? ` · Prazo ${formatShortDate(activity.due_date)}` : ''}</p>
         {activity.description && <p className="activity-board-card-description">{activity.description}</p>}
@@ -690,12 +713,21 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
               setFlowTargetById((current) => ({ ...current, [activity.id]: target }));
               if (target && target !== 'blocked') void moveActivityFlow(activity, target);
             }}>
-              <option value="">Escolha uma etapa…</option>{transitions[activity.flow_status].map((target) => <option key={target} value={target}>{activityFlowLabels[target]}</option>)}
+              <option value="">Escolha uma etapa…</option>{activityFlowTransitions[activity.flow_status].map((target) => <option key={target} value={target}>{activityFlowLabels[target]}</option>)}
             </select></label>
             {selectedTarget === 'blocked' && <div className="activity-block-form"><label><span>Motivo do bloqueio <b>obrigatório</b></span><textarea value={blockedReasonById[activity.id] ?? ''} rows={2} onChange={(event) => setBlockedReasonById((current) => ({ ...current, [activity.id]: event.target.value }))} /></label><button type="button" disabled={savingFlowId === activity.id || !(blockedReasonById[activity.id] ?? '').trim()} onClick={() => void moveActivityFlow(activity, 'blocked', blockedReasonById[activity.id] ?? '')}>{savingFlowId === activity.id ? 'Salvando…' : 'Registrar bloqueio'}</button></div>}
           </> : <span className="workspace-read-only">Fluxo somente leitura</span>}
           {canFlow && <div className="activity-card-attachment-controls"><label><span>Anexar arquivo</span><input type="file" multiple accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,application/pdf,text/plain,text/csv,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation" disabled={savingFlowId === activity.id} onChange={(event) => { const selected = Array.from(event.target.files ?? []); if (selected.length) void uploadActivityFiles(activity, selected); event.target.value = ''; }} /></label><label><span>Nome do link Google</span><input maxLength={240} value={driveDraftById[activity.id]?.name ?? ''} onChange={(event) => setDriveDraftById((current) => ({ ...current, [activity.id]: { ...(current[activity.id] ?? { name: '', url: '' }), name: event.target.value } }))} /></label><label><span>URL do Drive/Docs</span><input type="url" value={driveDraftById[activity.id]?.url ?? ''} onChange={(event) => setDriveDraftById((current) => ({ ...current, [activity.id]: { ...(current[activity.id] ?? { name: '', url: '' }), url: event.target.value } }))} /></label><button type="button" onClick={() => void addActivityDriveLink(activity)} disabled={savingFlowId === activity.id}>Adicionar link</button></div>}
-          {canEdit && <button type="button" className="activity-card-edit" onClick={() => { setDialogError(''); setDialogActivity(activity); }}>Editar</button>}
+          {canEdit && <div className="activity-card-actions">
+            <button type="button" className="activity-card-edit" onClick={() => { setDialogError(''); setDialogActivity(activity); }}>Editar</button>
+            {confirmRemoveActivityId === activity.id ? (
+              <div className="activity-card-remove-confirm" role="group" aria-label={`Confirmar remoção de ${activity.code}`}>
+                <span>Remover?</span>
+                <button type="button" className="activity-card-remove-confirm-button" onClick={() => void removeActivity(activity)} disabled={removingActivityId === activity.id}><Check size={13} aria-hidden="true" />{removingActivityId === activity.id ? 'Removendo…' : 'Confirmar'}</button>
+                <button type="button" className="activity-card-cancel-remove" onClick={() => setConfirmRemoveActivityId(null)} disabled={removingActivityId === activity.id} aria-label={`Cancelar remoção de ${activity.code}`}><X size={13} aria-hidden="true" />Cancelar</button>
+              </div>
+            ) : <button type="button" className="activity-card-remove" onClick={() => setConfirmRemoveActivityId(activity.id)}><Trash2 size={13} aria-hidden="true" />Remover</button>}
+          </div>}
         </div>
       </article>
     );
@@ -839,8 +871,42 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
       setFlowTargetById((current) => ({ ...current, [activity.id]: '' }));
       setBlockedReasonById((current) => ({ ...current, [activity.id]: '' }));
       setFeedback(`Cartão ${activity.code} movido para ${activityFlowLabels[target]}.`);
-    } catch (error) { setFeedback(`Não foi possível mover o cartão: ${errorText(error)}`); }
+    } catch (error) {
+      const message = errorText(error);
+      setFeedback(message.includes('Transição não permitida')
+        ? 'O Supabase ainda usa a regra antiga de etapas. Aplique a migration 20261106211000_kanban_drag_drop.sql para habilitar o arraste entre as quatro colunas.'
+        : `Não foi possível mover o cartão: ${message}`);
+    }
     finally { setSavingFlowId(null); }
+  }
+
+  function handleActivityDragStart(event: DragEvent<HTMLElement>, activity: Activity) {
+    if (!mayUpdateActivity(activity) || savingFlowId === activity.id) {
+      event.preventDefault();
+      return;
+    }
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', activity.id);
+    setDraggedActivityId(activity.id);
+  }
+
+  async function handleActivityDrop(event: DragEvent<HTMLElement>, targetColumnKey: string) {
+    event.preventDefault();
+    setDragOverColumnId(null);
+    const activityId = event.dataTransfer.getData('text/plain') || draggedActivityId;
+    setDraggedActivityId(null);
+    const activity = activities.find((item) => item.id === activityId);
+    const targetColumn = kanbanColumnDefinitions.find((column) => column.key === targetColumnKey);
+    if (!activity || !targetColumn || !mayUpdateActivity(activity)) return;
+    const sameVisualColumn = kanbanColumnForStatus(activity.flow_status) === targetColumn.key;
+    if (sameVisualColumn && !(activity.flow_status === 'blocked' && targetColumn.key === 'in_progress')) return;
+
+    const target = targetColumn.key === 'in_progress' ? 'in_progress' : targetColumn.statuses[0];
+    if (!activityFlowTransitions[activity.flow_status].includes(target)) {
+      setFeedback(`Não é possível mover de ${activityFlowLabels[activity.flow_status]} para ${targetColumn.label} sem concluir a etapa atual.`);
+      return;
+    }
+    await moveActivityFlow(activity, target);
   }
 
   async function saveWipSettings() {
@@ -1164,11 +1230,11 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
           )}
 
           {tab === 'activities' && (
-            <section className="workspace-activities-section" aria-labelledby="activity-list-title">
+            <section className="workspace-activities-section" aria-labelledby="activity-view-title">
               <div className="workspace-list-heading">
-                <div><p className="workspace-kicker">FLUXO CONTÍNUO · SEM SPRINTS OBRIGATÓRIAS</p><h2 id="activity-list-title">{activityView === 'pert' ? 'Marcos · caminho crítico PERT/CPM' : 'Atividades cadastradas'}</h2></div>
+                <div><p className="workspace-kicker">FLUXO CONTÍNUO · SEM SPRINTS OBRIGATÓRIAS</p><h2 id="activity-view-title">{activityView === 'pert' ? 'Marcos · caminho crítico PERT/CPM' : 'Quadro Kanban de atividades'}</h2></div>
                 <div className="activity-view-tools"><span className="workspace-count">{activityView === 'pert' ? `${activities.filter((item) => item.activity_type === 'marco' && isAreaActive(item.area_id)).length} marcos` : `${visibleActivities.length} de ${activities.length}`}</span><div className="activity-view-switch" role="group" aria-label="Visualização de atividades">
-                  <button type="button" aria-pressed={activityView === 'list'} onClick={() => setActivityView('list')}>Lista</button><button type="button" aria-pressed={activityView === 'board'} onClick={() => setActivityView('board')}>Quadro</button><button type="button" aria-pressed={activityView === 'pert'} onClick={() => setActivityView('pert')}>PERT/CPM</button>
+                  <button type="button" aria-pressed={activityView === 'board'} onClick={() => setActivityView('board')}>Kanban</button><button type="button" aria-pressed={activityView === 'pert'} onClick={() => setActivityView('pert')}>PERT/CPM</button>
                 </div></div>
               </div>
               {activityView === 'board' && profile.role === 'admin' && (
@@ -1182,36 +1248,38 @@ export default function TeamWorkspace({ client, userId, profile, onLogout }: Tea
                   {wipAreaEditor && <div className="activity-wip-fields">{activityFlowStages.map((stage) => <label key={stage}><span>{activityFlowLabels[stage]}</span><input aria-label={`Limite WIP para ${activityFlowLabels[stage]}`} type="number" min="0" step="1" placeholder="Sem limite" value={wipDrafts[stage] ?? ''} onChange={(event) => setWipDrafts((current) => ({ ...current, [stage]: event.target.value }))} /></label>)}<button type="button" onClick={() => void saveWipSettings()} disabled={savingWipKey === wipAreaEditor}>{savingWipKey ? 'Salvando…' : 'Salvar limites'}</button></div>}
                 </section>
               )}
-              {activityView === 'pert' ? (loading ? <WorkspaceLoading /> : <PERTCPMWorkspace client={client} activities={activities.filter((activity) => isAreaActive(activity.area_id))} profile={profile} />) : loading ? <WorkspaceLoading /> : visibleActivities.length === 0 ? (
-                <EmptyState title={activities.length === 0 ? 'Ainda não há atividades no banco.' : 'Nenhuma atividade corresponde aos filtros.'}>{activities.length === 0 ? 'Confirme que a migration exclusiva de fluxo e anexos foi aplicada no Supabase conectado.' : 'Limpe os filtros ou tente outra busca.'}</EmptyState>
-              ) : activityView === 'board' ? (
-                <div className="activity-board" aria-label="Quadro Scrumban de atividades">
-                  {boardColumns.map(({ stage, cards, wipCount, exceededAreas, configuredLimit }) => (
-                    <section className={`activity-board-column${exceededAreas.length ? ' is-over-wip' : ''}`} key={stage} aria-labelledby={`activity-stage-${stage}`}>
-                      <header><div><h3 id={`activity-stage-${stage}`}>{activityFlowLabels[stage]}</h3><span className="activity-board-count">{cards.length} cartão(ões)</span></div><span className={`activity-wip-badge${exceededAreas.length ? ' is-over' : ''}`}>{configuredLimit === null ? `${wipCount} · sem limite` : `WIP ${wipCount} · limite somado ${configuredLimit}`}</span></header>
-                      {exceededAreas.length > 0 && <p className="activity-wip-warning" role="status">Limite excedido: {exceededAreas.map((item) => `${areasById.get(item.areaId)?.name ?? 'Área'} (${item.count}/${item.limit})`).join(', ')}</p>}
+              {activityView === 'pert' ? (
+                loading ? <WorkspaceLoading /> : <PERTCPMWorkspace client={client} activities={activities.filter((activity) => isAreaActive(activity.area_id))} profile={profile} />
+              ) : loading ? <WorkspaceLoading /> : (
+                <>
+                  {visibleActivities.length === 0 && <EmptyState title={activities.length === 0 ? 'Ainda não há atividades no banco.' : 'Nenhuma atividade corresponde aos filtros.'}>{activities.length === 0 ? 'Confirme que a migration exclusiva de fluxo e anexos foi aplicada no Supabase conectado.' : 'Limpe os filtros ou tente outra busca.'}</EmptyState>}
+                  <div className="activity-board" aria-label="Quadro Kanban de atividades">
+                  {boardColumns.map(({ key, label, cards, wipCount, exceededAreas, configuredLimit }) => (
+                    <section
+                      className={`activity-board-column${exceededAreas.length ? ' is-over-wip' : ''}${dragOverColumnId === key ? ' is-drop-target' : ''}`}
+                      key={key}
+                      aria-labelledby={`activity-stage-${key}`}
+                      onDragOver={(event) => {
+                        if (!draggedActivityId) return;
+                        event.preventDefault();
+                        event.dataTransfer.dropEffect = 'move';
+                        setDragOverColumnId((current) => current === key ? current : key);
+                      }}
+                      onDragLeave={(event) => {
+                        const next = event.relatedTarget;
+                        if (!(next instanceof Node) || !event.currentTarget.contains(next)) {
+                          setDragOverColumnId((current) => current === key ? null : current);
+                        }
+                      }}
+                      onDrop={(event) => void handleActivityDrop(event, key)}
+                    >
+                      <header><div><h3 id={`activity-stage-${key}`}>{label}</h3><span className="activity-board-count">{cards.length} cartão(ões)</span></div><span className={`activity-wip-badge${exceededAreas.length ? ' is-over' : ''}`}>{configuredLimit === null ? `${wipCount} · sem limite` : `WIP ${wipCount} · limite somado ${configuredLimit}`}</span></header>
+                      {exceededAreas.length > 0 && <p className="activity-wip-warning" role="status">Limite excedido: {exceededAreas.map((item) => `${areasById.get(item.areaId)?.name ?? 'Área'} — ${activityFlowLabels[item.stage]} (${item.count}/${item.limit})`).join(', ')}</p>}
                       <div className="activity-board-cards">{cards.length ? cards.map(renderFlowCard) : <p className="activity-board-empty">Nenhum cartão nesta etapa.</p>}</div>
                     </section>
                   ))}
-                </div>
-              ) : (
-                <div className="workspace-activity-list">
-                  {visibleActivities.map((activity) => {
-                    const area = areasById.get(activity.area_id);
-                    const status = generalStatusById.get(activity.id) ?? 'not_started'; const canEdit = isAreaActive(activity.area_id) && canManageActivity(profile, activity.area_id);
-                    const related = activityAttachments.filter((attachment) => attachment.activity_id === activity.id);
-                    return <article id={`activity-card-${activity.id}`} className={`workspace-activity-card${pushTarget?.type === 'activity' && pushTarget.itemId === activity.id ? ' is-push-target' : ''}`} key={activity.id}>
-                      <div className="workspace-activity-card-head"><span className="workspace-code">{activity.code}</span><span className={`workspace-status ${statusClass(status)}`}>{generalStatusLabels[status]}</span></div>
-                      <h3>{activity.name}</h3><p className="workspace-activity-description">{activity.description || 'Sem descrição.'}</p>
-                      <div className="workspace-activity-facts"><span><small>Área</small><strong>{area?.name ?? 'Área removida'}</strong></span><span><small>Tipo</small><strong>{activityTypeLabels[activity.activity_type]}</strong></span><span><small>Responsável</small><strong>{activity.responsible_name || 'A definir'}</strong></span><span><small>Início</small><strong>{activity.start_date ? formatShortDate(activity.start_date) : '—'}</strong></span><span><small>Prazo</small><strong>{activity.due_date ? formatShortDate(activity.due_date) : '—'}</strong></span><span><small>Fluxo</small><strong>{activityFlowLabels[activity.flow_status]}</strong></span><span><small>Prioridade / esforço</small><strong>{activityPriorityLabels[activity.priority]} · {activity.effort_points === null ? 'não estimado' : `${activity.effort_points} ponto(s)`}</strong></span></div>
-                      {activity.flow_status === 'blocked' && <p className="activity-blocked-reason"><strong>Motivo do bloqueio:</strong> {activity.blocked_reason}</p>}
-                      {(activity.frequency || activity.execution_condition) && <p className="workspace-activity-extra"><strong>{activity.activity_type === 'rotina' ? activity.frequency : activity.execution_condition || activity.frequency}</strong></p>}
-                      {activity.expected_deliverable && <p className="workspace-activity-deliverable"><small>Entregável esperado</small>{activity.expected_deliverable}</p>}{activity.notes && <p className="workspace-activity-notes"><small>Observações</small>{activity.notes}</p>}
-                      {related.length > 0 && <ul className="activity-attachments" aria-label="Anexos da atividade">{related.map((attachment) => <li key={attachment.id}>{attachment.kind === 'drive_link' && attachment.drive_url ? <a href={attachment.drive_url} target="_blank" rel="noopener noreferrer"><ExternalLink size={13} aria-hidden="true" />{attachment.file_name}<span className="sr-only"> (abre em nova aba; acesso depende das permissões do Google)</span></a> : attachmentUrls[attachment.id] ? <a href={attachmentUrls[attachment.id]} target="_blank" rel="noopener noreferrer"><Paperclip size={13} aria-hidden="true" />{attachment.file_name}</a> : <span><Paperclip size={13} aria-hidden="true" />{attachment.file_name} (link temporariamente indisponível)</span>}</li>)}</ul>}
-                      <div className="workspace-activity-card-foot"><span>{canEdit ? 'Edição autorizada para seu perfil e área' : profile.role === 'reader' ? 'Perfil somente leitura' : 'Visualização; edição depende do perfil e da área'}</span>{canEdit && <div className="workspace-activity-actions"><button type="button" onClick={() => { setDialogError(''); setDialogActivity(activity); }}>Editar atividade</button>{confirmRemoveActivityId === activity.id ? <div className="workspace-activity-remove-confirm" role="group" aria-label={`Confirmar remoção de ${activity.code}`}><span>Remover?</span><button type="button" className="workspace-activity-confirm-remove" onClick={() => void removeActivity(activity)} disabled={removingActivityId === activity.id}><Check size={13} aria-hidden="true" />{removingActivityId === activity.id ? 'Removendo…' : 'Confirmar'}</button><button type="button" className="workspace-activity-cancel-remove" onClick={() => setConfirmRemoveActivityId(null)} disabled={removingActivityId === activity.id}><X size={13} aria-hidden="true" />Cancelar</button></div> : <button type="button" className="workspace-activity-remove" onClick={() => setConfirmRemoveActivityId(activity.id)}><Trash2 size={13} aria-hidden="true" />Remover</button>}</div>}</div>
-                    </article>;
-                  })}
-                </div>
+                  </div>
+                </>
               )}
             </section>
           )}

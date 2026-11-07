@@ -215,3 +215,11 @@
 
 ## 25. Intervalos de disponibilidade a cada 30 minutos (06/11/2026)
 - [x] Construir a grade de segunda a sexta em blocos de meia hora, de 07:00–07:30 até 20:30–21:00. Exibir os blocos da grade como intervalos; no quadro por pessoa, agrupar períodos consecutivos em faixas como “07:00 - 08:00”. Converter a contagem de blocos em horas reais (dois blocos = uma hora) e permitir que o banco salve inícios em :00 ou :30.
+
+
+## 26. Atividades — Kanban sem Lista e cartões por prioridade (06/11/2026)
+- [x] Na aba Atividades, retirar a visualização Lista e abrir o quadro Kanban como fluxo de atividades; manter PERT/CPM como visualização separada de marcos. Colorir os cartões conforme a prioridade (baixa, média, alta e urgente), com paleta de post-its e texto legível nos temas claro e escuro.
+
+
+## 27. Kanban com quatro colunas e cartões arrastáveis (06/11/2026)
+- [x] O quadro tem exatamente quatro colunas: Backlog, A fazer, Fazendo e Feito. Atividades bloqueadas aparecem em Fazendo identificadas como Bloqueadas, sem perder estado/WIP do banco. O estágio deve poder ser alterado no cartão e, para pessoas autorizadas, por arraste do mouse entre quaisquer colunas. O Supabase valida permissões, limites WIP e exige motivo para Bloqueada, sem exigir passagem sequencial por todas as etapas. Manter edição e opção de exclusão/arquivamento no cartão, com confirmação.

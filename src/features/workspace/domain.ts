@@ -95,7 +95,7 @@ export const activityTypeLabels: Record<ActivityType, string> = {
 
 export const activityFlowStages: ActivityFlowStatus[] = ['backlog', 'ready', 'in_progress', 'blocked', 'done'];
 export const activityFlowLabels: Record<ActivityFlowStatus, string> = {
-  backlog: 'Backlog', ready: 'Pronta', in_progress: 'Em andamento', blocked: 'Bloqueada', done: 'Concluída',
+  backlog: 'Backlog', ready: 'A fazer', in_progress: 'Fazendo', blocked: 'Bloqueada', done: 'Feito',
 };
 export const activityPriorityLabels: Record<ActivityPriority, string> = {
   low: 'Baixa', medium: 'Média', high: 'Alta', urgent: 'Urgente',

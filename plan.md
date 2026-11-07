@@ -106,3 +106,11 @@ Referências para o desenho Scrumban (consultadas em 06/11/2026): a Atlassian de
 A aba do Chat adotará a marca SolMarZap e um fluxo de mensageiro familiar — lista de conversas, painel da conversa ativa e compositor na base, responsivo para celular — usando a paleta azul já aprovada e sem assets da marca WhatsApp. Dois controles explícitos iniciarão conversas privadas ou conversas em grupo; a foto de grupo será atualizável por participante/admin e visível apenas em URLs assinadas de um bucket privado. Em mensagens de grupos e na sala da equipe, o autor poderá abrir os detalhes de leitura e identificar quem leu e quem ainda não leu. RLS restringirá a lista de recibos ao contexto da própria conversa; DMs mantêm visibilidade somente aos participantes.
 
 As siglas oficiais serão exibidas junto aos nomes e códigos de novas atividades: Gestão de Pessoas - GP; Marketing - MKT; Administrativo Financeiro - AF; Mecânica Naval - MEC; Elétrica - ELE; Telemetria - TEL. Prefixos antigos em códigos e vínculos históricos não serão reescritos; “Projetos (histórico)” permanece inativo e a nova área Elétrica usa ELE. Alterações usam migrations incrementais após a limpeza de áreas.
+
+
+## Incremento — Kanban como vista principal e cores por prioridade (06/11/2026)
+Na aba Atividades, remover a vista Lista e deixar o quadro Kanban como a vista de fluxo; manter PERT/CPM como ferramenta separada de marcos. Colorir cada cartão Kanban conforme a prioridade cadastrada, usando paleta de post-its suaves, rótulo de prioridade no próprio cartão e contraste adequado nos temas claro e escuro.
+
+
+## Incremento — quatro colunas e cartões arrastáveis (06/11/2026)
+O quadro de Atividades terá somente as colunas Backlog, A fazer, Fazendo e Feito; itens bloqueados continuarão no grupo Fazendo, marcados como bloqueados, para preservar os estados e limites WIP do banco. Integrantes autorizados poderão arrastar cartões entre qualquer uma das quatro colunas ou mudar o fluxo no próprio cartão. A camada Supabase continuará validando permissão, limites WIP e o motivo obrigatório para bloqueios, sem exigir passagem sequencial por todas as etapas. Manter edição e exclusão/arquivamento com confirmação no cartão.
