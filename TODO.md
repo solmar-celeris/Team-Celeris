@@ -253,3 +253,11 @@
 
 - [x] Na versão mobile, manter as dez abas em uma única fileira, todas visíveis sem rolagem horizontal; usar ícones maiores que a versão anterior e abreviações curtas legíveis que caibam em telas estreitas.
 **Evidência:** A barra mobile apresenta as dez abas em uma única linha, com overflow oculto, ícones de 16–18 px e rótulos curtos de 7.5–9 px; `pnpm typecheck` e `pnpm build` aprovados.
+
+
+## 33. Atualização da navegação e dos nomes do workspace (07/11/2026)
+- [x] Remover a aba IA da navegação principal; preservar os prompts institucionais completos e os links dos templates oficiais dentro do Manual de funções, depois do conteúdo do manual.
+- [x] Em celulares, voltar a apresentar a navegação principal como barra vertical na lateral esquerda, com rótulos visíveis e itens utilizáveis por toque.
+- [x] Unificar Acompanhamento semanal, Calendário de eventos e Disponibilidades sob uma única aba principal **Semanas**; no conteúdo, apresentar subguias **Acompanhamento semanal**, **Agenda** e **Disponibilidades**, cada uma abrindo a funcionalidade correspondente já existente.
+- [x] Alterar o título exibido como **SolMar Celeris Workspace** para **Team Celeris** e renomear **SolMarZap** para **Chat**, mantendo as conversas e recursos existentes.
+**Evidência:** `pnpm typecheck` e `pnpm build` aprovados; revisão estática confirmou o título `Team Celeris`, remoção de destinos principais de IA/Calendário/Disponibilidades, componentes de Agenda/Disponibilidades sob Semanas e ausência de alterações nas migrations do Supabase. Nenhum deploy foi feito.

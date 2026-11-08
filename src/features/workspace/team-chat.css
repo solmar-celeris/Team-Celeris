@@ -370,7 +370,7 @@
 }
 
 
-/* SolMarZap: interface de mensageiro familiar com identidade azul própria. */
+/* Chat: interface de mensageiro familiar com identidade azul própria. */
 .team-chat-heading { padding-bottom: 12px; border-bottom: 1px solid color-mix(in srgb, var(--ocean) 15%, var(--line)); }
 .team-chat-heading h2 { color: var(--ocean); }
 :root[data-theme="dark"] .team-chat-heading h2 { color: #a9d6ff; }

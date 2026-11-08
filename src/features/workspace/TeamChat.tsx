@@ -191,7 +191,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   const availableGroupMembers = useMemo(() => members.filter((member) => !activeGroupMemberIds.has(member.user_id)), [activeGroupMemberIds, members]);
   const dialogMembers = useMemo(() => groupDialogMode === 'create' ? members.filter((member) => member.user_id !== userId) : groupDialogMode === 'add-members' ? availableGroupMembers : [], [availableGroupMembers, groupDialogMode, members, userId]);
   const canWrite = !activeGroupId || activeGroupMemberIds.has(userId);
-  const conversationLabel = activeDirectMember?.full_name || activeGroup?.name || 'SolMarZap';
+  const conversationLabel = activeDirectMember?.full_name || activeGroup?.name || 'Chat';
   const activeKey = activeDirectId ?? activeGroupId ?? 'team';
   const activeConversationRef = useRef(activeKey);
   activeConversationRef.current = activeKey;
@@ -713,9 +713,9 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   return (
     <section className="team-chat" aria-labelledby="team-chat-title">
       <div className="team-chat-heading">
-        <div><p className="workspace-kicker">{activeDirectId ? 'CONVERSA PRIVADA' : activeGroupId ? 'SOLMARZAP · GRUPO' : 'SOLMARZAP · EQUIPE'}</p>
-          <h2 id="team-chat-title">{activeGroup ? groupAvatar(activeGroup, 'md') : <MessageCircle aria-hidden="true" />} {activeDirectId ? conversationLabel : activeGroup?.name ?? 'SolMarZap'}</h2>
-          <p>{activeDirectId ? 'Conversa privada, visível somente para as duas contas participantes.' : activeGroupId ? 'Mensagens e informações de leitura restritas aos integrantes do grupo.' : 'Converse com a equipe em tempo real no SolMarZap.'}</p></div>
+        <div><p className="workspace-kicker">{activeDirectId ? 'CONVERSA PRIVADA' : activeGroupId ? 'CHAT · GRUPO' : 'CHAT · EQUIPE'}</p>
+          <h2 id="team-chat-title">{activeGroup ? groupAvatar(activeGroup, 'md') : <MessageCircle aria-hidden="true" />} {activeDirectId ? conversationLabel : activeGroup?.name ?? 'Chat'}</h2>
+          <p>{activeDirectId ? 'Conversa privada, visível somente para as duas contas participantes.' : activeGroupId ? 'Mensagens e informações de leitura restritas aos integrantes do grupo.' : 'Converse com a equipe em tempo real no Chat.'}</p></div>
         <div className="team-chat-heading-actions">
           <button className="team-chat-mobile-toggle" type="button" onClick={() => setShowMobileConversations(true)} aria-expanded={showMobileConversations}><MessageCircle aria-hidden="true" /> Conversas</button>
           {isAdmin && <span className="team-chat-admin-badge"><ShieldCheck aria-hidden="true" /> Administrador</span>}
@@ -728,7 +728,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
       <div className="team-chat-shell">
         {showMobileConversations && <button className="team-chat-drawer-backdrop" type="button" aria-label="Fechar lista de conversas" onClick={() => setShowMobileConversations(false)} />}
         <nav className={`team-chat-channels${showMobileConversations ? ' is-mobile-open' : ''}`} aria-label="Conversas do Chat">
-          <p className="team-chat-channels-title">SOLMARZAP · CONVERSAS</p>
+          <p className="team-chat-channels-title">CHAT · CONVERSAS</p>
           <div className="team-chat-channel-list">
             <button type="button" className={`team-chat-channel${!activeGroupId && !activeDirectId ? ' is-active' : ''}`} onClick={() => { setActiveGroupId(null); setActiveDirectId(null); setShowMobileConversations(false); }}><MessageCircle aria-hidden="true" /><span>Equipe</span><small>Todos</small></button>
             <div className="team-chat-channel-heading"><span>PRIVADAS</span><button type="button" title="Nova conversa privada" aria-label="Iniciar conversa privada" onClick={() => setShowNewDirect((value) => !value)}><Plus aria-hidden="true" /></button></div>

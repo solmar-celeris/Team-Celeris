@@ -31,13 +31,13 @@ export default function App() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <a className="brand" href="#inicio" aria-label="SolMar Celeris — início">
+        <a className="brand" href="#inicio" aria-label="Team Celeris — início">
           <img
             className="brand-logo"
             src="/assets/solmar-celeris-site-logo.png"
             alt="Logo SolMar Celeris"
           />
-          <span className="brand-name">SolMar Celeris</span>
+          <span className="brand-name">Team Celeris</span>
         </a>
         <div className="top-actions">
           <span className="connection-pill"><i /> ACESSO RESTRITO</span>
@@ -73,7 +73,7 @@ export default function App() {
 
       <footer className="page-footer" aria-label="Identidade do projeto">
         <img className="page-footer-logo" src="/assets/teamceleris-app-mark.png" alt="Símbolo do app Team Celeris" />
-        <span className="footer-workspace-label">SOLMAR CELERIS WORKSPACE</span>
+        <span className="footer-workspace-label">TEAM CELERIS</span>
         <span className="footer-line" />
         <span className="footer-institution">UFCI/RJ</span>
       </footer>

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
+import DocumentationPrompts from './DocumentationPrompts';
 
 type ManualRole = {
   area: string;
@@ -281,6 +282,7 @@ export default function ManualFunctions() {
         <p>A Coordenação Geral é exercida pelos professores e não recebe atividades operacionais pré-atribuídas. Os responsáveis das áreas planejam e executam suas entregas, articulando dependências com as demais equipes. Gestão de Pessoas - GP cuida da integração e capacitação; Administrativo Financeiro - AF, de recursos e controles; Marketing - MKT, de produtos e comunicação; Mecânica Naval - MEC, Elétrica - ELE e Telemetria - TEL, da integração técnica; TI apoia transversalmente as áreas. Registre arquivos, códigos, CAD, simulações e testes com identificação, versão, responsável e local de armazenamento para preservar o conhecimento.</p>
         <ul>{indicators.map((item) => <li key={item}>{item}</li>)}</ul>
       </aside>
+      <DocumentationPrompts />
     </section>
   );
 }

@@ -35,9 +35,9 @@ Atividade esperada por semana: semanal todas; quinzenal em semanas alternadas de
 
 - `src/App.tsx` e `src/main.tsx`: montagem da aplicação, sessão, tela de login e entrada no espaço autenticado.
 - `src/features/auth/`: login/cadastro, aprovação, recuperação de senha e transição de sessão.
-- `src/features/workspace/TeamWorkspace.tsx`: topbar, nove abas, incluindo SolMarZap e Disponibilidades; `domain.ts` contém regras tipadas de semana/atividade.
+- `src/features/workspace/TeamWorkspace.tsx`: topbar e sete destinos principais, com Semanas agrupando Acompanhamento semanal, Agenda e Disponibilidades; `domain.ts` contém regras tipadas de semana/atividade.
 - `src/features/workspace/SharedContentWorkspace.tsx` e `shared-content.css`: pastas Drive e comunicados com as permissões RLS aprovadas.
-- `src/features/workspace/TeamChat.tsx` e `team-chat.css`: experiência SolMarZap azul, lista/painel de conversas, criação de grupos e DMs, foto privada de grupo, mensagens em tempo real e recibos de leitura.
+- `src/features/workspace/TeamChat.tsx` e `team-chat.css`: Chat azul, lista/painel de conversas, criação de grupos e DMs, foto privada de grupo, mensagens em tempo real e recibos de leitura.
 - `src/features/profile/ProfileMenu.tsx` e `profile-menu.css`: nome, avatar, configurações pessoais e foto privada Supabase Storage.
 - `src/features/dashboard/`: prévia demonstrativa; painel operacional com gráficos reais permanece futuro.
 - `src/lib/supabase.ts`: cliente do front-end com somente URL/chave publishable.
@@ -55,7 +55,7 @@ Atividade esperada por semana: semanal todas; quinzenal em semanas alternadas de
 3. Atividades/semana: 58 atividades, validações e regras de acompanhamento; código implementado e conectado ao perfil responsável.
 4. Painel: indicadores e gráficos reais; permanece futuro. A tela demo não deve ser apresentada como dado ao vivo.
 5. Arquivos/comunicados: links Drive e regras de permissão confirmadas por qualquer perfil ativo; código/migração estão prontos, o usuário aplica o SQL incremental.
-6. Chat: SolMarZap com lista de conversas, sala compartilhada, DMs privadas e grupos; botões explícitos para iniciar privado/grupo; uploads de foto de grupo em bucket privado, leitura coletiva detalhada sob RLS, anexos locais/Drive/áudio e remoção de mensagens só por Administrador. As migrations incrementais são entregues para aplicação consciente pelo usuário.
+6. Chat: lista de conversas, sala compartilhada, DMs privadas e grupos; botões explícitos para iniciar privado/grupo; uploads de foto de grupo em bucket privado, leitura coletiva detalhada sob RLS, anexos locais/Drive/áudio e remoção de mensagens só por Administrador. As migrations incrementais são entregues para aplicação consciente pelo usuário.
 7. Perfil e notificações: permitir edição do próprio nome/foto privada; após cada gravação de atividade/semana no site, invocar a Edge Function com a sessão autenticada. A função valida o ator/evento no servidor e envia somente ao responsável atualmente vinculado quando houver e aos Administradores ativos, excluindo o ator; nenhum e-mail de Chat. O usuário ainda não tem provedor, então o envio fica preparado e inativo até configurar Resend ou alternativa, domínio remetente e segredos.
 8. Publicação/PWA: atualizar o mesmo site Netlify via GitHub, sem criar outro projeto; PWA continua pendente. Dados permanecem no Supabase remoto e não são armazenados em cache offline.
 
@@ -64,7 +64,7 @@ Atividade esperada por semana: semanal todas; quinzenal em semanas alternadas de
 - **Movimento:** caderno técnico náutico contemporâneo, inspirado nos painéis de operação de uma equipe universitária de engenharia solar.
 - **Princípios:** leitura imediata no celular; dados operacionais acima da decoração; status distinguíveis também por texto/forma; ações sensíveis explícitas e confirmáveis.
 - **Filosofia de cor:** azul-céu e azul-oceano representam energia, confiança e contexto marítimo; laranja é destaque de ação e orientação. Usar a paleta fornecida (#38B6FF, #126CAD, #67B6FA, #014B89, #E06916, #E87B27) e tons discretos previstos para os status, garantindo contraste nos dois temas.
-- **Paradigma de layout:** cabeçalho compacto de identidade e ciclo, navegação inferior fixa no celular, listas/cards orientados a tarefas e painéis expansíveis; em telas maiores, navegação e métricas aproveitam a largura sem transformar cada fluxo em uma grade rígida.
+- **Paradigma de layout:** cabeçalho compacto de identidade e ciclo, navegação vertical na lateral esquerda também em celulares, subguias horizontais no topo de Semanas, listas/cards orientados a tarefas e painéis expansíveis; em telas maiores, navegação e métricas aproveitam a largura sem transformar cada fluxo em uma grade rígida.
 - **Motivos:** linha fina de “rota” conectando status/prazos; marcadores circulares de progresso com acento laranja; códigos de atividade em pequenos rótulos monoespaçados.
 - **Interação:** atualização de status em poucos toques, justificativa junto ao estado Pendente, confirmação de remoção em dois passos, mensagens claras de conexão e salvamento.
 - **Animação:** feedback curto (120–180 ms) em filtros, foco e progresso; respeitar `prefers-reduced-motion`; não animar métricas de modo a atrasar leitura.
@@ -124,3 +124,10 @@ A usuária aprovou o serviço público meet.jit.si e suas condições. A aba **R
 Explicar dentro da aba e nos documentos que o criador precisa de conta Jitsi, convidados podem entrar sem conta, todos têm controles de moderação no serviço público e o limite atual é de 95 minutos. O link é convite de acesso e deve ser compartilhado só com participantes pretendidos. Não prometer cópia integral/paridade com Microsoft Teams; gravação, transcrição, salas simultâneas, telefonia, calendário avançado e demais recursos que não constam na integração não estão implementados.
 
 Referências oficiais verificadas: [Segurança e privacidade Jitsi](https://jitsi.org/security/), [atualizações do serviço público Jitsi](https://jitsi.org/blog/), [Jitsi Meet IFrame API](https://jitsi.github.io/handbook/docs/dev-guide/dev-guide-iframe/), [apps em reuniões do Teams](https://learn.microsoft.com/en-us/microsoftteams/platform/apps-in-teams-meetings/teams-apps-in-meetings) e [políticas de gravação/transcrição Teams](https://learn.microsoft.com/en-us/microsoftteams/recording-transcription-overview).
+
+
+## Incremento de navegação e rótulos do workspace (07/11/2026)
+- A navegação principal deixa de incluir IA; prompts e links dos templates oficiais permanecem disponíveis ao fim do Manual de funções.
+- Em viewports móveis, a navegação volta a ser uma barra vertical na lateral esquerda com rótulos legíveis e alvos de toque adequados.
+- Uma única aba **Semanas** agrupa três subguias no topo do conteúdo: **Acompanhamento semanal** (registro de atividades), **Agenda** (Calendário de eventos) e **Disponibilidades** (quadro/escala existentes). Deep links de calendário e atalhos da semana continuam abrindo a subguia Agenda.
+- O nome da aplicação passa a **Team Celeris**, e o chat passa a ser identificado como **Chat**; nenhuma tabela, migration, política RLS ou dado remoto será alterado.

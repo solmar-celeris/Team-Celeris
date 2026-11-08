@@ -781,3 +781,112 @@
   .activity-wip-editor { grid-template-columns: 1fr; }
   .activity-wip-fields { grid-column: auto; }
 }
+
+
+/* Navegação das três telas agrupadas na aba Semanas. */
+.workspace-week-subnav { display: flex; align-items: stretch; gap: 7px; margin: 0 0 18px; padding: 0 0 8px; overflow-x: auto; border-bottom: 1px solid var(--line); scrollbar-width: thin; }
+.workspace-week-subnav button { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 0 13px; border: 1px solid transparent; border-radius: 9px 9px 0 0; color: var(--muted); background: transparent; cursor: pointer; font-size: 11px; font-weight: 760; white-space: nowrap; }
+.workspace-week-subnav button:hover { color: var(--ink); background: var(--card); }
+.workspace-week-subnav button.is-active { border-color: var(--line); border-bottom-color: var(--card); color: var(--ocean); background: var(--card); box-shadow: inset 0 2px var(--orange); }
+.workspace-week-subnav button svg { width: 16px; height: 16px; flex: 0 0 16px; }
+:root[data-theme="dark"] .workspace-week-subnav button.is-active { color: #b9ddff; }
+
+/* Em telas móveis, a navegação principal fica novamente na lateral esquerda. */
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-frame {
+    display: grid;
+    grid-template-columns: clamp(82px, 16vw, 124px) minmax(0, 1fr);
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: none;
+    min-height: 0;
+  }
+  .workspace-frame > .workspace-sidebar {
+    position: relative;
+    top: auto;
+    z-index: 2;
+    order: 0;
+    align-self: stretch;
+    display: block;
+    width: auto;
+    height: auto;
+    min-height: 0;
+    padding: 12px 5px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border: 0;
+    border-right: 1px solid var(--line);
+    background: color-mix(in srgb, var(--surface) 96%, var(--bg));
+    box-shadow: 4px 0 14px rgba(1, 38, 70, .06);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .workspace-nav {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+    width: 100%;
+    height: auto;
+    max-width: none;
+    margin: 0;
+    overflow: visible;
+  }
+  .workspace-nav button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+    min-height: 57px;
+    gap: 5px;
+    padding: 6px 2px;
+    overflow: visible;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    font-size: 9px;
+    white-space: normal;
+    text-align: center;
+  }
+  .workspace-nav-icon { width: 22px; height: 22px; flex: 0 0 22px; border-radius: 7px; }
+  .workspace-nav-icon svg { width: 15px; height: 15px; }
+  .workspace-nav-label {
+    position: static;
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    border: 0;
+    font-size: 9px;
+    font-weight: 760;
+    line-height: 1.15;
+    text-align: center;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+  .workspace-nav-mobile-label { display: none; }
+  .workspace-main {
+    order: 0;
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+    padding: 17px 12px 18px;
+  }
+  .workspace-week-subnav { gap: 4px; }
+  .workspace-week-subnav button { gap: 6px; min-height: 40px; padding: 0 10px; font-size: 10px; }
+}
+@media (max-width: 360px) {
+  .workspace-frame { grid-template-columns: 78px minmax(0, 1fr); }
+  .workspace-frame > .workspace-sidebar { padding-right: 3px; padding-left: 3px; }
+  .workspace-nav button { min-height: 54px; }
+  .workspace-nav-label { font-size: 8.5px; }
+  .workspace-main { padding-right: 9px; padding-left: 9px; }
+}
