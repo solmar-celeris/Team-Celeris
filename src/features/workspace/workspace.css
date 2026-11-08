@@ -1019,7 +1019,7 @@
 :root[data-theme="dark"] .workspace-week-indicators article strong { color: #b9ddff; }
 .workspace-week-indicator-note { margin: 0 0 16px; color: var(--muted); font-size: 9px; line-height: 1.45; }
 
-/* Em mobile, manter as abas logo abaixo do cabeçalho em uma grade legível, sem rolagem lateral. */
+/* Mobile/tablet touch: oito abas numa única linha, sem scroll horizontal. */
 @media (max-width: 760px), (hover: none) and (pointer: coarse) {
   .workspace-frame { display: flex; flex-direction: column; width: 100%; max-width: none; min-height: 0; }
   .workspace-frame > .workspace-sidebar {
@@ -1027,13 +1027,13 @@
     top: auto;
     z-index: 3;
     order: 0;
-    flex: 0 0 auto;
+    flex: 0 0 56px;
     display: block;
     width: 100%;
-    height: auto;
+    height: 56px;
     min-height: 0;
-    padding: 7px 7px;
-    overflow: visible;
+    padding: 3px 4px;
+    overflow: hidden;
     border: 0;
     border-bottom: 1px solid var(--line);
     background: color-mix(in srgb, var(--surface) 96%, var(--bg));
@@ -1045,13 +1045,14 @@
   .workspace-nav {
     display: grid;
     width: 100%;
-    height: auto;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    grid-template-rows: repeat(2, minmax(68px, auto));
+    height: 100%;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr);
+    grid-auto-flow: column;
     align-items: stretch;
-    gap: 4px;
+    gap: 1px;
     margin: 0;
-    overflow: visible;
+    overflow: hidden;
   }
   .workspace-nav button {
     display: flex;
@@ -1060,19 +1061,19 @@
     justify-content: center;
     width: 100%;
     min-width: 0;
-    min-height: 68px;
-    gap: 4px;
-    padding: 5px 3px;
-    overflow: visible;
+    min-height: 0;
+    gap: 2px;
+    padding: 2px 1px;
+    overflow: hidden;
     border: 1px solid transparent;
     border-radius: 9px;
-    font-size: 10px;
+    font-size: clamp(7px, 2vw, 9px);
     text-align: center;
     white-space: normal;
   }
   .workspace-nav button:focus-visible { outline: 3px solid var(--sky); outline-offset: 1px; }
-  .workspace-nav-icon { width: 22px; height: 22px; flex: 0 0 22px; border-radius: 7px; }
-  .workspace-nav-icon svg { width: 18px; height: 18px; }
+  .workspace-nav-icon { width: clamp(13px, 3.8vw, 18px); height: clamp(13px, 3.8vw, 18px); flex: 0 0 clamp(13px, 3.8vw, 18px); border-radius: 5px; }
+  .workspace-nav-icon svg { width: 72%; height: 72%; }
   .workspace-nav-label {
     position: static;
     display: block;
@@ -1081,16 +1082,22 @@
     height: auto;
     padding: 0;
     margin: 0;
-    overflow: visible;
+    overflow: hidden;
     clip: auto;
     border: 0;
-    font-size: 10.5px;
+    font-size: clamp(7px, 2vw, 9px);
     font-weight: 780;
-    line-height: 1.15;
+    line-height: 1.02;
     text-align: center;
-    text-wrap: balance;
+    text-wrap: pretty;
     overflow-wrap: anywhere;
     white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    max-height: 2.04em;
+    flex: 0 1 auto;
   }
   .workspace-nav-mobile-label { display: none; }
   .workspace-main { order: 1; width: 100%; min-width: 0; min-height: 0; overflow: auto; padding: 18px 13px 20px; }

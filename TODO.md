@@ -267,7 +267,7 @@
 
 ## 34. Reposicionamento final da navegação mobile (07/11/2026)
 - [x] Colocar as abas principais de volta no topo do workspace, imediatamente abaixo do cabeçalho do app; manter todos os destinos visíveis em telas estreitas.
-**Evidência atualizada:** oito destinos em uma grade 4×2, ícones de 22 px, rótulos completos, áreas de toque de 68 px e sem rolagem lateral; sequência cabeçalho → navegação → conteúdo.
+**Evidência atualizada:** decisão substituída pela solicitação de 08/11: oito colunas iguais em uma única linha; ícone acima do nome completo (máximo de duas linhas), sem rolagem lateral; sequência cabeçalho → navegação → conteúdo.
 
 
 ## 35. Perfil e tema visíveis no cabeçalho (07/11/2026)
@@ -280,7 +280,7 @@
 - [x] Aumentar ícones, nomes e espaçamento das abas mobile; criar áreas de toque confortáveis; evitar textos cortados/difíceis de ler e rolagem horizontal indesejada; ajustar alinhamento, margens e espaçamentos para diferentes larguras sem aumentar elementos indiscriminadamente.
 - [x] Preservar a navegação no topo sob o cabeçalho, acomodando todos os destinos com nomes legíveis em telas estreitas.
 - [x] Ajustar filtros mobile: campos e ações com mínimo de 44 px também em telas touch/tablets até 760 px; coluna única nos smartphones mais estreitos. O anexo termina após esta instrução e não traz os demais bullets da seção 5.
-**Evidência:** revisão do CSS responsivo; `pnpm typecheck` e `pnpm build` aprovados. Não foi feito teste visual em aparelho físico.
+**Evidência:** revisão do CSS responsivo; `pnpm typecheck` e `pnpm build` aprovados. A geometria da barra foi medida com Chromium em contentores de 360, 375 e 390 px; não foi feito teste em aparelho físico.
 
 ## 37. Reorganização de Semanas e Disponibilidades
 - [x] Manter **Semanas** no menu principal; dentro dela, deixar somente **Acompanhamento semanal** (ícone `clock`) e **Agenda** (ícone `calendar-days`), reaproveitando a agenda existente.
@@ -309,3 +309,9 @@
 - [x] Reutilizar anexos e links da atividade, bucket privado, limites e policies existentes para documentos, imagens, planilhas e links; preservar anexos já cadastrados.
 
 **Validação final:** `pnpm typecheck` e `pnpm build` aprovados; parser PostgreSQL validou as 19 instruções da migration. A migration e o deploy não foram executados no Supabase/Netlify remoto.
+
+## 43. Barra de navegação mobile em linha única (08/11/2026)
+- [x] Exibir as oito abas — Chat, Reuniões ao vivo, Comunicados, Semanas, Disponibilidades, Atividades, Arquivos e Manual de funções — em uma linha horizontal e oito colunas proporcionais; não quebrar a barra, nem usar rolagem horizontal, carrossel ou navegação lateral em celulares/tablets touch.
+- [x] Centralizar ícones compactos acima dos nomes completos; limitar cada nome a no máximo duas linhas sem aumentar a altura fixa da barra; manter o destaque azul/laranja da aba ativa e preservar eventos e funcionalidades.
+- [x] Usar CSS Grid com `repeat(8, minmax(0, 1fr))`, sem `wrap`; ajustar proporcionalmente ícones, texto e espaçamento para telas estreitas e maiores, sem modificar cabeçalho, logo, perfil ou outras seções.
+**Evidência:** Chromium confirmou 8 colunas/1 linha, todos os botões alinhados, rótulos visíveis em até 2 linhas e zero overflow horizontal para contentores de 360, 375 e 390 px; `pnpm typecheck` e `pnpm build` aprovados.

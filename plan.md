@@ -64,7 +64,7 @@ Atividade esperada por semana: semanal todas; quinzenal em semanas alternadas de
 - **Movimento:** caderno técnico náutico contemporâneo, inspirado nos painéis de operação de uma equipe universitária de engenharia solar.
 - **Princípios:** leitura imediata no celular; dados operacionais acima da decoração; status distinguíveis também por texto/forma; ações sensíveis explícitas e confirmáveis.
 - **Filosofia de cor:** azul-céu e azul-oceano representam energia, confiança e contexto marítimo; laranja é destaque de ação e orientação. Usar a paleta fornecida (#38B6FF, #126CAD, #67B6FA, #014B89, #E06916, #E87B27) e tons discretos previstos para os status, garantindo contraste nos dois temas.
-- **Paradigma de layout:** cabeçalho compacto de identidade e ciclo; navegação vertical lateral no desktop e, em mobile, grade 4×2 logo abaixo do cabeçalho, com rótulos completos e sem rolagem horizontal; duas subguias no topo de Semanas; listas/cards orientados a tarefas e painéis expansíveis.
+- **Paradigma de layout:** cabeçalho compacto de identidade e ciclo; navegação vertical lateral no desktop e, em mobile/tablets touch, uma faixa logo abaixo do cabeçalho com oito colunas iguais em uma única linha, ícones compactos, nomes completos limitados a duas linhas e sem rolagem horizontal; duas subguias no topo de Semanas; listas/cards orientados a tarefas e painéis expansíveis.
 - **Motivos:** linha fina de “rota” conectando status/prazos; marcadores circulares de progresso com acento laranja; códigos de atividade em pequenos rótulos monoespaçados.
 - **Interação:** atualização de status em poucos toques, justificativa junto ao estado Pendente, confirmação de remoção em dois passos, mensagens claras de conexão e salvamento.
 - **Animação:** feedback curto (120–180 ms) em filtros, foco e progresso; respeitar `prefers-reduced-motion`; não animar métricas de modo a atrasar leitura.
@@ -128,7 +128,7 @@ Referências oficiais verificadas: [Segurança e privacidade Jitsi](https://jits
 
 ## Incremento de navegação e rótulos do workspace (07–08/11/2026)
 - A navegação principal deixa de incluir IA; prompts e links dos templates oficiais permanecem disponíveis ao fim do Manual de funções.
-- Em viewports móveis, os oito destinos ficam em uma grade 4×2 imediatamente abaixo do cabeçalho do app, com nomes completos, alvos de toque e sem rolagem horizontal.
+- Em viewports móveis e tablets touch, os oito destinos ficam em uma única linha horizontal de oito colunas iguais imediatamente abaixo do cabeçalho do app; ícones compactos ficam acima dos nomes completos, limitados a duas linhas, sem rolagem horizontal ou carrossel.
 - **Semanas** agrupa duas subguias no topo do conteúdo: **Acompanhamento semanal** e **Agenda** (Calendário de eventos). **Disponibilidades** é uma aba principal independente. Deep links de calendário e atalhos semanais continuam abrindo Agenda.
 - O nome da aplicação passa a **Team Celeris**, e o chat passa a ser identificado como **Chat**. No cabeçalho azul, nome e foto/iniciais abrem as configurações do perfil, com alternância direta de tema claro/escuro ao lado em web e mobile. Essas mudanças visuais não alteram o banco; os campos/histórico semanais dependem da migration aditiva da etapa seguinte, entregue mas não aplicada remotamente.
 
