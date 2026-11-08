@@ -1,4 +1,4 @@
-# Plano de implementação — SolMar Celeris · Gestão
+# Plano de implementação — Team Celeris · Gestão do projeto SolMar Celeris
 
 ## Escopo e arquitetura
 
@@ -21,7 +21,7 @@ Converter o protótipo recebido (`SolMar_Celeris_App.html`, com 58 atividades) e
 6. `drive_folders`: nome, URL validada, área opcional (nulo = Geral), indicação da pasta principal, autoria, remoção e confirmação.
 7. `announcements`: título, mensagem, audiência (equipe/área), autor, data/hora, fixação e remoção.
 8. `audit_log`: tipo e ID do registro, ator, horário, ação e diff mínimo de campos relevantes; sem guardar tokens, senhas ou conteúdo integral de arquivos do Drive.
-9. `team_chat_messages`: mensagens da sala SolMarZap ou de grupo/DM, com anexos locais privados e links Drive nomeados quando aplicáveis; autor/data derivados da sessão/banco, RLS por contexto e remoção administrativa que substitui o corpo pelo marcador de remoção.
+9. `team_chat_messages`: mensagens da sala compartilhada **Chat** ou de grupo/DM, com anexos locais privados e links Drive nomeados quando aplicáveis; autor/data derivados da sessão/banco, RLS por contexto e remoção administrativa que substitui o corpo pelo marcador de remoção.
 10. `team_chat_groups`: grupos com nome, criador, data e caminho opcional de foto privada; criados por perfis ativos.
 11. `team_chat_group_members` e `team_chat_message_reads`: participantes autorizados e recibos de leitura coletivos. Integrantes do grupo consultam quem leu/não leu as mensagens do grupo; Admin pode moderar conteúdo sem contar como destinatário quando não pertence; DMs continuam visíveis apenas aos participantes.
 
@@ -35,7 +35,7 @@ Atividade esperada por semana: semanal todas; quinzenal em semanas alternadas de
 
 - `src/App.tsx` e `src/main.tsx`: montagem da aplicação, sessão, tela de login e entrada no espaço autenticado.
 - `src/features/auth/`: login/cadastro, aprovação, recuperação de senha e transição de sessão.
-- `src/features/workspace/TeamWorkspace.tsx`: topbar e sete destinos principais, com Semanas agrupando Acompanhamento semanal, Agenda e Disponibilidades; `domain.ts` contém regras tipadas de semana/atividade.
+- `src/features/workspace/TeamWorkspace.tsx`: topbar e oito destinos principais. **Semanas** contém somente Acompanhamento semanal e Agenda; **Disponibilidades** é um destino independente. `domain.ts` contém regras tipadas de semana/atividade.
 - `src/features/workspace/SharedContentWorkspace.tsx` e `shared-content.css`: pastas Drive e comunicados com as permissões RLS aprovadas.
 - `src/features/workspace/TeamChat.tsx` e `team-chat.css`: Chat azul, lista/painel de conversas, criação de grupos e DMs, foto privada de grupo, mensagens em tempo real e recibos de leitura.
 - `src/features/profile/ProfileMenu.tsx` e `profile-menu.css`: nome, avatar, configurações pessoais e foto privada Supabase Storage.
@@ -64,7 +64,7 @@ Atividade esperada por semana: semanal todas; quinzenal em semanas alternadas de
 - **Movimento:** caderno técnico náutico contemporâneo, inspirado nos painéis de operação de uma equipe universitária de engenharia solar.
 - **Princípios:** leitura imediata no celular; dados operacionais acima da decoração; status distinguíveis também por texto/forma; ações sensíveis explícitas e confirmáveis.
 - **Filosofia de cor:** azul-céu e azul-oceano representam energia, confiança e contexto marítimo; laranja é destaque de ação e orientação. Usar a paleta fornecida (#38B6FF, #126CAD, #67B6FA, #014B89, #E06916, #E87B27) e tons discretos previstos para os status, garantindo contraste nos dois temas.
-- **Paradigma de layout:** cabeçalho compacto de identidade e ciclo, navegação vertical na lateral esquerda também em celulares, subguias horizontais no topo de Semanas, listas/cards orientados a tarefas e painéis expansíveis; em telas maiores, navegação e métricas aproveitam a largura sem transformar cada fluxo em uma grade rígida.
+- **Paradigma de layout:** cabeçalho compacto de identidade e ciclo; navegação vertical lateral no desktop e, em mobile, grade 4×2 logo abaixo do cabeçalho, com rótulos completos e sem rolagem horizontal; duas subguias no topo de Semanas; listas/cards orientados a tarefas e painéis expansíveis.
 - **Motivos:** linha fina de “rota” conectando status/prazos; marcadores circulares de progresso com acento laranja; códigos de atividade em pequenos rótulos monoespaçados.
 - **Interação:** atualização de status em poucos toques, justificativa junto ao estado Pendente, confirmação de remoção em dois passos, mensagens claras de conexão e salvamento.
 - **Animação:** feedback curto (120–180 ms) em filtros, foco e progresso; respeitar `prefers-reduced-motion`; não animar métricas de modo a atrasar leitura.
@@ -77,7 +77,7 @@ Atividade esperada por semana: semanal todas; quinzenal em semanas alternadas de
 ## Incremento aprovado — período, atalhos e prompts de documentação
 
 - **Período do projeto:** substituir o término derivado do contador fixo pelo intervalo inclusivo `cycle_start`–`cycle_end`. Padrão `2026-11-09` a `2027-12-22`; aceitar qualquer data inicial. Agrupar registros nas semanas civis de segunda a domingo, exibir o primeiro bloco parcial começando na data inicial configurada e limitar a última semana à data final. O Administrador ativo pode editar início e fim pela interface. A migration incremental adiciona `cycle_end`; não refazer a migration inicial nem abrir permissões RLS.
-- **Aba IA:** manter o design clean e a marca original SolMar. Exibir os quatro logotipos nos endereços fornecidos pelo usuário e um atalho Canva separado. Os links abrem serviços externos; o site não armazena credenciais nem promete autenticação Google automática.
+- **Atalhos IA e prompts:** a aba dedicada de IA foi removida em etapa posterior. Os prompts e templates oficiais continuam no fim do Manual de funções; não exibir atalhos de IA externos na navegação principal.
 - **Biblioteca documental:** manter em arquivos Markdown no código os dois prompts completos e as instruções comuns de identificação/armazenamento. Cada prompt pode ser lido e copiado integralmente; preservar templates oficiais, URLs, campos, regras de conteúdo, identificação, nomenclatura DOCX, destinos previstos e limites de acesso ao Drive.
 
 ## Incremento aprovado — organograma v2.2, anexos e fluxo Scrumban (06/11/2026)
@@ -126,8 +126,28 @@ Explicar dentro da aba e nos documentos que o criador precisa de conta Jitsi, co
 Referências oficiais verificadas: [Segurança e privacidade Jitsi](https://jitsi.org/security/), [atualizações do serviço público Jitsi](https://jitsi.org/blog/), [Jitsi Meet IFrame API](https://jitsi.github.io/handbook/docs/dev-guide/dev-guide-iframe/), [apps em reuniões do Teams](https://learn.microsoft.com/en-us/microsoftteams/platform/apps-in-teams-meetings/teams-apps-in-meetings) e [políticas de gravação/transcrição Teams](https://learn.microsoft.com/en-us/microsoftteams/recording-transcription-overview).
 
 
-## Incremento de navegação e rótulos do workspace (07/11/2026)
+## Incremento de navegação e rótulos do workspace (07–08/11/2026)
 - A navegação principal deixa de incluir IA; prompts e links dos templates oficiais permanecem disponíveis ao fim do Manual de funções.
-- Em viewports móveis, a navegação principal fica em uma barra horizontal na parte superior, imediatamente abaixo do cabeçalho do app, com rótulos compactos e todas as sete abas visíveis.
-- Uma única aba **Semanas** agrupa três subguias no topo do conteúdo: **Acompanhamento semanal** (registro de atividades), **Agenda** (Calendário de eventos) e **Disponibilidades** (quadro/escala existentes). Deep links de calendário e atalhos da semana continuam abrindo a subguia Agenda.
-- O nome da aplicação passa a **Team Celeris**, e o chat passa a ser identificado como **Chat**. No cabeçalho azul, nome e foto/iniciais abrem as configurações do perfil, com alternância direta de tema claro/escuro ao lado em web e mobile; nenhuma tabela, migration, política RLS ou dado remoto será alterado.
+- Em viewports móveis, os oito destinos ficam em uma grade 4×2 imediatamente abaixo do cabeçalho do app, com nomes completos, alvos de toque e sem rolagem horizontal.
+- **Semanas** agrupa duas subguias no topo do conteúdo: **Acompanhamento semanal** e **Agenda** (Calendário de eventos). **Disponibilidades** é uma aba principal independente. Deep links de calendário e atalhos semanais continuam abrindo Agenda.
+- O nome da aplicação passa a **Team Celeris**, e o chat passa a ser identificado como **Chat**. No cabeçalho azul, nome e foto/iniciais abrem as configurações do perfil, com alternância direta de tema claro/escuro ao lado em web e mobile. Essas mudanças visuais não alteram o banco; os campos/histórico semanais dependem da migration aditiva da etapa seguinte, entregue mas não aplicada remotamente.
+
+
+## Etapa: aprimoramentos móveis e gestão semanal (08/11/2026)
+
+### Escopo e limites
+Trabalhar na aplicação existente; manter identidade, módulos, dados, integrações e políticas Supabase. Não reconstruir nem executar migrations/deploy remotos. O anexo termina logo após o título de filtros com o único requisito “Ajustar a apresentação dos filtros na versão mobile”; não inferir bullets que não foram enviados. Manter a localização mobile previamente aprovada da navegação (faixa sob o cabeçalho) enquanto ampliar rótulos, ícones e áreas de toque sem rolagem horizontal.
+
+### Estrutura atual e integração
+- `src/features/workspace/TeamWorkspace.tsx` mantém tabs principais, subguia Semanas, período do projeto, consultas/atualizações semanais, permissões e upload de evidências.
+- `src/features/workspace/AvailabilityWorkspace.tsx` e `TeamCalendar.tsx` são módulos existentes, montados de modo independente; mover Disponibilidades para uma aba própria e manter em Semanas apenas Acompanhamento semanal e Agenda.
+- `src/features/workspace/domain.ts` centraliza regras de semana, expectativa e status. Para indicadores, continuar usando `isActivityExpected` e status semanal para concluídas/em andamento, `getGeneralStatus` para atrasadas e `activities.flow_status` para bloqueadas, sem criar nova definição divergente.
+- `ProjectPeriodDialog` já edita `team_settings`; preservar esse fluxo e atualizar a UI responsiva. A alteração do período não deve criar/duplicar/limpar atividades; após salvar, recarregar os dados como hoje.
+- `weekly_updates` tem uma linha corrente por (atividade, semana); campos de relato serão aditivos, e um feed de histórico específico será append-only, sem ampliar `audit_log` admin-only.
+- Anexos devem reutilizar `activity_attachments`, o bucket privado `activity-attachments`, MIME/limite e policies existentes; exibí-los também no acompanhamento semanal, sem criar buckets públicos.
+
+### Implementação
+Adicionar migration incremental para relatos semanais estruturados e snapshots append-only de cada insert/update/delete, com ator, data, status anterior/novo e conteúdo de observações; baseline do registro corrente e cópia da justificativa apenas para `pending_work` quando o status é `pending`, sem alegar recuperar versões antigas que o banco nunca guardou. RLS da nova tabela limita leitura a integrantes ativos e escrita via trigger, preservando `audit_log` restrito a administradores. Não executar SQL remoto. Manter 8 destinos principais e 2 subguias de Semanas; preservar deep links de calendário (Agenda). Melhorar o modal do período e filtros mobile para campos/alvos de toque de pelo menos 44 px, leitura sem corte e ausência de rolagem horizontal indesejada. Não afirmar teste físico em Android/iOS sem aparelhos.
+
+### Regras de indicadores
+Total previsto = atividades esperadas para a semana selecionada conforme `isActivityExpected` (com filtros aplicados, se ativos). Concluídas e Em andamento = estado semanal da linha da semana selecionada. Atrasadas = `getGeneralStatus(activity) === 'overdue'`, mantendo a regra geral preexistente. Bloqueadas = `activity.flow_status === 'blocked'`; estes contadores são categorias independentes e podem se sobrepor quando os sistemas semanal e Kanban indicarem estados diferentes.

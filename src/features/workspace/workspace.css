@@ -277,9 +277,10 @@
   .workspace-permission-note { margin-bottom: 14px; }
   .workspace-filter-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; padding: 11px; }
   .workspace-filter-panel .workspace-search { grid-column: span 2; }
-  .workspace-filter-panel label > span { font-size: 9px; }
-  .workspace-filter-panel input, .workspace-filter-panel select { min-height: 36px; padding: 7px; font-size: 10px; }
-  .workspace-clear-filters { grid-column: span 2; }
+  .workspace-filter-panel label > span { font-size: 11px; }
+  .workspace-filter-panel input, .workspace-filter-panel select { min-height: 44px; padding: 8px 10px; font-size: 12px; }
+  .workspace-week-picker select { min-height: 44px; font-size: 12px; }
+  .workspace-clear-filters { grid-column: span 2; min-height: 44px; font-size: 11px; }
   .workspace-week-heading, .workspace-list-heading { display: grid; align-items: start; gap: 12px; }
   .workspace-week-picker { width: 100%; }
   .workspace-week-card { grid-template-columns: 1fr; gap: 13px; padding: 13px; }
@@ -783,7 +784,7 @@
 }
 
 
-/* Navegação das três telas agrupadas na aba Semanas. */
+/* Navegação das duas telas agrupadas na aba Semanas. */
 .workspace-week-subnav { display: flex; align-items: stretch; gap: 7px; margin: 0 0 18px; padding: 0 0 8px; overflow-x: auto; border-bottom: 1px solid var(--line); scrollbar-width: thin; }
 .workspace-week-subnav button { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 0 13px; border: 1px solid transparent; border-radius: 9px 9px 0 0; color: var(--muted); background: transparent; cursor: pointer; font-size: 11px; font-weight: 760; white-space: nowrap; }
 .workspace-week-subnav button:hover { color: var(--ink); background: var(--card); }
@@ -791,7 +792,7 @@
 .workspace-week-subnav button svg { width: 16px; height: 16px; flex: 0 0 16px; }
 :root[data-theme="dark"] .workspace-week-subnav button.is-active { color: #b9ddff; }
 
-/* Em telas móveis, a navegação principal fica novamente na lateral esquerda. */
+/* Regra móvel anterior; a faixa superior final é aplicada abaixo. */
 @media (max-width: 760px), (hover: none) and (pointer: coarse) {
   .workspace-frame {
     display: grid;
@@ -992,4 +993,130 @@
 }
 @media (max-width: 560px) {
   .workspace-brand span { display: none; }
+}
+
+
+/* Melhorias de leitura e toque no acompanhamento semanal. */
+.workspace-week-indicators {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 9px;
+  margin: 0 0 5px;
+}
+.workspace-week-indicators article {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  align-content: center;
+  min-height: 68px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--card);
+}
+.workspace-week-indicators article span { color: var(--muted); font-size: 10px; font-weight: 750; }
+.workspace-week-indicators article strong { color: var(--ocean); font-size: 22px; line-height: 1; }
+:root[data-theme="dark"] .workspace-week-indicators article strong { color: #b9ddff; }
+.workspace-week-indicator-note { margin: 0 0 16px; color: var(--muted); font-size: 9px; line-height: 1.45; }
+
+/* Em mobile, manter as abas logo abaixo do cabeçalho em uma grade legível, sem rolagem lateral. */
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-frame { display: flex; flex-direction: column; width: 100%; max-width: none; min-height: 0; }
+  .workspace-frame > .workspace-sidebar {
+    position: relative;
+    top: auto;
+    z-index: 3;
+    order: 0;
+    flex: 0 0 auto;
+    display: block;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    padding: 7px 7px;
+    overflow: visible;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    background: color-mix(in srgb, var(--surface) 96%, var(--bg));
+    box-shadow: 0 5px 16px rgba(1, 38, 70, .08);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
+  .workspace-sidebar-label, .workspace-side-card { display: none; }
+  .workspace-nav {
+    display: grid;
+    width: 100%;
+    height: auto;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(68px, auto));
+    align-items: stretch;
+    gap: 4px;
+    margin: 0;
+    overflow: visible;
+  }
+  .workspace-nav button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+    min-height: 68px;
+    gap: 4px;
+    padding: 5px 3px;
+    overflow: visible;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    font-size: 10px;
+    text-align: center;
+    white-space: normal;
+  }
+  .workspace-nav button:focus-visible { outline: 3px solid var(--sky); outline-offset: 1px; }
+  .workspace-nav-icon { width: 22px; height: 22px; flex: 0 0 22px; border-radius: 7px; }
+  .workspace-nav-icon svg { width: 18px; height: 18px; }
+  .workspace-nav-label {
+    position: static;
+    display: block;
+    width: 100%;
+    max-width: none;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    border: 0;
+    font-size: 10.5px;
+    font-weight: 780;
+    line-height: 1.15;
+    text-align: center;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+  .workspace-nav-mobile-label { display: none; }
+  .workspace-main { order: 1; width: 100%; min-width: 0; min-height: 0; overflow: auto; padding: 18px 13px 20px; }
+  .workspace-week-indicators { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+  .workspace-week-indicators article { min-height: 62px; padding: 9px; }
+  .workspace-week-indicators article strong { font-size: 20px; }
+  .workspace-week-indicator-note { font-size: 10px; }
+  .workspace-period-form { grid-template-columns: 1fr; }
+  .workspace-period-form .form-span-2 { grid-column: 1 / -1; }
+  .workspace-period-form input[type="date"] { min-height: 48px; font-size: 16px; }
+  .workspace-period-form .workspace-dialog-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  .workspace-period-form .workspace-save-button,
+  .workspace-period-form .workspace-cancel-button { width: 100%; min-height: 46px; }
+  .workspace-week-subnav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; overflow: visible; }
+  .workspace-week-subnav button { display: flex; min-width: 0; min-height: 48px; justify-content: flex-start; padding: 7px 9px; font-size: 10.5px; line-height: 1.2; text-align: left; white-space: normal; }
+}
+
+@media (max-width: 480px) {
+  .workspace-filter-panel { grid-template-columns: 1fr; gap: 12px; padding: 14px; }
+  .workspace-filter-panel .workspace-search,
+  .workspace-clear-filters { grid-column: auto; }
+  .workspace-filter-panel label > span { font-size: 11px; }
+  .workspace-filter-panel input,
+  .workspace-filter-panel select { min-height: 44px; padding: 9px 10px; font-size: 12px; }
+  .workspace-clear-filters { width: 100%; min-height: 44px; font-size: 12px; }
+  .workspace-week-picker select { min-height: 44px; font-size: 12px; }
+  .workspace-heading-actions .workspace-period-button { min-height: 44px; }
+  .workspace-week-indicators { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

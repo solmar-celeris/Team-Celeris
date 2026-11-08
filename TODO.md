@@ -253,22 +253,59 @@
 
 - [x] Na versão mobile, manter as dez abas em uma única fileira, todas visíveis sem rolagem horizontal; usar ícones maiores que a versão anterior e abreviações curtas legíveis que caibam em telas estreitas.
 **Evidência:** A barra mobile apresenta as dez abas em uma única linha, com overflow oculto, ícones de 16–18 px e rótulos curtos de 7.5–9 px; `pnpm typecheck` e `pnpm build` aprovados.
+**Nota:** Este foi o layout da versão anterior; as solicitações posteriores o substituíram pelo menu reorganizado e pela grade descrita nas seções 34 e 36.
 
 
 ## 33. Atualização da navegação e dos nomes do workspace (07/11/2026)
 - [x] Remover a aba IA da navegação principal; preservar os prompts institucionais completos e os links dos templates oficiais dentro do Manual de funções, depois do conteúdo do manual.
-- [x] Em celulares, voltar a apresentar a navegação principal como barra vertical na lateral esquerda, com rótulos visíveis e itens utilizáveis por toque.
+- [x] Em celulares, voltar a apresentar a navegação principal como barra vertical na lateral esquerda, com rótulos visíveis e itens utilizáveis por toque (decisão da etapa; substituída pela faixa superior solicitada depois).
 - [x] Unificar Acompanhamento semanal, Calendário de eventos e Disponibilidades sob uma única aba principal **Semanas**; no conteúdo, apresentar subguias **Acompanhamento semanal**, **Agenda** e **Disponibilidades**, cada uma abrindo a funcionalidade correspondente já existente.
 - [x] Alterar o título exibido como **SolMar Celeris Workspace** para **Team Celeris** e renomear **SolMarZap** para **Chat**, mantendo as conversas e recursos existentes.
 **Evidência:** `pnpm typecheck` e `pnpm build` aprovados; revisão estática confirmou o título `Team Celeris`, remoção de destinos principais de IA/Calendário/Disponibilidades, componentes de Agenda/Disponibilidades sob Semanas e ausência de alterações nas migrations do Supabase. Nenhum deploy foi feito.
+**Nota:** A estrutura então pedida de três subguias e Disponibilidades dentro de Semanas foi posteriormente substituída pelo anexo de 08/11: duas subguias em Semanas e Disponibilidades como destino independente (seção 37).
 
 
 ## 34. Reposicionamento final da navegação mobile (07/11/2026)
-- [x] Colocar as sete abas principais de volta numa faixa horizontal na parte superior do workspace, imediatamente abaixo do cabeçalho do app; mostrar ícone e rótulo compacto e manter todos os destinos visíveis em telas estreitas.
-**Evidência:** CSS mobile usa uma linha horizontal de sete itens e o frame volta ao fluxo vertical (cabeçalho → navegação → conteúdo); `pnpm typecheck` e `pnpm build` aprovados; nenhum deploy foi feito.
+- [x] Colocar as abas principais de volta no topo do workspace, imediatamente abaixo do cabeçalho do app; manter todos os destinos visíveis em telas estreitas.
+**Evidência atualizada:** oito destinos em uma grade 4×2, ícones de 22 px, rótulos completos, áreas de toque de 68 px e sem rolagem lateral; sequência cabeçalho → navegação → conteúdo.
 
 
 ## 35. Perfil e tema visíveis no cabeçalho (07/11/2026)
 - [x] No cabeçalho azul, manter visíveis a foto do usuário (ou iniciais) e o nome; esse controle abre as configurações do perfil.
 - [x] Colocar ao lado um controle direto para alternar entre tema claro e escuro, visível na versão web e mobile.
 **Evidência:** o gatilho acessível abre o painel de perfil existente e exibe avatar/nome; o botão ao lado alterna o tema e anuncia o modo que será ativado. CSS mantém ambos disponíveis em viewport desktop e estreita; `pnpm typecheck` e `pnpm build` aprovados; nenhum deploy ou alteração de banco foi feito.
+
+
+## 36. Navegação e usabilidade mobile
+- [x] Aumentar ícones, nomes e espaçamento das abas mobile; criar áreas de toque confortáveis; evitar textos cortados/difíceis de ler e rolagem horizontal indesejada; ajustar alinhamento, margens e espaçamentos para diferentes larguras sem aumentar elementos indiscriminadamente.
+- [x] Preservar a navegação no topo sob o cabeçalho, acomodando todos os destinos com nomes legíveis em telas estreitas.
+- [x] Ajustar filtros mobile: campos e ações com mínimo de 44 px também em telas touch/tablets até 760 px; coluna única nos smartphones mais estreitos. O anexo termina após esta instrução e não traz os demais bullets da seção 5.
+**Evidência:** revisão do CSS responsivo; `pnpm typecheck` e `pnpm build` aprovados. Não foi feito teste visual em aparelho físico.
+
+## 37. Reorganização de Semanas e Disponibilidades
+- [x] Manter **Semanas** no menu principal; dentro dela, deixar somente **Acompanhamento semanal** (ícone `clock`) e **Agenda** (ícone `calendar-days`), reaproveitando a agenda existente.
+- [x] Mover **Disponibilidades** para uma entrada independente do menu principal com ícone de relógio, preservando consulta, registro e dados existentes, sem duplicar o módulo.
+- [x] Preservar deep links de calendário, atalhos semanais, permissões e componentes existentes.
+
+## 38. Ajuste do período em smartphones
+- [x] Manter **Editar período** visível para Administradores no workspace mobile, sem depender do desktop.
+- [x] Adaptar o modal em uma coluna, manter campos nativos `type=date` e organizar **Salvar** e **Cancelar** em alvos de toque confortáveis.
+- [x] Após salvar, atualizar automaticamente o período exibido; não modificar atividades nem duplicar registros.
+**Limitação de validação:** a compatibilidade dos seletores nativos não foi testada em aparelho Android/iOS físico nesta sessão.
+
+## 39. Indicadores do acompanhamento semanal
+- [x] Adicionar indicadores compactos calculados dos registros existentes: previstas, concluídas, em andamento, atrasadas e bloqueadas.
+- [x] Reutilizar as regras de expectativa/status existentes e explicitar a fonte; separar a semântica de status semanal e Kanban.
+
+## 40. Relato detalhado da atualização por semana
+- [x] Permitir registrar realizado, pendências, dificuldades, dependências e próxima ação.
+- [x] Vincular os campos à atividade/semana e preservar status e justificativa existentes, inclusive no modo fallback anterior à migration.
+
+## 41. Histórico consultável das atualizações
+- [x] Consultar status, autor, data, observações, justificativas e revisões anteriores em snapshots append-only.
+- [x] Preservar RLS de leitura e não abrir `audit_log` para não administradores; baseline cobre o estado corrente, sem inventar histórico antigo já sobrescrito.
+
+## 42. Evidências e arquivos nas atividades
+- [x] Reutilizar anexos e links da atividade, bucket privado, limites e policies existentes para documentos, imagens, planilhas e links; preservar anexos já cadastrados.
+
+**Validação final:** `pnpm typecheck` e `pnpm build` aprovados; parser PostgreSQL validou as 19 instruções da migration. A migration e o deploy não foram executados no Supabase/Netlify remoto.

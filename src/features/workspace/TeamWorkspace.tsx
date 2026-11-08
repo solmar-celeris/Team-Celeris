@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type DragEvent, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { BookOpen, CalendarDays, Check, ClipboardList, Clock3, Folder, GripVertical, Megaphone, MessageCircle, Moon, Sun, Trash2, X, Paperclip, ExternalLink, Users, Video, type LucideIcon } from 'lucide-react';
+import { BookOpen, CalendarDays, Check, ClipboardList, Clock3, Folder, GripVertical, Megaphone, MessageCircle, Moon, Sun, Trash2, X, Paperclip, ExternalLink, Video, type LucideIcon } from 'lucide-react';
 import {
   activityTypeLabels,
   activityFlowLabels,
@@ -38,6 +38,7 @@ import ManualFunctions from './ManualFunctions';
 import AvailabilityWorkspace from './AvailabilityWorkspace';
 import PERTCPMWorkspace from './PERTCPMWorkspace';
 import MeetingsWorkspace from './MeetingsWorkspace';
+import WeeklyActivityCard, { type WeeklyReportDraft } from './WeeklyActivityCard';
 import { flushPendingWorkspacePushEvents, notifyActivityChange, notifyWorkspacePush } from '../../lib/notifications';
 import './workspace.css';
 
@@ -94,9 +95,9 @@ type ActivityFormState = {
   effort_points: string;
 };
 type AttachmentSubmission = { files: File[]; driveName: string; driveUrl: string };
-type WeeklyDraft = { status: WeeklyStatus; justification: string };
-type WorkspaceTab = 'week' | 'activities' | 'files' | 'announcements' | 'chat' | 'meetings' | 'manual';
-type WeekSection = 'tracking' | 'agenda' | 'availability';
+type WeeklyDraft = WeeklyReportDraft;
+type WorkspaceTab = 'week' | 'availability' | 'activities' | 'files' | 'announcements' | 'chat' | 'meetings' | 'manual';
+type WeekSection = 'tracking' | 'agenda';
 type PushDeepLink =
   | { type: 'chat'; messageId: string; conversationId: string | null; conversationType: 'team' | 'group' | 'direct' }
   | { type: 'announcement' | 'activity'; itemId: string }
@@ -115,6 +116,7 @@ const workspaceTabs: { id: WorkspaceTab; label: string; mobileLabel: string; ico
   { id: 'meetings', label: 'Reuniões ao vivo', mobileLabel: 'Reu.', icon: Video },
   { id: 'announcements', label: 'Comunicados', mobileLabel: 'Avis.', icon: Megaphone },
   { id: 'week', label: 'Semanas', mobileLabel: 'Sem.', icon: Clock3 },
+  { id: 'availability', label: 'Disponibilidades', mobileLabel: 'Disp.', icon: Clock3 },
   { id: 'activities', label: 'Atividades', mobileLabel: 'Ativ.', icon: ClipboardList },
   { id: 'files', label: 'Arquivos', mobileLabel: 'Arq.', icon: Folder },
   { id: 'manual', label: 'Manual de funções', mobileLabel: 'Man.', icon: BookOpen },
@@ -196,27 +198,57 @@ function errorText(error: unknown): string {
   return 'Ocorreu um erro inesperado. Confira sua conexão e tente novamente.';
 }
 
-async function fetchCycleUpdates(client: SupabaseClient, start: string, end: string): Promise<WeeklyUpdate[]> {
-  const allUpdates: WeeklyUpdate[] = [];
+type CycleUpdateResult = { updates: WeeklyUpdate[]; detailsMigrationAvailable: boolean };
+
+async function fetchPagedWeeklyRows(client: SupabaseClient, start: string, end: string, columns: string): Promise<Record<string, unknown>[]> {
+  const allUpdates: Record<string, unknown>[] = [];
   const pageSize = 1000;
   let offset = 0;
 
   while (true) {
     const { data, error } = await client
       .from('weekly_updates')
-      .select('id,activity_id,week_start,status,justification,updated_by,updated_at')
+      .select(columns)
       .gte('week_start', start)
       .lte('week_start', end)
       .order('week_start', { ascending: true })
       .range(offset, offset + pageSize - 1);
     if (error) throw error;
-    const page = (data ?? []) as unknown as WeeklyUpdate[];
+    const page = (data ?? []) as unknown as Record<string, unknown>[];
     allUpdates.push(...page);
     if (page.length < pageSize) break;
     offset += pageSize;
   }
 
   return allUpdates;
+}
+
+function isMissingWeeklyDetailsColumn(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const candidate = error as { code?: unknown; message?: unknown };
+  const code = typeof candidate.code === 'string' ? candidate.code : '';
+  const message = typeof candidate.message === 'string' ? candidate.message : '';
+  return ['42703', 'PGRST204'].includes(code) || /column .* does not exist|could not find .*column|schema cache/i.test(message);
+}
+
+async function fetchCycleUpdates(client: SupabaseClient, start: string, end: string): Promise<CycleUpdateResult> {
+  const currentColumns = 'id,activity_id,week_start,status,justification,completed_work,pending_work,difficulties,dependency_notes,next_action,updated_by,updated_at';
+  try {
+    const rows = await fetchPagedWeeklyRows(client, start, end, currentColumns);
+    return { updates: rows as unknown as WeeklyUpdate[], detailsMigrationAvailable: true };
+  } catch (error) {
+    if (!isMissingWeeklyDetailsColumn(error)) throw error;
+    const legacyRows = await fetchPagedWeeklyRows(client, start, end, 'id,activity_id,week_start,status,justification,updated_by,updated_at');
+    const updates = legacyRows.map((row) => ({
+      ...row,
+      completed_work: '',
+      pending_work: '',
+      difficulties: '',
+      dependency_notes: '',
+      next_action: '',
+    })) as unknown as WeeklyUpdate[];
+    return { updates, detailsMigrationAvailable: false };
+  }
 }
 
 function makeFormState(activity: Activity | null, firstAreaId: string): ActivityFormState {
@@ -349,6 +381,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   const [cycleStart, setCycleStart] = useState(defaultCycleStart);
   const [cycleEndDate, setCycleEndDate] = useState(defaultCycleEnd);
   const [periodMigrationAvailable, setPeriodMigrationAvailable] = useState(true);
+  const [weeklyDetailsMigrationAvailable, setWeeklyDetailsMigrationAvailable] = useState(true);
   const [selectedWeekStart, setSelectedWeekStart] = useState(mondayOfDate(new Date(`${defaultCycleStart}T00:00:00.000Z`)));
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [loading, setLoading] = useState(true);
@@ -362,6 +395,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   const [savingPeriod, setSavingPeriod] = useState(false);
   const [periodError, setPeriodError] = useState('');
   const [drafts, setDrafts] = useState<Record<string, WeeklyDraft>>({});
+  const [draftWeekStart, setDraftWeekStart] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [feedback, setFeedback] = useState('');
   const [dialogError, setDialogError] = useState('');
@@ -478,7 +512,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           ? { ...activity, responsible_name: currentResponsibleName }
           : activity;
       });
-      const nextUpdates = await fetchCycleUpdates(client, mondayOfDate(new Date(`${nextCycleStart}T00:00:00.000Z`)), nextCycleEnd);
+      const updateResult = await fetchCycleUpdates(client, mondayOfDate(new Date(`${nextCycleStart}T00:00:00.000Z`)), nextCycleEnd);
 
       setCycleStart(nextCycleStart);
       setCycleEndDate(nextCycleEnd);
@@ -492,7 +526,8 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
       setAreas(nextAreas);
       setWipAreaEditor((current) => (current && nextAreas.some((area) => area.id === current && area.is_active)) ? current : (nextAreas.find((area) => area.is_active)?.id || ''));
       setMembers(nextMembers);
-      setUpdates(nextUpdates);
+      setUpdates(updateResult.updates);
+      setWeeklyDetailsMigrationAvailable(updateResult.detailsMigrationAvailable);
     } catch (error) {
       setErrorMessage(`Não foi possível carregar os dados do Supabase. ${errorText(error)}`);
     } finally {
@@ -602,16 +637,37 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   }, [selectedWeek?.start, updates]);
 
   useEffect(() => {
+    if (draftWeekStart === selectedWeek?.start) {
+      setDrafts((current) => Object.fromEntries(activities.map((activity) => {
+        const update = updatesForWeek.get(activity.id);
+        return [activity.id, current[activity.id] ?? {
+          status: update?.status ?? 'not_started',
+          justification: update?.justification ?? '',
+          completed_work: update?.completed_work ?? '',
+          pending_work: update?.pending_work ?? '',
+          difficulties: update?.difficulties ?? '',
+          dependency_notes: update?.dependency_notes ?? '',
+          next_action: update?.next_action ?? '',
+        }];
+      })));
+      return;
+    }
     const nextDrafts: Record<string, WeeklyDraft> = {};
     for (const activity of activities) {
       const update = updatesForWeek.get(activity.id);
       nextDrafts[activity.id] = {
         status: update?.status ?? 'not_started',
         justification: update?.justification ?? '',
+        completed_work: update?.completed_work ?? '',
+        pending_work: update?.pending_work ?? '',
+        difficulties: update?.difficulties ?? '',
+        dependency_notes: update?.dependency_notes ?? '',
+        next_action: update?.next_action ?? '',
       };
     }
     setDrafts(nextDrafts);
-  }, [activities, updatesForWeek]);
+    setDraftWeekStart(selectedWeek?.start ?? '');
+  }, [activities, draftWeekStart, selectedWeek?.start, updatesForWeek]);
 
   const generalStatusById = useMemo(() => {
     const result = new Map<string, GeneralStatus>();
@@ -647,7 +703,8 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
       if (filters.responsible && activity.responsible_name !== filters.responsible) return false;
       if (filters.area && activity.area_id !== filters.area) return false;
       if (filters.type && activity.activity_type !== filters.type) return false;
-      if (filters.status && status !== filters.status) return false;
+      const selectedStatus = tab === 'week' && filters.status === 'overdue' ? '' : filters.status;
+      if (selectedStatus && status !== selectedStatus) return false;
       const activityStart = activity.start_date ?? '0001-01-01';
       const activityEnd = activity.due_date ?? '9999-12-31';
       if (filters.from && activityEnd < filters.from) return false;
@@ -655,6 +712,14 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
       return true;
     });
   }, [activities, expectedActivities, filters, generalStatusById, tab, updatesForWeek]);
+
+  const weeklyIndicators = useMemo(() => ({
+    planned: visibleActivities.length,
+    completed: visibleActivities.filter((activity) => updatesForWeek.get(activity.id)?.status === 'completed').length,
+    inProgress: visibleActivities.filter((activity) => updatesForWeek.get(activity.id)?.status === 'in_progress').length,
+    overdue: visibleActivities.filter((activity) => generalStatusById.get(activity.id) === 'overdue').length,
+    blocked: visibleActivities.filter((activity) => activity.flow_status === 'blocked').length,
+  }), [generalStatusById, updatesForWeek, visibleActivities]);
 
   useEffect(() => {
     if (tab !== 'activities' || loading || pushTarget?.type !== 'activity') return;
@@ -950,7 +1015,11 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   }
 
   async function saveWeekly(activity: Activity) {
-    const draft = drafts[activity.id] ?? { status: 'not_started' as WeeklyStatus, justification: '' };
+    const draft = drafts[activity.id] ?? {
+      status: 'not_started' as WeeklyStatus,
+      justification: '',
+      completed_work: '', pending_work: '', difficulties: '', dependency_notes: '', next_action: '',
+    };
     if (draft.status === 'pending' && !draft.justification.trim()) {
       setFeedback('Para registrar Pendente, escreva uma justificativa.');
       return;
@@ -959,14 +1028,23 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
     setSavingWeeklyId(activity.id);
     setFeedback('');
     try {
-      const { data, error } = await client.from('weekly_updates').upsert({
+      const basePayload = {
         activity_id: activity.id,
         week_start: selectedWeek.start,
         status: draft.status,
-        justification: draft.status === 'pending' ? draft.justification.trim() : '',
-      }, { onConflict: 'activity_id,week_start' }).select('id').single();
+        justification: draft.justification.trim(),
+      };
+      const payload = weeklyDetailsMigrationAvailable ? {
+        ...basePayload,
+        completed_work: draft.completed_work.trim(),
+        pending_work: draft.pending_work.trim(),
+        difficulties: draft.difficulties.trim(),
+        dependency_notes: draft.dependency_notes.trim(),
+        next_action: draft.next_action.trim(),
+      } : basePayload;
+      const { data, error } = await client.from('weekly_updates').upsert(payload, { onConflict: 'activity_id,week_start' }).select('id').single();
       if (error) throw error;
-      setFeedback(`Status de ${activity.code} salvo para a semana ${selectedWeek.number}.`);
+      setFeedback(`Atualização de ${activity.code} salva para a semana ${selectedWeek.number}.`);
       await loadData(true);
       void notifyActivityChange(client, 'weekly_updates', data.id).then((result) => {
         if (result.status === 'failed') {
@@ -986,15 +1064,15 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
 
   const pageHeading = tab === 'week'
     ? {
-      kicker: weekSection === 'tracking' ? 'ACOMPANHAMENTO SEMANAL' : weekSection === 'agenda' ? 'AGENDA DA EQUIPE' : 'DISPONIBILIDADES E ESCALAS',
+      kicker: weekSection === 'tracking' ? 'ACOMPANHAMENTO SEMANAL' : 'AGENDA DA EQUIPE',
       title: 'Semanas da equipe.',
       subtitle: weekSection === 'tracking'
         ? 'Registre o que avançou e sinalize o que precisa de atenção.'
-        : weekSection === 'agenda'
-          ? 'Organize reuniões, treinamentos e compromissos da equipe.'
-          : 'Informe seus horários semanais e consulte as disponibilidades ou escalas do time.',
+        : 'Organize reuniões, treinamentos e compromissos da equipe.',
     }
-    : tab === 'activities'
+    : tab === 'availability'
+      ? { kicker: 'HORÁRIOS E ESCALAS', title: 'Disponibilidades.', subtitle: 'Informe seus horários semanais e consulte as disponibilidades ou escalas do time.' }
+      : tab === 'activities'
       ? { kicker: 'CADASTRO DA EQUIPE', title: 'Atividades da equipe.', subtitle: 'Consulte, filtre e mantenha as atividades do ciclo atualizadas.' }
       : tab === 'files'
         ? { kicker: 'LINKS COMPARTILHADOS', title: 'Arquivos da equipe.', subtitle: 'Acesse atalhos visuais para as pastas compartilhadas.' }
@@ -1083,7 +1161,6 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             {([
               { id: 'tracking', label: 'Acompanhamento semanal', icon: Clock3 },
               { id: 'agenda', label: 'Agenda', icon: CalendarDays },
-              { id: 'availability', label: 'Disponibilidades', icon: Users },
             ] as const).map(({ id, label, icon: Icon }) => (
               <button key={id} type="button" aria-pressed={weekSection === id} className={weekSection === id ? 'is-active' : ''} onClick={() => setWeekSection(id)}>
                 <Icon aria-hidden="true" /> <span>{label}</span>
@@ -1130,9 +1207,9 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             </label>
             <label>
               <span>{tab === 'week' ? 'Status da semana' : 'Situação geral'}</span>
-              <select value={filters.status} onChange={(event) => updateFilter('status', event.target.value)}>
+              <select value={tab === 'week' && filters.status === 'overdue' ? '' : filters.status} onChange={(event) => updateFilter('status', event.target.value)}>
                 <option value="">Todos</option>
-                {(Object.keys(generalStatusLabels) as GeneralStatus[]).map((status) => <option key={status} value={status}>{generalStatusLabels[status]}</option>)}
+                {(tab === 'week' ? Object.entries(weeklyStatusLabels) : Object.entries(generalStatusLabels)).map(([status, label]) => <option key={status} value={status}>{label}</option>)}
               </select>
             </label>
             <label>
@@ -1162,6 +1239,19 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
                 </label>
               </div>
 
+              <div className="workspace-week-indicators" aria-label="Indicadores da semana">
+                <article><span>Previstas</span><strong>{weeklyIndicators.planned}</strong></article>
+                <article><span>Concluídas</span><strong>{weeklyIndicators.completed}</strong></article>
+                <article><span>Em andamento</span><strong>{weeklyIndicators.inProgress}</strong></article>
+                <article><span>Atrasadas</span><strong>{weeklyIndicators.overdue}</strong></article>
+                <article><span>Bloqueadas</span><strong>{weeklyIndicators.blocked}</strong></article>
+              </div>
+              <p className="workspace-week-indicator-note">Atrasadas segue o status geral da atividade; bloqueadas usa o status do fluxo. Os filtros aplicados também afetam os totais.</p>
+              {!weeklyDetailsMigrationAvailable && <div className="workspace-alert" role="status">
+                <strong>Relato detalhado e histórico ainda não estão habilitados.</strong>
+                <p>Aplique <code>supabase/migrations/20261108122000_weekly_update_details_history.sql</code> no Supabase para liberar os novos campos. O acompanhamento existente continua disponível.</p>
+              </div>}
+
               {loading ? <WorkspaceLoading /> : (
                 <>
                   {visibleActivities.length === 0 && weekCalendarEvents.length === 0 && !weekEventsLoading && (
@@ -1174,63 +1264,39 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
                   {visibleActivities.length > 0 && <div className="workspace-week-list">
                   {visibleActivities.map((activity) => {
                     const saved = updatesForWeek.get(activity.id);
-                    const draft = drafts[activity.id] ?? { status: 'not_started' as WeeklyStatus, justification: '' };
+                    const draft = drafts[activity.id] ?? {
+                      status: 'not_started' as WeeklyStatus,
+                      justification: '',
+                      completed_work: '', pending_work: '', difficulties: '', dependency_notes: '', next_action: '',
+                    };
                     const area = areasById.get(activity.area_id);
                     const mayUpdate = mayUpdateActivity(activity);
                     return (
-                      <article className="workspace-week-card" key={activity.id}>
-                        <div className="workspace-week-card-main">
-                          <div className="workspace-activity-meta">
-                            <span className="workspace-code">{activity.code}</span>
-                            <span>{area?.name ?? 'Área removida'}</span>
-                            {!saved && <span className="workspace-no-update">Sem atualização</span>}
-                          </div>
-                          <h3>{activity.name}</h3>
-                          <p>{activity.description || activity.expected_deliverable || 'Sem descrição.'}</p>
-                          <div className="workspace-detail-line">
-                            <span>Responsável: <strong>{activity.responsible_name || 'A definir'}</strong></span>
-                            {activity.due_date && <span>Prazo: <strong>{formatShortDate(activity.due_date)}</strong></span>}
-                          </div>
-                        </div>
-                        <div className="workspace-week-editor">
-                          <label>
-                            <span>Status</span>
-                            <select
-                              value={draft.status}
-                              disabled={!mayUpdate || savingWeeklyId === activity.id}
-                              onChange={(event) => setDrafts((current) => ({
-                                ...current,
-                                [activity.id]: { ...draft, status: event.target.value as WeeklyStatus },
-                              }))}
-                            >
-                              {(Object.keys(weeklyStatusLabels) as WeeklyStatus[]).map((status) => <option key={status} value={status}>{weeklyStatusLabels[status]}</option>)}
-                            </select>
-                          </label>
-                          {draft.status === 'pending' && (
-                            <label className="workspace-justification">
-                              <span>Justificativa <b>obrigatória</b></span>
-                              <textarea
-                                value={draft.justification}
-                                disabled={!mayUpdate || savingWeeklyId === activity.id}
-                                rows={2}
-                                onChange={(event) => setDrafts((current) => ({
-                                  ...current,
-                                  [activity.id]: { ...draft, justification: event.target.value },
-                                }))}
-                                placeholder="Explique o que impediu o avanço."
-                              />
-                            </label>
-                          )}
-                          <div className="workspace-week-actions">
-                            {!mayUpdate && <span className="workspace-read-only">Somente leitura</span>}
-                            {mayUpdate && (
-                              <button type="button" onClick={() => void saveWeekly(activity)} disabled={savingWeeklyId === activity.id}>
-                                {savingWeeklyId === activity.id ? 'Salvando…' : 'Salvar status'}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </article>
+                      <WeeklyActivityCard
+                        key={`${activity.id}:${selectedWeek?.start ?? ''}:${saved?.updated_at ?? 'novo'}`}
+                        client={client}
+                        activity={activity}
+                        areaName={area?.name ?? 'Área removida'}
+                        weekStart={selectedWeek?.start ?? ''}
+                        draft={draft}
+                        saved={saved}
+                        canUpdate={mayUpdate}
+                        saving={savingWeeklyId === activity.id}
+                        busy={savingWeeklyId === activity.id || savingFlowId === activity.id}
+                        attachmentBusy={savingFlowId === activity.id}
+                        detailsMigrationAvailable={weeklyDetailsMigrationAvailable}
+                        attachments={activityAttachments.filter((attachment) => attachment.activity_id === activity.id)}
+                        attachmentUrls={attachmentUrls}
+                        driveDraft={driveDraftById[activity.id] ?? { name: '', url: '' }}
+                        onDraftChange={(patch) => setDrafts((current) => ({ ...current, [activity.id]: { ...(current[activity.id] ?? draft), ...patch } }))}
+                        onSave={() => void saveWeekly(activity)}
+                        onUploadFiles={(files) => void uploadActivityFiles(activity, files)}
+                        onDriveDraftChange={(patch) => setDriveDraftById((current) => ({
+                          ...current,
+                          [activity.id]: { ...(current[activity.id] ?? { name: '', url: '' }), ...patch },
+                        }))}
+                        onAddDriveLink={() => void addActivityDriveLink(activity)}
+                      />
                     );
                   })}
                   </div>}
@@ -1320,7 +1386,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             <TeamChat client={client} userId={userId} isAdmin={profile.role === 'admin'} members={members} initialMessageId={pushTarget?.type === 'chat' ? pushTarget.messageId : undefined} initialConversationId={pushTarget?.type === 'chat' ? pushTarget.conversationId : undefined} initialConversationType={pushTarget?.type === 'chat' ? pushTarget.conversationType : undefined} />
           )}
           {tab === 'meetings' && <MeetingsWorkspace displayName={displayName} onRoomActiveChange={setJitsiRoomActive} />}
-          {tab === 'week' && weekSection === 'availability' && <AvailabilityWorkspace client={client} userId={userId} profile={profile} />}
+          {tab === 'availability' && <AvailabilityWorkspace client={client} userId={userId} profile={profile} />}
           {tab === 'week' && weekSection === 'agenda' && <TeamCalendar client={client} userId={userId} isAdmin={profile.role === 'admin'} initialDate={calendarFocusDate} initialEventId={pushTarget?.type === 'calendar' ? pushTarget.itemId : undefined} />}
           {tab === 'manual' && <ManualFunctions />}
 
@@ -1403,9 +1469,9 @@ function ProjectPeriodDialog({
           </div>
           <button type="button" className="workspace-dialog-close" aria-label="Fechar" onClick={onClose} disabled={busy}>×</button>
         </div>
-        <p className="workspace-dialog-note">O período define as semanas disponíveis para acompanhamento de toda a equipe. O término é inclusivo; a última semana pode ser parcial.</p>
+        <p className="workspace-dialog-note">O período define as semanas disponíveis para acompanhamento de toda a equipe. O término é inclusivo; a última semana pode ser parcial. Alterá-lo não apaga atividades ou atualizações; registros fora do intervalo deixam de aparecer no acompanhamento até que o período seja ampliado novamente.</p>
         {!migrationAvailable && <p className="workspace-dialog-error" role="alert">Para salvar, aplique `20261104120000_workspace_project_period.sql` no Supabase e atualize esta página.</p>}
-        <form className="workspace-activity-form" onSubmit={(event) => { event.preventDefault(); onSave(start, end); }}>
+        <form className="workspace-activity-form workspace-period-form" onSubmit={(event) => { event.preventDefault(); onSave(start, end); }}>
           <label><span>Início do projeto <b>obrigatório</b></span>
             <input type="date" required value={start} onChange={(event) => setStart(event.target.value)} />
           </label>

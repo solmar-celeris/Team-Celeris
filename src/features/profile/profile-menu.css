@@ -73,3 +73,6 @@
   .profile-menu-trigger { max-width: 138px; gap: 5px; padding-right: 5px; }
   .profile-menu-trigger-name { max-width: 69px; font-size: 9px; }
 }
+@media (max-width: 760px) {
+  .profile-menu-popover { top: 226px; max-height: calc(100dvh - 234px); }
+}

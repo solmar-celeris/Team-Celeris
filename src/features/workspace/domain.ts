@@ -67,8 +67,32 @@ export type WeeklyUpdate = {
   week_start: string;
   status: WeeklyStatus;
   justification: string;
+  completed_work: string;
+  pending_work: string;
+  difficulties: string;
+  dependency_notes: string;
+  next_action: string;
   updated_by: string | null;
   updated_at: string;
+};
+
+export type WeeklyUpdateHistory = {
+  id: number;
+  weekly_update_id: string;
+  activity_id: string;
+  week_start: string;
+  event_type: 'baseline' | 'insert' | 'update' | 'delete';
+  previous_status: WeeklyStatus | null;
+  status: WeeklyStatus;
+  justification: string;
+  completed_work: string;
+  pending_work: string;
+  difficulties: string;
+  dependency_notes: string;
+  next_action: string;
+  actor_id: string | null;
+  actor_name: string;
+  occurred_at: string;
 };
 
 export type CycleWeek = { start: string; end: string; number: number; periodStart?: string };
