@@ -52,3 +52,24 @@
 @media (max-width: 420px) {
   .profile-menu-popover { top: 108px; right: 8px; width: calc(100vw - 16px); padding: 14px; }
 }
+
+
+/* Gatilho de perfil no cabeçalho: identidade da pessoa sempre visível. */
+.profile-menu-trigger { display: flex; align-items: center; justify-content: flex-start; gap: 8px; width: auto; max-width: 240px; min-width: 0; height: 40px; padding: 3px 10px 3px 4px; text-align: left; white-space: nowrap; }
+.profile-menu-trigger-avatar { width: 30px; height: 30px; flex: 0 0 30px; font-size: 12px; }
+.profile-menu-trigger-name { display: block; min-width: 0; max-width: 170px; overflow: hidden; color: #fff; font-size: 12px; font-weight: 760; text-overflow: ellipsis; white-space: nowrap; }
+.profile-menu-trigger-chevron { width: 15px; height: 15px; flex: 0 0 15px; opacity: .82; }
+@media (max-width: 760px) {
+  .profile-menu-trigger { max-width: 154px; gap: 6px; padding-right: 7px; }
+  .profile-menu-trigger-name { max-width: 92px; font-size: 10px; }
+  .profile-menu-popover { top: 136px; }
+}
+@media (max-width: 420px) {
+  .profile-menu-trigger { max-width: 146px; }
+  .profile-menu-trigger-name { max-width: 78px; }
+  .profile-menu-popover { top: 132px; }
+}
+@media (max-width: 360px) {
+  .profile-menu-trigger { max-width: 138px; gap: 5px; padding-right: 5px; }
+  .profile-menu-trigger-name { max-width: 69px; font-size: 9px; }
+}

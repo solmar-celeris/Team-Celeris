@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type DragEvent, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { BookOpen, CalendarDays, Check, ClipboardList, Clock3, Folder, GripVertical, Megaphone, MessageCircle, Trash2, X, Paperclip, ExternalLink, Users, Video, type LucideIcon } from 'lucide-react';
+import { BookOpen, CalendarDays, Check, ClipboardList, Clock3, Folder, GripVertical, Megaphone, MessageCircle, Moon, Sun, Trash2, X, Paperclip, ExternalLink, Users, Video, type LucideIcon } from 'lucide-react';
 import {
   activityTypeLabels,
   activityFlowLabels,
@@ -1024,6 +1024,15 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             onThemeChange={onThemeChange}
             onUpdated={handleProfileUpdated}
           />
+          <button
+            className="workspace-theme-toggle"
+            type="button"
+            aria-label={theme === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'}
+            title={theme === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'}
+            onClick={() => onThemeChange(theme === 'light' ? 'dark' : 'light')}
+          >
+            {theme === 'light' ? <Moon aria-hidden="true" /> : <Sun aria-hidden="true" />}
+          </button>
           <button className="workspace-logout" type="button" onClick={() => {
             if (jitsiRoomActive && !window.confirm('Você está em uma reunião. Sair do Team Celeris desconectará sua chamada. Deseja continuar?')) return;
             onLogout();

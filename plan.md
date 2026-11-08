@@ -128,6 +128,6 @@ Referências oficiais verificadas: [Segurança e privacidade Jitsi](https://jits
 
 ## Incremento de navegação e rótulos do workspace (07/11/2026)
 - A navegação principal deixa de incluir IA; prompts e links dos templates oficiais permanecem disponíveis ao fim do Manual de funções.
-- Em viewports móveis, a navegação volta a ser uma barra vertical na lateral esquerda com rótulos legíveis e alvos de toque adequados.
+- Em viewports móveis, a navegação principal fica em uma barra horizontal na parte superior, imediatamente abaixo do cabeçalho do app, com rótulos compactos e todas as sete abas visíveis.
 - Uma única aba **Semanas** agrupa três subguias no topo do conteúdo: **Acompanhamento semanal** (registro de atividades), **Agenda** (Calendário de eventos) e **Disponibilidades** (quadro/escala existentes). Deep links de calendário e atalhos da semana continuam abrindo a subguia Agenda.
-- O nome da aplicação passa a **Team Celeris**, e o chat passa a ser identificado como **Chat**; nenhuma tabela, migration, política RLS ou dado remoto será alterado.
+- O nome da aplicação passa a **Team Celeris**, e o chat passa a ser identificado como **Chat**. No cabeçalho azul, nome e foto/iniciais abrem as configurações do perfil, com alternância direta de tema claro/escuro ao lado em web e mobile; nenhuma tabela, migration, política RLS ou dado remoto será alterado.

@@ -261,3 +261,14 @@
 - [x] Unificar Acompanhamento semanal, Calendário de eventos e Disponibilidades sob uma única aba principal **Semanas**; no conteúdo, apresentar subguias **Acompanhamento semanal**, **Agenda** e **Disponibilidades**, cada uma abrindo a funcionalidade correspondente já existente.
 - [x] Alterar o título exibido como **SolMar Celeris Workspace** para **Team Celeris** e renomear **SolMarZap** para **Chat**, mantendo as conversas e recursos existentes.
 **Evidência:** `pnpm typecheck` e `pnpm build` aprovados; revisão estática confirmou o título `Team Celeris`, remoção de destinos principais de IA/Calendário/Disponibilidades, componentes de Agenda/Disponibilidades sob Semanas e ausência de alterações nas migrations do Supabase. Nenhum deploy foi feito.
+
+
+## 34. Reposicionamento final da navegação mobile (07/11/2026)
+- [x] Colocar as sete abas principais de volta numa faixa horizontal na parte superior do workspace, imediatamente abaixo do cabeçalho do app; mostrar ícone e rótulo compacto e manter todos os destinos visíveis em telas estreitas.
+**Evidência:** CSS mobile usa uma linha horizontal de sete itens e o frame volta ao fluxo vertical (cabeçalho → navegação → conteúdo); `pnpm typecheck` e `pnpm build` aprovados; nenhum deploy foi feito.
+
+
+## 35. Perfil e tema visíveis no cabeçalho (07/11/2026)
+- [x] No cabeçalho azul, manter visíveis a foto do usuário (ou iniciais) e o nome; esse controle abre as configurações do perfil.
+- [x] Colocar ao lado um controle direto para alternar entre tema claro e escuro, visível na versão web e mobile.
+**Evidência:** o gatilho acessível abre o painel de perfil existente e exibe avatar/nome; o botão ao lado alterna o tema e anuncia o modo que será ativado. CSS mantém ambos disponíveis em viewport desktop e estreita; `pnpm typecheck` e `pnpm build` aprovados; nenhum deploy ou alteração de banco foi feito.

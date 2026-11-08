@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { Menu, Moon, Sun } from 'lucide-react';
+import { ChevronDown, Moon, Sun } from 'lucide-react';
 import {
   disableDesktopNotifications,
   enableDesktopNotifications,
@@ -262,10 +262,15 @@ export default function ProfileMenu({ client, userId, fallbackName, photoUrl, th
         type="button"
         aria-expanded={open}
         aria-haspopup="dialog"
-        aria-label={`${open ? 'Fechar' : 'Abrir'} menu de perfil e aparência`}
+        aria-label={`${open ? 'Fechar' : 'Abrir'} configurações de perfil de ${shownName}`}
+        title={shownName}
         onClick={() => setOpen((value) => !value)}
       >
-        <Menu size={20} strokeWidth={2.2} aria-hidden="true" />
+        <span className="profile-avatar profile-menu-trigger-avatar" aria-hidden="true">
+          {shownPhoto ? <img src={shownPhoto} alt="" /> : <span>{initialFrom(shownName)}</span>}
+        </span>
+        <span className="profile-menu-trigger-name">{shownName}</span>
+        <ChevronDown className="profile-menu-trigger-chevron" aria-hidden="true" />
       </button>
 
       {open && (
