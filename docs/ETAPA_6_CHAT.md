@@ -19,8 +19,8 @@ Mensagens da sala geral continuam no mesmo local (`group_id` nulo), sem mudar o 
 
 Se não souber se uma migration já foi executada, pare e confira o estado em vez de tentar rodá-la novamente. Não desative RLS.
 
-## Moderação
+## Exclusão para todos
 
-Somente Administradores ativos podem remover mensagem, tanto na sala geral quanto em grupos. O app solicita confirmação; a função de banco valida novamente o papel e substitui o texto original pelo marcador de remoção.
+Com a migration `20261110101000_chat_global_delete_member_revocation.sql` e a Edge Function `delete-chat-content` publicadas, qualquer integrante ativo pode apagar para todos uma mensagem de que tenha acesso na sala geral, grupo ou DM, mesmo quando outra pessoa a enviou. O participante também pode apagar um grupo ou DM para todos. A sala geral não pode ser apagada. A confirmação é explícita; RLS permanece ativo e o servidor valida status e participação.
 
-Não use o Chat para senhas, documentos ou conteúdo confidencial. A sala Equipe é comum a todos os perfis ativos; os grupos têm visibilidade restrita aos participantes e Administradores.
+Anexos, áudio e foto passam por uma fila privada de limpeza; se o Storage falhar, o retry acontece em outra ação ou na próxima abertura do Chat. Links assinados já emitidos podem continuar válidos até expirarem. Não use o Chat para senhas ou conteúdo confidencial.

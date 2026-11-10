@@ -336,7 +336,7 @@
 - [x] Usar Supabase Realtime Presence em canal privado, com RLS para membros ativos; não persistir um booleano online nem deixar canal de presença público.
 - [x] Ajustar layout desktop/mobile para não cobrir navegação ou controles existentes; atualizar o papel do próprio usuário após uma promoção.
 
-## 47. Ações administrativas e convites por e-mail
+## 47. Ações administrativas e convites por e-mail — comportamento de remoção atualizado na etapa 51
 - [x] Apenas administrador ativo pode promover a admin, remover membro e convidar por e-mail; validar no backend/banco e na UI.
 - [x] “Remover da equipe” suspende o perfil sem apagar usuário nem histórico; impedir auto-remoção e suspensão do último administrador ativo; auditar mudanças.
 - [x] Convidar por Supabase Auth Admin via Edge Function autenticada; redirect fixo para a tela de login, sem aceitar redirect arbitrário nem expor service-role no front-end.
@@ -360,9 +360,19 @@
 - [x] Reduzir largura e altura da barra **Membros** em telas móveis sem remover funções administrativas.
 
 
-## 50. Revisão atual — Agenda/Conversas, navegação e exclusão segura
+## 50. Revisão anterior — Agenda/Conversas e exclusão (comportamento substituído pela etapa 51)
 - [x] Preservar módulos, dados, anexos, permissões RLS, notificações e deep links dos módulos agrupados; a navegação existente foi reorganizada sem excluir registros.
-- [x] Implementar **Apagar só para mim** para conversas diretas e grupos, com confirmação; a preferência individual oculta a conversa da própria lista, mantém mensagens/anexos/grupo para os demais e oferece restauração em **Ocultas**.
+- [x] Na revisão anterior, implementou-se **Apagar só para mim**. A interface e as consultas individuais foram retiradas na etapa 51; a tabela/migration antiga e seus registros são mantidos intactos.
 - [x] Criar a migration `20261109231000_team_chat_user_hidden_conversations.sql`, com RLS e acesso restrito ao próprio usuário; nenhuma migration foi aplicada ao Supabase remoto por esta entrega.
 - [x] Atualizar README e instruções Netlify/Supabase; executar `pnpm typecheck` e `pnpm build` com sucesso e emular 360, 375 e 390 px, tablet 768 px e desktop 1350 px, sem overflow horizontal.
-- [ ] Aplicar a nova migration somente se ainda não estiver no histórico do Supabase do usuário e validar o fluxo no site publicado com contas autorizadas.
+- [x] A migration histórica de ocultação individual permanece no projeto; nenhum registro foi apagado.
+
+## 51. Exclusão global do Chat e revogação permanente de vínculo (10/11/2026)
+- [x] Qualquer integrante ativo participante pode apagar para todos qualquer mensagem na sala geral, grupos ou DMs, sem ser autor; conversas privadas e grupos podem ser apagados globalmente por participante. A sala geral nunca é apagada. A UI exige confirmação; as RPCs revalidam status e membership no banco.
+- [x] Retirar do front-end o controle **Apagar só para mim** e a seção **Ocultas**; parar de consultar/escrever em `team_chat_user_hidden_conversations`, mantendo tabela e dados preexistentes sem alteração.
+- [x] Criar fila Storage privada, RLS habilitado e sem acesso `authenticated`, para remover anexos, áudio e foto do grupo; caminhos são derivados das linhas no banco, limpeza é idempotente e tenta novamente após ação ou abertura do Chat. Não apagar arquivos compartilhados por outras mensagens.
+- [x] Implementar confirmação explícita de exclusão global; atualizar lista e estado de conversa, atender eventos Realtime de DELETE, e exibir confirmação de leitura também nas conversas privadas para o remetente.
+- [x] Remover da interface o botão de suspensão; adicionar a Administradores ativos a ação **Revogar o vínculo permanentemente**. Criar estado terminal `removed` e RPC auditada, não apagar Auth/perfil/autoria/histórico, bloquear auto-revogação e proteger o último Administrador ativo.
+- [x] Criar migrations incrementais `20261110100000_member_removed_enum.sql` e `20261110101000_chat_global_delete_member_revocation.sql`; criar `supabase/functions/delete-chat-content/index.ts` com Verify JWT obrigatório e service role somente no runtime Supabase. RLS fica ativo.
+- [x] Atualizar README/manual e instruções de publicação; validar `pnpm build` localmente. Nenhuma migration ou Edge Function foi executada/publicada no projeto Supabase remoto nem Netlify.
+- [ ] Conferir histórico e aplicar somente migrations faltantes; publicar `delete-chat-content`; depois fazer o deploy Netlify e testar com múltiplas contas ativas, suspensas e não participantes.

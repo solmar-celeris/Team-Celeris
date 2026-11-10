@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowUp, Camera, Download, ExternalLink, Eye, EyeOff, FileText, Image as ImageIcon, Link2, Mic, MessageCircle, Paperclip, RefreshCw, ShieldCheck, Square, Trash2, UserPlus, UsersRound, Plus, Search, X } from 'lucide-react';
+import { ArrowUp, Camera, Download, ExternalLink, FileText, Image as ImageIcon, Link2, Mic, MessageCircle, Paperclip, RefreshCw, ShieldCheck, Square, Trash2, UserPlus, UsersRound, Plus, Search, X } from 'lucide-react';
 import { Mp3Encoder } from '@breezystack/lamejs';
 import { notifyChatMessagePush } from '../../lib/notifications';
 import type { MemberProfile } from './domain';
@@ -111,23 +111,10 @@ async function convertToMp3(source: Blob): Promise<Blob> {
     await context.close();
   }
 }
-function isMissingHiddenConversationTable(error: unknown): boolean {
-  if (!error || typeof error !== 'object') return false;
-  const details = error as { code?: string; message?: string };
-  return ['42P01', 'PGRST205'].includes(details.code ?? '')
-    && (details.message ?? '').toLowerCase().includes('team_chat_user_hidden_conversations');
-}
-function hiddenPreferencesUnavailableMessage(error?: unknown): string {
-  if (isMissingHiddenConversationTable(error)) {
-    return '“Apagar só para mim” requer a migration 20261109231000_team_chat_user_hidden_conversations.sql. O Chat continua disponível; aplique a migration para ativar ocultação e restauração.';
-  }
-  return 'As preferências de conversas ocultas não estão disponíveis no momento. O Chat continua disponível, mas ocultar/restaurar foi desativado temporariamente.';
-}
 function chatError(error: unknown): string {
   if (!error || typeof error !== 'object') return 'Não foi possível concluir a operação. Tente novamente.';
   const details = error as { code?: string; message?: string };
-  if (isMissingHiddenConversationTable(error)) return hiddenPreferencesUnavailableMessage(error);
-  if (['42P01', '42703', 'PGRST204', 'PGRST205', 'PGRST202'].includes(details.code ?? '')) return 'As funções recentes do Chat ainda não estão configuradas no Supabase. Confira as migrations de Chat privado/calendário, ocultação individual de conversas (20261109231000_team_chat_user_hidden_conversations.sql), áudio/leitura, anexos, links do Drive, fotos de grupo e recibos; aplique somente as que ainda faltam.';
+  if (['42P01', '42703', 'PGRST204', 'PGRST205', 'PGRST202'].includes(details.code ?? '')) return 'As funções recentes do Chat ainda não estão configuradas no Supabase. Confira as migrations de Chat privado/calendário, áudio/leitura, anexos, links do Drive, fotos de grupo e exclusão global (20261110100000_member_removed_enum.sql e 20261110101000_chat_global_delete_member_revocation.sql); aplique somente as que ainda faltam.';
   if (details.code === '42501') return 'O Supabase bloqueou a operação pelas regras de acesso. Confirme que sua conta está ativa e pertence à conversa.';
   if (details.code === '23514') return 'Confira os dados informados e tente novamente.';
   if (details.code === '23505') return 'Essa conversa ou participante já existe. Atualize a lista de conversas.';
@@ -138,10 +125,6 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   const [groups, setGroups] = useState<TeamChatGroup[]>([]);
   const [groupMembers, setGroupMembers] = useState<TeamChatGroupMember[]>([]);
   const [directs, setDirects] = useState<DirectConversation[]>([]);
-  const [hiddenGroupIds, setHiddenGroupIds] = useState<string[]>([]);
-  const [hiddenDirectIds, setHiddenDirectIds] = useState<string[]>([]);
-  const [hiddenPreferencesAvailable, setHiddenPreferencesAvailable] = useState<boolean | null>(null);
-  const [hiddenPreferencesNotice, setHiddenPreferencesNotice] = useState('');
   const [activeGroupId, setActiveGroupId] = useState<string | null>(() => initialConversationType === 'group' ? initialConversationId ?? null : null);
   const [activeDirectId, setActiveDirectId] = useState<string | null>(() => initialConversationType === 'direct' ? initialConversationId ?? null : null);
   const [groupDialogMode, setGroupDialogMode] = useState<GroupDialogMode | null>(null);
@@ -149,8 +132,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   const [groupActionBusy, setGroupActionBusy] = useState(false);
   const [showNewDirect, setShowNewDirect] = useState(false);
   const [showMobileConversations, setShowMobileConversations] = useState(false);
-  const [showHiddenConversations, setShowHiddenConversations] = useState(false);
-  const [conversationVisibilityBusy, setConversationVisibilityBusy] = useState<string | null>(null);
+  const [conversationDeletionBusy, setConversationDeletionBusy] = useState(false);
   const [memberSearch, setMemberSearch] = useState('');
   const [draft, setDraft] = useState('');
   const [driveFormOpen, setDriveFormOpen] = useState(false);
@@ -204,20 +186,25 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   const memberNames = useMemo(() => new Map(members.map((member) => [member.user_id, member.full_name.trim()])), [members]);
   const activeGroup = useMemo(() => groups.find((group) => group.id === activeGroupId) ?? null, [groups, activeGroupId]);
   const activeDirect = useMemo(() => directs.find((conversation) => conversation.id === activeDirectId) ?? null, [directs, activeDirectId]);
-  const visibleGroups = useMemo(() => groups.filter((group) => !hiddenGroupIds.includes(group.id)), [groups, hiddenGroupIds]);
-  const hiddenGroups = useMemo(() => groups.filter((group) => hiddenGroupIds.includes(group.id)), [groups, hiddenGroupIds]);
-  const visibleDirects = useMemo(() => directs.filter((conversation) => !hiddenDirectIds.includes(conversation.id)), [directs, hiddenDirectIds]);
-  const hiddenDirects = useMemo(() => directs.filter((conversation) => hiddenDirectIds.includes(conversation.id)), [directs, hiddenDirectIds]);
+  const visibleGroups = groups;
+  const visibleDirects = directs;
   const activeDirectUserId = activeDirect ? (activeDirect.user_a_id === userId ? activeDirect.user_b_id : activeDirect.user_a_id) : null;
   const activeDirectMember = activeDirectUserId ? memberById.get(activeDirectUserId) : undefined;
   const activeGroupMemberIds = useMemo(() => new Set(groupMembers.filter((member) => member.group_id === activeGroupId).map((member) => member.user_id)), [groupMembers, activeGroupId]);
   const availableGroupMembers = useMemo(() => members.filter((member) => !activeGroupMemberIds.has(member.user_id)), [activeGroupMemberIds, members]);
   const dialogMembers = useMemo(() => groupDialogMode === 'create' ? members.filter((member) => member.user_id !== userId) : groupDialogMode === 'add-members' ? availableGroupMembers : [], [availableGroupMembers, groupDialogMode, members, userId]);
   const canWrite = !activeGroupId || activeGroupMemberIds.has(userId);
+  const canDeleteCurrentConversation = activeDirectId
+    ? Boolean(activeDirect && (activeDirect.user_a_id === userId || activeDirect.user_b_id === userId))
+    : activeGroupId ? activeGroupMemberIds.has(userId) : true;
   const conversationLabel = activeDirectMember?.full_name || activeGroup?.name || 'Chat';
   const activeKey = activeDirectId ?? activeGroupId ?? 'team';
   const activeConversationRef = useRef(activeKey);
   activeConversationRef.current = activeKey;
+
+  useEffect(() => {
+    void client.functions.invoke('delete-chat-content', { body: { action: 'cleanup_pending' } }).catch(() => undefined);
+  }, [client, userId]);
 
   useEffect(() => () => {
     cameraStreamRef.current?.getTracks().forEach((track) => track.stop());
@@ -243,11 +230,10 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
 
   const loadLists = useCallback(async () => {
     try {
-      const [groupResult, memberResult, directResult, hiddenResult] = await Promise.all([
+      const [groupResult, memberResult, directResult] = await Promise.all([
         client.from('team_chat_groups').select('id,name,created_by,created_at,avatar_path').order('name', { ascending: true }),
         client.from('team_chat_group_members').select('group_id,user_id'),
         client.from('team_chat_direct_conversations').select('id,user_a_id,user_b_id,created_at').order('created_at', { ascending: false }),
-        client.from('team_chat_user_hidden_conversations').select('group_id,dm_conversation_id').eq('user_id', userId),
       ]);
       const failure = groupResult.error ?? memberResult.error ?? directResult.error;
       if (failure) throw failure;
@@ -260,21 +246,18 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
       setGroups(nextGroups);
       setGroupAvatarUrls(Object.fromEntries(groupPhotos.filter(([, url]) => Boolean(url))));
       setGroupMembers((memberResult.data ?? []) as unknown as TeamChatGroupMember[]);
-      setDirects((directResult.data ?? []) as unknown as DirectConversation[]);
-      if (hiddenResult.error) {
-        setHiddenPreferencesAvailable(false);
-        setHiddenPreferencesNotice(hiddenPreferencesUnavailableMessage(hiddenResult.error));
-        setHiddenGroupIds([]);
-        setHiddenDirectIds([]);
-      } else {
-        setHiddenPreferencesAvailable(true);
-        setHiddenPreferencesNotice('');
-        const hiddenRows = (hiddenResult.data ?? []) as { group_id: string | null; dm_conversation_id: string | null }[];
-        setHiddenGroupIds(hiddenRows.flatMap((row) => row.group_id ? [row.group_id] : []));
-        setHiddenDirectIds(hiddenRows.flatMap((row) => row.dm_conversation_id ? [row.dm_conversation_id] : []));
+      const nextDirects = (directResult.data ?? []) as unknown as DirectConversation[];
+      setDirects(nextDirects);
+      if (activeGroupRef.current && !nextGroups.some((group) => group.id === activeGroupRef.current)) {
+        setActiveGroupId(null);
+        setActiveDirectId(null);
+      }
+      if (activeDirectRef.current && !nextDirects.some((conversation) => conversation.id === activeDirectRef.current)) {
+        setActiveDirectId(null);
+        setActiveGroupId(null);
       }
     } catch (loadError) { setError(chatError(loadError)); }
-  }, [client, userId]);
+  }, [client]);
 
   const loadLatest = useCallback(async (quiet = false) => {
     const groupId = activeGroupId; const directId = activeDirectId;
@@ -492,6 +475,13 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
         if (message.removed_at) { removedIdsRef.current.add(message.id); setMessages((current) => current.filter((item) => item.id !== message.id)); return; }
         setMessages((current) => mergeMessages(current, [message])); autoScrollRef.current = true;
       })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'team_chat_messages' }, (payload) => {
+        const deleted = payload.old as Partial<TeamChatMessage>;
+        if (deleted.id) {
+          removedIdsRef.current.add(deleted.id);
+          setMessages((current) => current.filter((item) => item.id !== deleted.id));
+        } else { void loadLatest(true); }
+      })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'team_chat_messages' }, (payload) => {
         const message = payload.new as unknown as TeamChatMessage;
         if (!message.id || message.group_id !== activeGroupId || message.dm_conversation_id !== activeDirectId) return;
@@ -509,7 +499,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'team_chat_groups' }, () => { void loadLists(); })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_chat_group_members' }, () => { void loadLists(); })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_chat_direct_conversations' }, () => { void loadLists(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'team_chat_direct_conversations' }, () => { void loadLists(); })
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') { setConnection('connected'); if (hasConnectedRef.current) void loadLatest(true); else hasConnectedRef.current = true; }
         else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') setConnection('disconnected');
@@ -662,13 +652,53 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   }
 
   async function removeMessage(messageId: string) {
-    if (!isAdmin || removingId) return; setRemovingId(messageId); setError(''); setFeedback('');
+    if (!canDeleteCurrentConversation || removingId) return;
+    setRemovingId(messageId); setError(''); setFeedback('');
     try {
-      const { error: removeError } = await client.rpc('admin_remove_team_chat_message', { p_message_id: messageId });
+      const { data, error: removeError } = await client.functions.invoke('delete-chat-content', { body: { action: 'delete_message', message_id: messageId } });
       if (removeError) throw removeError;
-      removedIdsRef.current.add(messageId); setMessages((current) => current.filter((message) => message.id !== messageId)); setConfirmRemoveId(null); setFeedback('Mensagem removida pelo administrador.');
-    } catch (removeError) { setError(chatError(removeError)); }
-    finally { setRemovingId(null); }
+      if (!data || data.status !== 'deleted') throw new Error('A função de exclusão não confirmou a operação.');
+      removedIdsRef.current.add(messageId);
+      setMessages((current) => current.filter((message) => message.id !== messageId));
+      setConfirmRemoveId(null);
+      setFeedback(data.storage_cleanup_pending
+        ? 'Mensagem apagada para todos. A limpeza de arquivos está pendente e será tentada novamente.'
+        : 'Mensagem apagada para todos.');
+    } catch {
+      setError('Não foi possível apagar a mensagem para todos. Confirme que as migrations foram aplicadas e que a Edge Function delete-chat-content foi publicada.');
+    } finally { setRemovingId(null); }
+  }
+
+  function confirmDeleteConversation(kind: 'group' | 'direct', id: string, name: string) {
+    const confirmed = window.confirm(`Apagar “${name}” para todos? Todo o histórico, recibos, fotos e arquivos associados serão apagados permanentemente para todos os participantes. Esta ação não pode ser desfeita.`);
+    if (confirmed) void removeConversationForAll({ kind, id, name });
+  }
+
+  async function removeConversationForAll(target: { kind: 'group' | 'direct'; id: string; name: string }) {
+    if (conversationDeletionBusy) return;
+    setConversationDeletionBusy(true); setError(''); setFeedback('');
+    try {
+      const { data, error: removeError } = await client.functions.invoke('delete-chat-content', {
+        body: { action: 'delete_conversation', kind: target.kind, conversation_id: target.id },
+      });
+      if (removeError) throw removeError;
+      if (!data || data.status !== 'deleted') throw new Error('A função de exclusão não confirmou a operação.');
+      if (target.kind === 'group') {
+        setGroups((current) => current.filter((group) => group.id !== target.id));
+        setGroupMembers((current) => current.filter((member) => member.group_id !== target.id));
+        setGroupAvatarUrls((current) => { const next = { ...current }; delete next[target.id]; return next; });
+        if (activeGroupId === target.id) { setActiveGroupId(null); setActiveDirectId(null); setMessages([]); }
+      } else {
+        setDirects((current) => current.filter((conversation) => conversation.id !== target.id));
+        if (activeDirectId === target.id) { setActiveDirectId(null); setActiveGroupId(null); setMessages([]); }
+      }
+      setFeedback(data.storage_cleanup_pending
+        ? `“${target.name}” foi apagada para todos. A limpeza de arquivos ficou pendente e será tentada novamente.`
+        : `“${target.name}” foi apagada para todos.`);
+      void loadLists();
+    } catch {
+      setError('Não foi possível apagar a conversa para todos. Confirme que as migrations foram aplicadas e que a Edge Function delete-chat-content foi publicada.');
+    } finally { setConversationDeletionBusy(false); }
   }
 
   async function uploadGroupPhoto(file: File) {
@@ -706,55 +736,9 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
       if (directError) throw directError;
       const directId = typeof data === 'string' ? data : String(data ?? '');
       if (!directId) throw new Error('Não foi possível abrir a conversa privada.');
-      if (hiddenPreferencesAvailable !== false) {
-        const { error: revealError } = await client.from('team_chat_user_hidden_conversations').delete().eq('user_id', userId).eq('dm_conversation_id', directId);
-        if (revealError) {
-          setHiddenPreferencesAvailable(false);
-          setHiddenPreferencesNotice(hiddenPreferencesUnavailableMessage(revealError));
-        }
-      }
-      setHiddenDirectIds((current) => current.filter((hiddenId) => hiddenId !== directId));
       setActiveGroupId(null); setActiveDirectId(directId); setShowNewDirect(false); setShowMobileConversations(false); setMemberSearch('');
       void loadLists();
     } catch (actionError) { setError(chatError(actionError)); }
-  }
-
-  async function changeConversationVisibility(kind: 'group' | 'direct', id: string, name: string, hide: boolean, openAfterRestore = false) {
-    const key = `${kind}:${id}`;
-    if (conversationVisibilityBusy) return;
-    if (hiddenPreferencesAvailable !== true) {
-      setError(hiddenPreferencesNotice || hiddenPreferencesUnavailableMessage());
-      return;
-    }
-    if (hide && !window.confirm(`Remover “${name}” apenas da sua lista? O grupo e o histórico de mensagens não serão apagados e continuarão disponíveis aos demais participantes. Você poderá restaurar a conversa depois.`)) return;
-    setConversationVisibilityBusy(key); setError(''); setFeedback('');
-    try {
-      if (hide) {
-        const { error: hideError } = await client.from('team_chat_user_hidden_conversations').insert({ user_id: userId, group_id: kind === 'group' ? id : null, dm_conversation_id: kind === 'direct' ? id : null });
-        if (hideError) throw hideError;
-      } else {
-        const targetColumn = kind === 'group' ? 'group_id' : 'dm_conversation_id';
-        const { error: restoreError } = await client.from('team_chat_user_hidden_conversations').delete().eq('user_id', userId).eq(targetColumn, id);
-        if (restoreError) throw restoreError;
-      }
-      const updateIds = (current: string[]) => hide ? [...new Set([...current, id])] : current.filter((hiddenId) => hiddenId !== id);
-      if (kind === 'group') setHiddenGroupIds(updateIds);
-      else setHiddenDirectIds(updateIds);
-      if (hide && activeGroupId === id) { setActiveGroupId(null); setActiveDirectId(null); }
-      if (hide && activeDirectId === id) { setActiveDirectId(null); setActiveGroupId(null); }
-      if (!hide && openAfterRestore) {
-        if (kind === 'group') { setActiveDirectId(null); setActiveGroupId(id); }
-        else { setActiveGroupId(null); setActiveDirectId(id); }
-        setShowMobileConversations(false);
-      }
-      setFeedback(hide ? `“${name}” foi removida da sua lista. O histórico permanece salvo.` : `“${name}” foi restaurada na sua lista.`);
-    } catch (visibilityError) {
-      if (isMissingHiddenConversationTable(visibilityError)) {
-        setHiddenPreferencesAvailable(false);
-        setHiddenPreferencesNotice(hiddenPreferencesUnavailableMessage(visibilityError));
-      } else setError(chatError(visibilityError));
-    }
-    finally { setConversationVisibilityBusy(null); }
   }
 
   async function handleGroupDialogSubmit(value: { name: string; memberIds: string[] }) {
@@ -811,7 +795,6 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
         {showMobileConversations && <button className="team-chat-drawer-backdrop" type="button" aria-label="Fechar lista de conversas" onClick={() => setShowMobileConversations(false)} />}
         <nav className={`team-chat-channels${showMobileConversations ? ' is-mobile-open' : ''}`} aria-label="Conversas do Chat">
           <p className="team-chat-channels-title">CHAT · CONVERSAS</p>
-          {hiddenPreferencesAvailable === false && <p className="team-chat-hidden-preference-notice" role="status">{hiddenPreferencesNotice}</p>}
           <div className="team-chat-channel-list">
             <button type="button" className={`team-chat-channel${!activeGroupId && !activeDirectId ? ' is-active' : ''}`} onClick={() => { setActiveGroupId(null); setActiveDirectId(null); setShowMobileConversations(false); }}><MessageCircle aria-hidden="true" /><span>Equipe</span><small>Todos</small></button>
             <div className="team-chat-channel-heading"><span>PRIVADAS</span><button type="button" title="Nova conversa privada" aria-label="Iniciar conversa privada" onClick={() => setShowNewDirect((value) => !value)}><Plus aria-hidden="true" /></button></div>
@@ -819,13 +802,12 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
             {visibleDirects.map((conversation) => {
               const otherId = conversation.user_a_id === userId ? conversation.user_b_id : conversation.user_a_id;
               const name = memberNames.get(otherId) || 'Integrante';
-              const key = `direct:${conversation.id}`;
               return <div className="team-chat-channel-row" key={conversation.id}>
                 <button type="button" className={`team-chat-channel${activeDirectId === conversation.id ? ' is-active' : ''}`} onClick={() => { setActiveGroupId(null); setActiveDirectId(conversation.id); setShowMobileConversations(false); }}>
                   {avatar(otherId, name)}<span>{name}</span><small>Privado</small>
                 </button>
-                <button className="team-chat-channel-visibility" type="button" title={hiddenPreferencesAvailable === false ? hiddenPreferencesNotice : 'Apagar só para mim'} aria-label={`Apagar conversa privada com ${name} só para mim`} disabled={Boolean(conversationVisibilityBusy) || hiddenPreferencesAvailable === false} onClick={() => void changeConversationVisibility('direct', conversation.id, name, true)}>
-                  {conversationVisibilityBusy === key ? <span className="team-chat-channel-spinner" aria-hidden="true" /> : <Trash2 aria-hidden="true" />}
+                <button className="team-chat-channel-visibility" type="button" title="Apagar conversa para todos" aria-label={`Apagar conversa privada com ${name} para todos`} disabled={conversationDeletionBusy} onClick={() => confirmDeleteConversation('direct', conversation.id, name)}>
+                  <Trash2 aria-hidden="true" />
                 </button>
               </div>;
             })}
@@ -833,50 +815,16 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
             {visibleGroups.map((group) => {
               const groupIds = groupMembers.filter((member) => member.group_id === group.id).map((member) => member.user_id);
               const count = groupIds.length;
-              const key = `group:${group.id}`;
               return <div className="team-chat-channel-row" key={group.id}>
                 <button type="button" className={`team-chat-channel${activeGroupId === group.id ? ' is-active' : ''}`} onClick={() => { setActiveDirectId(null); setActiveGroupId(group.id); setShowMobileConversations(false); }}>
                   {groupAvatar(group, 'sm')}<span>{group.name}</span><small>{count}</small>
                 </button>
-                <button className="team-chat-channel-visibility" type="button" title={hiddenPreferencesAvailable === false ? hiddenPreferencesNotice : 'Apagar só para mim'} aria-label={`Apagar grupo ${group.name} só para mim`} disabled={Boolean(conversationVisibilityBusy) || hiddenPreferencesAvailable === false} onClick={() => void changeConversationVisibility('group', group.id, group.name, true)}>
-                  {conversationVisibilityBusy === key ? <span className="team-chat-channel-spinner" aria-hidden="true" /> : <Trash2 aria-hidden="true" />}
-                </button>
+                {groupIds.includes(userId) && <button className="team-chat-channel-visibility" type="button" title="Apagar conversa para todos" aria-label={`Apagar grupo ${group.name} para todos`} disabled={conversationDeletionBusy} onClick={() => confirmDeleteConversation('group', group.id, group.name)}>
+                  <Trash2 aria-hidden="true" />
+                </button>}
               </div>;
             })}
-            {(hiddenDirects.length > 0 || hiddenGroups.length > 0) && <>
-              <div className="team-chat-channel-heading team-chat-hidden-heading">
-                <span>OCULTAS · {hiddenDirects.length + hiddenGroups.length}</span>
-                <button type="button" title={showHiddenConversations ? 'Ocultar a lista de conversas apagadas para mim' : 'Ver conversas apagadas para mim'} aria-label={showHiddenConversations ? 'Fechar lista de conversas ocultas' : 'Abrir lista de conversas ocultas'} aria-expanded={showHiddenConversations} onClick={() => setShowHiddenConversations((current) => !current)}>
-                  {showHiddenConversations ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
-                </button>
-              </div>
-              {showHiddenConversations && hiddenDirects.map((conversation) => {
-                const otherId = conversation.user_a_id === userId ? conversation.user_b_id : conversation.user_a_id;
-                const name = memberNames.get(otherId) || 'Integrante';
-                const key = `direct:${conversation.id}`;
-                return <div className="team-chat-channel-row is-hidden" key={`hidden:${conversation.id}`}>
-                  <button type="button" className={`team-chat-channel${activeDirectId === conversation.id ? ' is-active' : ''}`} onClick={() => { setActiveGroupId(null); setActiveDirectId(conversation.id); setShowMobileConversations(false); }}>
-                    {avatar(otherId, name)}<span>{name}</span><small>Oculta</small>
-                  </button>
-                  <button className="team-chat-channel-visibility is-restore" type="button" title={hiddenPreferencesAvailable === false ? hiddenPreferencesNotice : 'Restaurar conversa'} aria-label={`Restaurar conversa privada com ${name}`} disabled={Boolean(conversationVisibilityBusy) || hiddenPreferencesAvailable === false} onClick={() => void changeConversationVisibility('direct', conversation.id, name, false, true)}>
-                    {conversationVisibilityBusy === key ? <span className="team-chat-channel-spinner" aria-hidden="true" /> : <Eye aria-hidden="true" />}
-                  </button>
-                </div>;
-              })}
-              {showHiddenConversations && hiddenGroups.map((group) => {
-                const count = groupMembers.filter((member) => member.group_id === group.id).length;
-                const key = `group:${group.id}`;
-                return <div className="team-chat-channel-row is-hidden" key={`hidden:${group.id}`}>
-                  <button type="button" className={`team-chat-channel${activeGroupId === group.id ? ' is-active' : ''}`} onClick={() => { setActiveDirectId(null); setActiveGroupId(group.id); setShowMobileConversations(false); }}>
-                    {groupAvatar(group, 'sm')}<span>{group.name}</span><small>{count}</small>
-                  </button>
-                  <button className="team-chat-channel-visibility is-restore" type="button" title={hiddenPreferencesAvailable === false ? hiddenPreferencesNotice : 'Restaurar grupo'} aria-label={`Restaurar grupo ${group.name}`} disabled={Boolean(conversationVisibilityBusy) || hiddenPreferencesAvailable === false} onClick={() => void changeConversationVisibility('group', group.id, group.name, false, true)}>
-                    {conversationVisibilityBusy === key ? <span className="team-chat-channel-spinner" aria-hidden="true" /> : <Eye aria-hidden="true" />}
-                  </button>
-                </div>;
-              })}
-            </>}
-            {visibleDirects.length === 0 && visibleGroups.length === 0 && <p className="team-chat-no-groups">{hiddenDirects.length || hiddenGroups.length ? 'Não há conversas visíveis. Abra “Ocultas” para restaurar uma conversa, ou inicie uma nova.' : 'Inicie uma conversa privada ou crie um grupo.'}</p>}
+            {visibleDirects.length === 0 && visibleGroups.length === 0 && <p className="team-chat-no-groups">Inicie uma conversa privada ou crie um grupo.</p>}
           </div>
         </nav>
         <div className="team-chat-main">
@@ -904,10 +852,10 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
                         : <span className="team-chat-audio-loading">Carregando anexo…</span>)}
                       {message.body === 'Mensagem de áudio' && !message.audio_path && <p>Mensagem de áudio indisponível.</p>}
                       <div className="team-chat-message-time"><time dateTime={message.created_at}>{timeLabel(message.created_at)}</time>{message.sender_id === userId && <span className={readCount ? 'is-read' : ''} aria-label={readCount ? (activeGroupId ? `Lida por ${readCount} integrante(s)` : 'Lida') : 'Enviada'} title={readCount ? (activeGroupId ? `Lida por ${readCount} integrante(s)` : 'Lida') : 'Enviada'}>{readCount ? '✓✓' : '✓'}{readCount > 0 && <small>{activeGroupId ? `Lida por ${readCount}` : 'Lida'}</small>}</span>}</div>
-                      {message.sender_id === userId && (activeGroupId ? activeGroupMemberIds.has(userId) : !activeDirectId) && (() => {
+                      {message.sender_id === userId && canDeleteCurrentConversation && (() => {
                         const recipientIds = (activeGroupId
                           ? groupMembers.filter((item) => item.group_id === activeGroupId).map((item) => item.user_id)
-                          : members.map((item) => item.user_id)).filter((id) => id !== message.sender_id && memberById.has(id));
+                          : activeDirectUserId ? [activeDirectUserId] : members.map((item) => item.user_id)).filter((id) => id !== message.sender_id && memberById.has(id));
                         const readIds = new Set(readByMessage[message.id] ?? []);
                         const readMembers = recipientIds.filter((id) => readIds.has(id));
                         const unreadMembers = recipientIds.filter((id) => !readIds.has(id));
@@ -923,7 +871,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
                           </section>}
                         </div>;
                       })()}
-                      {isAdmin && <div className="team-chat-message-actions">{confirmRemoveId === message.id ? <><span>Remover esta mensagem?</span><button type="button" className="team-chat-confirm-remove" onClick={() => void removeMessage(message.id)} disabled={removingId === message.id}>{removingId === message.id ? 'Removendo…' : 'Confirmar remoção'}</button><button type="button" className="team-chat-cancel-remove" onClick={() => setConfirmRemoveId(null)} disabled={removingId === message.id}>Cancelar</button></> : <button type="button" className="team-chat-remove" onClick={() => setConfirmRemoveId(message.id)} aria-label={`Remover mensagem de ${senderName}`}><Trash2 aria-hidden="true" /> Remover</button>}</div>}
+                      {canDeleteCurrentConversation && <div className="team-chat-message-actions">{confirmRemoveId === message.id ? <><span>Apagar para todos?</span><button type="button" className="team-chat-confirm-remove" onClick={() => void removeMessage(message.id)} disabled={removingId === message.id}>{removingId === message.id ? 'Apagando…' : 'Apagar para todos'}</button><button type="button" className="team-chat-cancel-remove" onClick={() => setConfirmRemoveId(null)} disabled={removingId === message.id}>Cancelar</button></> : <button type="button" className="team-chat-remove" onClick={() => setConfirmRemoveId(message.id)} aria-label={`Apagar mensagem de ${senderName} para todos`}><Trash2 aria-hidden="true" /> Apagar</button>}</div>}
                     </article></div></div>;
               })}
               <div ref={bottomRef} />
@@ -939,7 +887,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
             </form>
           </div>
           {cameraOpen && <div className="team-chat-camera-backdrop" role="presentation"><section className="team-chat-camera-dialog" role="dialog" aria-modal="true" aria-labelledby="team-chat-camera-title"><header><div><p className="workspace-kicker">CÂMERA DO COMPUTADOR</p><h3 id="team-chat-camera-title">Tirar foto</h3></div><button type="button" onClick={closeCamera} aria-label="Fechar câmera"><X aria-hidden="true" /></button></header><video ref={cameraVideoRef} autoPlay muted playsInline aria-label="Pré-visualização da câmera" />{cameraError && <p className="team-chat-camera-error" role="alert">{cameraError}</p>}<footer><button type="button" className="team-chat-camera-cancel" onClick={closeCamera}>Cancelar</button><button type="button" className="team-chat-camera-capture" onClick={captureCameraPhoto} disabled={Boolean(cameraError)}><Camera aria-hidden="true" /> Capturar foto</button></footer></section></div>}
-          <p className="team-chat-retention-note">Mensagens ficam salvas até um Administrador removê-las. As conversas privadas só podem ser lidas pelos dois participantes. Mensagens do Chat não enviam e-mail.</p>
+          <p className="team-chat-retention-note">Qualquer participante ativo pode apagar uma mensagem ou conversa para todos; a exclusão de mensagens e conversas privadas é permanente. Conversas privadas só são visíveis aos dois participantes. Mensagens do Chat não enviam e-mail.</p>
         </div>
       </div>
       {groupDialogMode && <ChatGroupDialog mode={groupDialogMode} members={dialogMembers} busy={groupActionBusy} error={groupDialogError} onCancel={() => { if (!groupActionBusy) setGroupDialogMode(null); }} onSubmit={(value) => void handleGroupDialogSubmit(value)} />}

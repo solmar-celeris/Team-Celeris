@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ChevronDown, LoaderCircle, MailPlus, RefreshCw, ShieldPlus, UserRound, Users, X } from 'lucide-react';
+import { ChevronDown, LoaderCircle, MailPlus, RefreshCw, ShieldPlus, Trash2, UserRound, Users, X } from 'lucide-react';
 import './team-members-menu.css';
 
 type TeamMembersMenuProps = {
@@ -38,6 +38,7 @@ function roleLabel(role: string | null): string {
 function statusLabel(status: string | null): string {
   if (status === 'active') return 'Ativo';
   if (status === 'suspended') return 'Suspenso';
+  if (status === 'removed') return 'Acesso removido';
   return status || 'Status não definido';
 }
 
@@ -131,7 +132,7 @@ export default function TeamMembersMenu({ client, userId, isAdmin, onSelfProfile
           .order('full_name', { ascending: true });
         if (error) throw error;
         const roster = (data ?? []) as unknown as TeamMember[];
-        setMembers(roster);
+        setMembers(roster.filter((member) => member.status !== 'removed'));
         setListError('');
         const ownProfile = roster.find((member) => member.user_id === userId);
         if (ownProfile && ownProfile.status !== 'active' && !signOutStartedRef.current) {
@@ -213,29 +214,24 @@ export default function TeamMembersMenu({ client, userId, isAdmin, onSelfProfile
   const selfMember = members.find((member) => member.user_id === userId);
   const canManageMembers = isAdmin && selfMember?.status === 'active';
 
-  async function updateMember(member: TeamMember, action: 'promote' | 'suspend') {
+  async function updateMember(member: TeamMember, action: 'promote' | 'remove') {
     if (!canManageMembers || member.user_id === userId || busyUserId) return;
-    if (action === 'suspend') {
-      const confirmed = window.confirm(
-        'Remover da equipe? O acesso desta pessoa será suspenso, e o histórico dela será preservado.',
-      );
-      if (!confirmed) return;
-    }
+    if (action === 'remove' && !window.confirm('Revogar definitivamente o vínculo desta pessoa? A conta Auth e o histórico serão preservados, mas ela perderá o acesso à equipe. Esta ação não é uma exclusão da conta.')) return;
     setBusyUserId(member.user_id);
     setActionError('');
     setNotice('');
     try {
       const { error } = await client.rpc(
-        action === 'promote' ? 'admin_promote_team_member' : 'admin_suspend_team_member',
+        action === 'promote' ? 'admin_promote_team_member' : 'admin_remove_team_member',
         { p_user_id: member.user_id },
       );
       if (error) throw error;
       await loadMembers(false, true);
-      setNotice(action === 'promote' ? 'Permissão de administrador atualizada.' : 'Acesso suspenso; o histórico foi preservado.');
+      setNotice(action === 'promote' ? 'Permissão de administrador atualizada.' : 'Vínculo removido. A conta Auth e o histórico foram preservados; o acesso à equipe foi revogado.');
     } catch {
       setActionError(action === 'promote'
         ? 'Não foi possível atualizar a função. Tente novamente ou fale com um administrador.'
-        : 'Não foi possível suspender o acesso. Tente novamente ou fale com um administrador.');
+        : 'Não foi possível revogar o vínculo. Confirme que as migrations de membros foram aplicadas.');
     } finally {
       setBusyUserId(null);
     }
@@ -320,7 +316,7 @@ export default function TeamMembersMenu({ client, userId, isAdmin, onSelfProfile
               {members.map((member) => {
                 const name = displayName(member.full_name);
                 const online = onlineUserIds.has(member.user_id);
-                const canActOnMember = canManageMembers && member.user_id !== userId && member.status === 'active';
+                const canActOnMember = canManageMembers && member.user_id !== userId && member.status !== 'removed';
                 return (
                   <li className="team-member-row" key={member.user_id}>
                     <span className="team-member-avatar" aria-hidden="true">{initialFrom(name)}</span>
@@ -334,7 +330,7 @@ export default function TeamMembersMenu({ client, userId, isAdmin, onSelfProfile
                     </div>
                     {canActOnMember && (
                       <div className="team-member-actions" aria-label={`Ações para ${name}`}>
-                        {member.role !== 'admin' && (
+                        {member.status === 'active' && member.role !== 'admin' && (
                           <button
                             className="team-member-action"
                             type="button"
@@ -349,12 +345,12 @@ export default function TeamMembersMenu({ client, userId, isAdmin, onSelfProfile
                         <button
                           className="team-member-action is-danger"
                           type="button"
-                          title="Remover da equipe"
-                          aria-label="Remover da equipe"
-                          onClick={() => void updateMember(member, 'suspend')}
+                          title="Revogar o vínculo permanentemente"
+                          aria-label="Revogar o vínculo permanentemente"
+                          onClick={() => void updateMember(member, 'remove')}
                           disabled={busyUserId !== null}
                         >
-                          <X size={15} aria-hidden="true" />
+                          {busyUserId === member.user_id ? <LoaderCircle size={15} className="team-members-spinner" aria-hidden="true" /> : <Trash2 size={15} aria-hidden="true" />}
                         </button>
                       </div>
                     )}

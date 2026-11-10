@@ -388,15 +388,15 @@
 .team-chat-compose-actions button[type="submit"] { border: 0; color: #fff; background: #126cad; box-shadow: 0 4px 12px rgba(1, 75, 137, .19); }
 .team-chat-compose-actions button[type="submit"]:hover:not(:disabled) { background: #014b89; }
 .team-chat-read-details-wrap { display: grid; justify-items: end; gap: 6px; max-width: min(100%, 380px); margin: 4px 0 0 auto; }
-.team-chat-read-details-trigger { display: inline-flex; align-items: center; gap: 6px; min-height: 26px; padding: 0 8px; border: 1px solid color-mix(in srgb, var(--ocean) 20%, var(--line)); border-radius: 99px; color: var(--ocean); background: color-mix(in srgb, var(--sky) 7%, var(--card)); cursor: pointer; font-size: 9px; font-weight: 800; }
+.team-chat-read-details-trigger { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 10px; border: 1px solid color-mix(in srgb, var(--ocean) 20%, var(--line)); border-radius: 99px; color: var(--ocean); background: color-mix(in srgb, var(--sky) 7%, var(--card)); cursor: pointer; font-size: 9px; font-weight: 800; }
 .team-chat-read-details-trigger span:first-child { color: #126cad; font-size: 11px; letter-spacing: -2px; }
 .team-chat-read-details-trigger:hover { border-color: var(--ocean); }
 :root[data-theme="dark"] .team-chat-read-details-trigger { color: #b8dcff; }
 .team-chat-read-details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: min(100%, 400px); padding: 10px; border: 1px solid color-mix(in srgb, var(--ocean) 20%, var(--line)); border-radius: 11px; color: var(--ink); background: var(--card); box-shadow: 0 8px 22px rgba(1, 38, 70, .13); text-align: left; }
-.team-chat-read-details strong { display: block; margin-bottom: 5px; color: var(--ocean); font-size: 9px; }
+.team-chat-read-details strong { display: block; margin-bottom: 5px; color: var(--ocean); font-size: 11px; }
 :root[data-theme="dark"] .team-chat-read-details strong { color: #9acfff; }
 .team-chat-read-details ul { display: grid; gap: 4px; max-height: 130px; overflow: auto; margin: 0; padding: 0; list-style: none; }
-.team-chat-read-details li, .team-chat-read-details p { margin: 0; color: var(--muted); font-size: 9px; line-height: 1.35; overflow-wrap: anywhere; }
+.team-chat-read-details li, .team-chat-read-details p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.35; overflow-wrap: anywhere; }
 @media (max-width: 520px) {
   .team-chat-heading h2 { flex-wrap: wrap; }
   .team-chat-heading-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
@@ -434,57 +434,19 @@
   .team-chat-drive-fields > div { align-items: flex-start; flex-direction: column; }
 }
 
-
-/* Ações pessoais para ocultar/restaurar conversas sem apagar o histórico. */
-.team-chat-channel-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 32px;
-  align-items: center;
-  gap: 3px;
-  min-width: 0;
-}
+/* Ações explícitas para exclusão global e alvos táteis em mobile. */
+.team-chat-channel-row { display: grid; grid-template-columns: minmax(0, 1fr) 38px; align-items: center; gap: 3px; min-width: 0; }
 .team-chat-channel-row .team-chat-channel { width: 100%; min-width: 0; }
-.team-chat-channel-visibility {
-  display: grid;
-  width: 30px;
-  height: 30px;
-  place-items: center;
-  padding: 0;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  color: var(--muted);
-  background: transparent;
-  cursor: pointer;
-}
-.team-chat-channel-visibility svg { width: 14px; height: 14px; }
+.team-chat-channel-visibility { display: grid; width: 36px; height: 36px; place-items: center; padding: 0; border: 1px solid transparent; border-radius: 9px; color: var(--muted); background: transparent; cursor: pointer; }
+.team-chat-channel-visibility svg { width: 15px; height: 15px; }
 .team-chat-channel-visibility:hover:not(:disabled) { border-color: color-mix(in srgb, #bd4337 28%, var(--line)); color: #a2352c; background: color-mix(in srgb, #e54444 7%, var(--card)); }
-.team-chat-channel-visibility.is-restore { color: var(--ocean); }
-.team-chat-channel-visibility.is-restore:hover:not(:disabled) { border-color: color-mix(in srgb, var(--ocean) 25%, var(--line)); color: var(--ocean); background: color-mix(in srgb, var(--sky) 9%, var(--card)); }
 .team-chat-channel-visibility:disabled { cursor: wait; opacity: .55; }
-.team-chat-channel-spinner { width: 13px; height: 13px; border: 2px solid var(--line); border-top-color: var(--ocean); border-radius: 50%; animation: chat-visibility-spin .7s linear infinite; }
-@keyframes chat-visibility-spin { to { transform: rotate(360deg); } }
-.team-chat-channel-heading.team-chat-hidden-heading { margin-top: 15px; }
-.team-chat-channel-heading.team-chat-hidden-heading button { display: grid; width: 28px; height: 28px; place-items: center; border: 1px solid var(--line); border-radius: 8px; color: var(--ocean); background: var(--card); cursor: pointer; }
-.team-chat-channel-heading.team-chat-hidden-heading button svg { width: 15px; height: 15px; }
-.team-chat-channel-row.is-hidden .team-chat-channel { opacity: .78; }
-@media (max-width: 760px) {
-  .team-chat-channel-row { flex: 0 0 min(250px, 86vw); grid-template-columns: minmax(0, 1fr) 32px; }
-  .team-chat-channel-row .team-chat-channel { flex: 1 1 auto; width: auto; }
-  .team-chat-channel-heading.team-chat-hidden-heading { flex: 0 0 auto; }
-}
-
-
-.team-chat-hidden-preference-notice {
-  margin: 0 2px 8px;
-  padding: 8px 9px;
-  border: 1px solid color-mix(in srgb, var(--orange) 28%, var(--line));
-  border-radius: 9px;
-  color: var(--muted);
-  background: color-mix(in srgb, var(--orange) 6%, var(--card));
-  font-size: 10px;
-  line-height: 1.45;
-}
-.team-chat-channel-visibility:disabled { cursor: not-allowed; opacity: .42; }
-@media (max-width: 760px) {
-  .team-chat-hidden-preference-notice { margin: 0 0 7px; padding: 7px 8px; font-size: 9px; }
+.team-chat-message-actions button { min-height: 34px; padding-inline: 9px; }
+.team-chat-message-actions .team-chat-confirm-remove { font-weight: 850; }
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .team-chat-channel-row { flex: 0 0 min(270px, 88vw); grid-template-columns: minmax(0, 1fr) 44px; }
+  .team-chat-channel-visibility { width: 44px; height: 44px; }
+  .team-chat-read-details-trigger { min-height: 44px; padding-inline: 12px; font-size: 11px; }
+  .team-chat-read-details { gap: 12px; padding: 12px; }
+  .team-chat-message-actions button { min-height: 40px; font-size: 10px; }
 }

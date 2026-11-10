@@ -194,3 +194,12 @@ Manter o cabeçalho azul e a paleta azul/laranja existentes, com ícones maiores
 - Conversas/grupos têm ação **Apagar só para mim**: criar uma preferência individual com RLS própria, ocultar apenas da lista do usuário, preservar mensagens/arquivos/acesso dos demais e permitir restauração; não implementar apagamento global implícito.
 
 Foi adicionada a migration `20261109231000_team_chat_user_hidden_conversations.sql`, documentada no README e no guia Netlify/Supabase. `pnpm typecheck` e `pnpm build` passaram; a navegação foi emulada em 360–390 px, 768 px e desktop sem overflow horizontal. Não foi aplicada migration nem publicado código no Supabase/Netlify remoto.
+
+
+## Adendo aprovado em 10/11/2026 — exclusão global do Chat e revogação permanente
+Este adendo substitui as linhas anteriores deste plano que pediam **Apagar só para mim**, restauração de ocultações e restrição da exclusão de mensagens a Administradores. A interface deixa de consultar/escrever a tabela `team_chat_user_hidden_conversations`; a migration e os dados existentes permanecem preservados, sem truncamento. Se a migration nunca foi aplicada, a versão nova não depende dela e ela pode ser ignorada. Conversas ocultas apenas localmente voltam a aparecer na lista da pessoa.
+
+- Qualquer integrante ativo pode apagar qualquer mensagem para todos na sala geral, em grupos ou DMs; grupos e DMs podem ser apagados para todos por participantes. A sala geral é a única conversa que não pode ser apagada. O banco revalida a participação e o status do ator.
+- Os objetos de áudio, anexos e fotos de grupo são removidos por uma fila privada/outbox do Storage, com retry idempotente, sem aceitar caminhos enviados pelo navegador. RLS permanece ligado e `service_role` só é usado no runtime da Edge Function autenticada.
+- Na tela Membros não existe botão de suspensão. Administradores ativos podem **Revogar o vínculo permanentemente**; o estado `removed` é terminal, bloqueia o acesso e não apaga Auth, perfil, autoria nem histórico. Não se permite auto-revogação ou remoção do último Administrador ativo.
+- Migrations incrementais: `20261110100000_member_removed_enum.sql` e `20261110101000_chat_global_delete_member_revocation.sql`. Edge Function: `supabase/functions/delete-chat-content/index.ts` com Verify JWT. Nenhuma operação foi aplicada ao Supabase remoto nesta etapa.
