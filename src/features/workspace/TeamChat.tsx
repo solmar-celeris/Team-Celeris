@@ -792,6 +792,10 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
         </div>
       </div>
       <div className="team-chat-shell">
+        <aside className="team-chat-members-sidebar">
+           <h3>Membros</h3>
+           {members.map(m => <button onClick={() => startDirect(m.user_id)}>{m.full_name}</button>)}
+        </aside>
         {showMobileConversations && <button className="team-chat-drawer-backdrop" type="button" aria-label="Fechar lista de conversas" onClick={() => setShowMobileConversations(false)} />}
         <nav className={`team-chat-channels${showMobileConversations ? ' is-mobile-open' : ''}`} aria-label="Conversas do Chat">
           <p className="team-chat-channels-title">CHAT · CONVERSAS</p>

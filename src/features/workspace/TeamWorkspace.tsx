@@ -1105,25 +1105,26 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
         <a className="workspace-brand" href="#workspace" aria-label="Team Celeris">
           <img src="/assets/solmar-celeris-site-logo.png" alt="" />
         </a>
-        <nav className="workspace-nav" aria-label="Navegação principal">
-          {workspaceTabs.map(({ id, label, icon: Icon }) => (
-            <button key={id} type="button" title={label} aria-label={label} className={tab === id ? 'is-active' : ''} onClick={() => navigateToTab(id)} aria-current={tab === id ? 'page' : undefined}>
-              <span className="workspace-nav-icon"><Icon aria-hidden="true" /></span>
-              <span className="workspace-nav-label">{label}</span>
-            </button>
-          ))}
+        <div className="workspace-nav-left">
+          <img src="/assets/solmar-celeris-site-logo.png" alt="Logo SolMar Celeris" />
+          <div className="channel-dropdown">
+             <button onClick={() => setChannelMenuOpen(!channelMenuOpen)}>
+                {activeChannel.name} ▾
+             </button>
+             {channelMenuOpen && (
+               <div className="dropdown-menu">
+                 {channels.map(c => <button onClick={() => setActiveChannel(c)}>{c.name}</button>)}
+               </div>
+             )}
+          </div>
+        </div>
+        <nav className="workspace-nav">
+           {workspaceTabs.map(({ id, label, icon: Icon }) => (
+            <button key={id} onClick={() => navigateToTab(id)}><Icon size={18} /><span>{label}</span></button>
+           ))}
         </nav>
         <div className="workspace-top-actions">
-          <ProfileMenu
-            client={client}
-            userId={userId}
-            fallbackName={displayName}
-            photoUrl={avatarUrl}
-            theme={theme}
-            onThemeChange={onThemeChange}
-            onUpdated={handleProfileUpdated}
-            onLogout={handleProfileLogout}
-          />
+          <ProfileMenu ... />
         </div>
       </header>
 
