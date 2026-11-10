@@ -71,6 +71,6 @@ Canais adicionais sem `area_id` aceitam o Manual próprio, mas ainda não recebe
 - Administradores podem alterar a privacidade dos canais após a criação; Geral permanece sempre aberto.
 - Chat acessado pelo diretório Membros, sem guia própria na navegação principal.
 - Editor rico em Comunicados e Manuais: tamanhos pequeno/médio/grande, negrito, itálico e marca-texto colorido.
-- Arquivos por canal com uploads e atalhos HTTPS, alternância em blocos/listas e ícones para Word, Excel, PowerPoint, PDF e web.
+- A área Arquivos apresenta somente pastas compartilhadas do Google Drive, com visualização em blocos ou lista.
 - Manual Administrativo-Financeiro com ação para restaurar o conteúdo-base de cargos e responsabilidades.
 - Nova migration: `supabase/migrations/20261110160000_workspace_it_privacy_and_channel_files.sql`. Aplicar somente depois das migrations de canais anteriores e após conferir o histórico do Supabase.

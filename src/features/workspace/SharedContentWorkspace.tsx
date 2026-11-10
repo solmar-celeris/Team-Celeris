@@ -4,7 +4,6 @@ import { ArrowUpRight, Check, FileText, FolderOpen, Link2, Megaphone, Pin, PinOf
 import type { Area, MemberProfile } from './domain';
 import { notifyWorkspacePush } from '../../lib/notifications';
 import RichTextEditor, { RichTextContent } from './RichTextEditor';
-import ChannelFilesPanel from './ChannelFilesPanel';
 import './shared-content.css';
 import './announcement-interactions.css';
 
@@ -655,9 +654,9 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
       <div className="shared-content-heading">
         <div>
           <p className="workspace-kicker">{isFiles ? 'ATALHOS COMPARTILHADOS' : 'MURAL DA EQUIPE'}</p>
-          <h2 id="shared-content-title">{isFiles ? 'Pastas e arquivos.' : 'Comunicados.'}</h2>
+          <h2 id="shared-content-title">{isFiles ? 'Pastas compartilhadas.' : 'Comunicados.'}</h2>
           <p>{isFiles
-            ? 'Arquivos enviados, pastas compartilhadas e atalhos de internet deste canal.'
+            ? 'Pastas compartilhadas deste canal, organizadas para acesso rápido no Google Drive.'
             : 'Avisos compartilhados com todos os integrantes deste canal.'}</p>
         </div>
         <div className="shared-content-actions">
@@ -742,7 +741,6 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
               <ArrowUpRight size={18} aria-hidden="true" />
             </a>
           )}
-          <ChannelFilesPanel client={client} channelId={channelId} userId={userId} isAdmin={isAdmin} viewMode={fileViewMode} onViewModeChange={setFileViewMode} />
           <label className="shared-content-search"><span>Buscar pasta</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nome, descrição ou área" /></label>
           {loading ? <div className="workspace-loading" role="status"><span />Carregando pastas…</div> : folderCount === 0 ? (
             <div className="workspace-empty"><FolderOpen size={25} aria-hidden="true" /><strong>{folders.length ? 'Nenhuma pasta corresponde à busca.' : 'Ainda não há pastas compartilhadas.'}</strong><p>{folders.length ? 'Tente outra busca.' : 'Adicione um link do Google Drive para deixá-lo visível para a equipe.'}</p></div>

@@ -453,3 +453,45 @@
 .team-chat-read-summary{margin:2px 0 0;color:var(--muted);font-size:9px;line-height:1.35;text-align:right;overflow-wrap:anywhere}
 :root[data-theme="dark"] .team-chat-read-summary{color:#a9bbca}
 @media(max-width:600px){.team-chat-read-summary{font-size:10px;max-width:100%}}
+
+
+/* Ajustes de contenção: o Chat deve caber na viewport em qualquer largura. */
+.workspace-main.is-chat-page,
+.workspace-main.is-chat-page > .team-chat,
+.workspace-main.is-chat-page .team-chat-shell,
+.workspace-main.is-chat-page .team-chat-channels,
+.workspace-main.is-chat-page .team-chat-main,
+.workspace-main.is-chat-page .team-chat-panel,
+.workspace-main.is-chat-page .team-chat-history,
+.workspace-main.is-chat-page .team-chat-message-row,
+.workspace-main.is-chat-page .team-chat-message {
+  min-width: 0;
+  max-width: 100%;
+}
+.workspace-main.is-chat-page .team-chat-history {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.workspace-main.is-chat-page .team-chat-message,
+.workspace-main.is-chat-page .team-chat-message > p,
+.workspace-main.is-chat-page .team-chat-drive-link,
+.workspace-main.is-chat-page .team-chat-attachment-download {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-main.is-chat-page {
+    width: 100%;
+    max-width: 100vw;
+  }
+  .workspace-main.is-chat-page .team-chat-heading,
+  .workspace-main.is-chat-page .team-chat-heading-actions,
+  .workspace-main.is-chat-page .team-chat-composer,
+  .workspace-main.is-chat-page .team-chat-compose-footer {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .workspace-main.is-chat-page .team-chat-history {
+    overscroll-behavior-x: none;
+  }
+}

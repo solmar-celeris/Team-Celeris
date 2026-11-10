@@ -36,7 +36,7 @@ import ChannelSwitcher, { type WorkspaceChannel } from './ChannelSwitcher';
 import SharedContentWorkspace from './SharedContentWorkspace';
 import TeamChat from './TeamChat';
 import TeamCalendar from './TeamCalendar';
-import ManualFunctions, { getManualRoleHtml } from './ManualFunctions';
+import ManualFunctions from './ManualFunctions';
 import ChannelManualWorkspace from './ChannelManualWorkspace';
 import AvailabilityWorkspace from './AvailabilityWorkspace';
 import PERTCPMWorkspace from './PERTCPMWorkspace';
@@ -1473,7 +1473,8 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           {tab === 'agenda' && agendaSubtab === 'availability' && <AvailabilityWorkspace client={client} userId={userId} profile={profile} />}
           {tab === 'agenda' && agendaSubtab === 'calendar' && <TeamCalendar client={client} userId={userId} isAdmin={profile.role === 'admin'} initialDate={calendarFocusDate} initialEventId={pushTarget?.type === 'calendar' ? pushTarget.itemId : undefined} />}
           {tab === 'manual' && activeChannel?.slug === 'geral' && <ChannelManualWorkspace client={client} userId={userId} channelId={activeChannel.id} kind="conduct" title="Manual de Conduta" isAdmin={profile.role === 'admin'} />}
-          {tab === 'manual' && activeChannel && activeChannel.slug !== 'geral' && <ChannelManualWorkspace client={client} userId={userId} channelId={activeChannel.id} kind="function" title={`Manual de Função · ${activeChannel.name}`} isAdmin={profile.role === 'admin'} fallback={<ManualFunctions areaFilter={manualAreaName} />} resetContent={activeChannel.slug === 'administrativo-financeiro' ? getManualRoleHtml('Administrativo-Financeiro') : undefined} />}
+          {tab === 'manual' && activeChannel && activeChannel.slug === 'administrativo-financeiro' && <ChannelManualWorkspace client={client} userId={userId} channelId={activeChannel.id} kind="function" title="Manual de Função · Administrativo-Financeiro" isAdmin={profile.role === 'admin'} fallback={<ManualFunctions areaFilter={manualAreaName} />} />}
+          {tab === 'manual' && activeChannel && activeChannel.slug !== 'geral' && activeChannel.slug !== 'administrativo-financeiro' && <ChannelManualWorkspace client={client} userId={userId} channelId={activeChannel.id} kind="function" title={`Manual de Função · ${activeChannel.name}`} isAdmin={profile.role === 'admin'} fallback={<ManualFunctions areaFilter={manualAreaName} />} />}
 
           <footer className="workspace-footer" aria-label="Identidade do projeto">
             <img src="/assets/teamceleris-app-mark.png" alt="Símbolo do app Team Celeris" />

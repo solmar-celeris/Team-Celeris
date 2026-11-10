@@ -283,9 +283,9 @@ O seletor de canais fica no cabeçalho. Os canais iniciais são Geral, Mecânica
 
 A navegação principal apresenta Feed, Atividades, Agenda, Comunicados, Arquivos e o Manual correspondente ao canal. O Chat não aparece como guia: DMs e grupos são abertos pelo diretório **Membros**. Deep links de notificações de Chat continuam podendo abrir a conversa correspondente.
 
-Comunicados e Manuais usam editor rico com tamanhos pequeno/médio/grande, negrito, itálico e marca-texto em cores. No Manual Administrativo-Financeiro, Administradores têm a ação **Restaurar versão-base**, que substitui o texto atual pelo conteúdo-base de cargos e responsabilidades incorporado ao app. Confira o texto antes de salvar.
+Comunicados e Manuais usam editor rico com tamanhos pequeno/médio/grande, negrito, itálico e marca-texto em cores. O Manual Administrativo-Financeiro utiliza a mesma apresentação em cartões de função dos demais canais.
 
-Em Arquivos, a seção **Arquivos e atalhos** permite enviar documentos e adicionar URLs HTTPS. A visualização pode alternar entre blocos e lista. Word, Excel, PowerPoint, PDF e atalhos de internet têm ícones diferentes. Os uploads ficam em bucket privado por canal; os links externos abrem em nova aba. As pastas legadas do Google Drive continuam disponíveis para canais vinculados a uma área.
+Em Arquivos, são exibidas somente as pastas compartilhadas do Google Drive, com alternância entre blocos e lista. Não há opção de adicionar arquivos individuais ou atalhos nesta área.
 
 ### Migrations adicionais
 
@@ -295,7 +295,7 @@ Depois de conferir o histórico de migrations, aplique somente as ausentes, nest
 2. `20261110113000_workspace_manual_storage.sql` — cria o bucket privado dos originais PDF/DOCX.
 3. `20261110114000_workspace_channels_area_seed_fix.sql` — corrige o vínculo da área Elétrica e instala proteção dos canais fixos.
 4. `20261110115000_workspace_channel_content_permissions.sql` — reforça RLS/RPCs para conteúdo por canal.
-5. `20261110160000_workspace_it_privacy_and_channel_files.sql` — inclui TI, permite alterar a privacidade dos canais (Geral continua aberto), cria a tabela/bucket privados de arquivos e atalhos e habilita Realtime para esses itens.
+5. `20261110160000_workspace_it_privacy_and_channel_files.sql` — inclui TI, permite alterar a privacidade dos canais (Geral continua aberto), cria a tabela/bucket privados de arquivos e atalhos e habilita Realtime para esses itens (a interface atual exibe somente pastas compartilhadas do Google Drive).
 
 A migration `20261110160000` pressupõe que a área `tecnologia-da-informacao` já existe, conforme o schema inicial. Ela não altera os dados históricos de atividades, comunicados, arquivos nem mensagens. Não reaplique migrations já executadas; confira o histórico do Supabase antes de cada execução.
 

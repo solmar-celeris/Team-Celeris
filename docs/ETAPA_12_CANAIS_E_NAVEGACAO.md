@@ -14,7 +14,7 @@ Esta etapa evolui o workspace sem recriar nem renumerar os registros existentes.
 - Diretório de membros com e-mail, somente perfis ativos, ações de promoção/rebaixamento e revogação definitiva sem apagar Auth/histórico.
 - DM iniciada diretamente pelo diretório e criação de grupos pela própria interface de membros; o Chat não aparece mais como guia principal e só é aberto por Membros.
 - Recibos de leitura com nomes/contagem abaixo das mensagens próprias.
-- Manuais por canal com upload PDF/DOCX, extração de texto no navegador, edição inline por Administradores, editor de formatação e download do original em Storage privado. O Manual Administrativo-Financeiro permite restaurar a versão-base de cargos e responsabilidades.
+- Manuais por canal com upload PDF/DOCX, extração de texto no navegador, edição inline por Administradores, editor de formatação e download do original em Storage privado. O Manual Administrativo-Financeiro utiliza o mesmo cartão de função dos demais canais.
 - RLS/RPCs adicionais para impedir que não participantes de canais privados leiam/alterem atividades, atualizações semanais, histórico, anexos, dependências PERT/CPM, WIP, comunicados, respostas, reações, links, enquetes e anexos de Storage.
 
 ## Migrations
@@ -37,7 +37,7 @@ A primeira migration associa os canais às áreas existentes e cria `workspace_m
 - Em canal privado, tente consultar com conta externa atividades, atualizações, histórico, anexos, PERT/CPM, WIP, comunicados, respostas, reações, enquetes e Storage; as consultas devem ser negadas/sem dados.
 - Abra Membros, inicie uma DM pelo ícone de conversa e crie um grupo pelo botão do diretório.
 - Envie mensagens em DM/grupo pelo diretório Membros e valide os recibos em desktop e mobile. Confirme que não existe guia Chat junto de Comunicados.
-- Envie PDF/DOCX com texto selecionável, confirme extração, escolha adicionar/substituir, edite o texto com tamanho, negrito, itálico e marca-texto, e baixe o original. No Manual Administrativo-Financeiro, teste Restaurar versão-base.
+- Envie PDF/DOCX com texto selecionável, confirme extração, escolha adicionar/substituir, edite o texto com tamanho, negrito, itálico e marca-texto, e baixe o original. O Manual Administrativo-Financeiro deve apresentar o mesmo cartão de função usado nos demais canais.
 - Altere um canal aberto para privado e de volta para aberto; confirme que Geral não pode ser tornado privado.
 - Em Arquivos, alterne blocos/listas, envie Word, Excel, PowerPoint e PDF, e adicione um atalho HTTPS.
 - Teste rebaixar um administrador sem permitir rebaixar o último administrador ativo e excluir um membro sem apagar sua conta Auth nem o histórico.

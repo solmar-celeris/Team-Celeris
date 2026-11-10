@@ -216,3 +216,14 @@ h1 em { color: var(--ink); font-style: normal; }
 :root[data-theme="dark"] .auth-mode-switch button.is-selected { color: #04111a; background: #014b89; }
 :root[data-theme="dark"] .primary-button { color: #ffffff; background: #e06916; }
 :root[data-theme="dark"] .secondary-button { color: #ffffff; background: #014b89; }
+
+
+/* Evita rolagem horizontal global em telas estreitas, sem bloquear a rolagem vertical. */
+html,
+body,
+#root,
+.app-shell {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
