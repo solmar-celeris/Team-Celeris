@@ -116,7 +116,7 @@ function formatDate(value: string): string {
   return new Date(value).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-export default function SharedContentWorkspace({ client, mode, userId, isAdmin, areas, members, targetAnnouncementId, areaId, isGeneralChannel, channelId }: SharedContentWorkspaceProps) {
+export default function SharedContentWorkspace({ client, mode, userId, isAdmin, areas, members, targetAnnouncementId, areaId, isGeneralChannel }: SharedContentWorkspaceProps) {
   const [folders, setFolders] = useState<DriveFolder[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -145,7 +145,7 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
   const [pollSelections, setPollSelections] = useState<Record<string, string[]>>({});
   const [signedAttachmentUrls, setSignedAttachmentUrls] = useState<Record<string, string>>({});
   const [announcementFiles, setAnnouncementFiles] = useState<File[]>([]);
-  const [fileViewMode, setFileViewMode] = useState<'grid' | 'list'>('grid');
+  const [fileViewMode] = useState<'grid' | 'list'>('grid');
 
   useEffect(() => {
     setFolderForm({ ...emptyFolderForm, areaId: areaId ?? '' });
