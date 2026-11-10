@@ -348,14 +348,21 @@
 
 
 ## 48. Feed de equipe e navegação estilo LinkedIn
-- [ ] Renomear **Semanas** para **Início**, usar ícone de casa e apresentar um feed da equipe com as atividades previstas para a semana selecionada, mantendo filtros, indicadores, atualizações e registros existentes.
-- [ ] Tornar **Agenda** uma aba principal independente; a ordem relativa das abas deve continuar: **Início, Atividades, Chat, Comunicados, Disponibilidades, Arquivos, Manual de funções**. Inserir **Agenda** após Disponibilidades, sem substituir nenhuma aba da lista.
-- [ ] Colocar **Membros** no extremo direito da navegação em vez de um atalho de mensagens; preservar lista, presença, convites e ações administrativas.
-- [ ] Preservar **Reuniões ao vivo** acessível como atalho em Início, ainda que não ocupe uma aba principal da ordem solicitada.
-- [ ] Reaproveitar os dados e cartões semanais atuais no feed; ajustar deep links de calendário e ações “Ver na Agenda” para abrir a aba Agenda, com evento/data recebidos.
+- [x] Renomear **Semanas** para **Início**, usar ícone de casa e apresentar um feed da equipe com as atividades previstas para a semana selecionada, mantendo filtros, indicadores, atualizações e registros existentes.
+- [x] Consolidar a navegação principal em **Início, Atividades, Agenda, Conversas, Arquivos e Manual de funções**, mantendo a ordem dos módulos atuais.
+- [x] Agrupar em **Agenda** as guias **Calendário, Disponibilidades e Reunião**; agrupar em **Conversas** as guias **Chat e Comunicados**; manter Reunião acessível também pelo atalho de Início.
+- [x] Reaproveitar os dados e cartões semanais atuais no feed; ajustar deep links e ações para abrir a área/subguia correta, preservando evento/data recebidos.
 
 ## 49. Cabeçalho e perfil responsivos
-- [ ] Desktop: usar o cabeçalho existente com logo, navegação compacta, Membros no canto e perfil identificado como **Eu** com foto circular.
-- [ ] Mobile: na primeira linha, exibir somente a logo do projeto à esquerda e um pequeno círculo com a foto de perfil à direita; manter a faixa de abas abaixo do cabeçalho e não adicionar barra de busca.
-- [ ] Em desktop e mobile, mostrar **Sair** somente dentro do menu aberto ao clicar na foto; manter dentro do perfil a opção de tema claro/escuro.
-- [ ] Preservar a confirmação ao trocar de tela ou sair quando uma chamada Jitsi estiver ativa; manter funções e links existentes.
+- [x] Desktop: manter logo e seis abas no cabeçalho, remover apenas o wordmark duplicado junto à logo de equipe, deixar perfil **Eu** com avatar; manter **Membros** no dock inferior.
+- [x] Mobile: alinhar logo à esquerda e avatar à direita na primeira faixa, sem busca; distribuir seis abas em uma única linha abaixo, aumentar ícones e manter rótulos legíveis em até duas linhas.
+- [x] Em desktop e mobile, mostrar **Sair** somente dentro do menu de perfil e manter a opção de tema claro/escuro; preservar a confirmação ao sair de reunião Jitsi ativa.
+- [x] Reduzir largura e altura da barra **Membros** em telas móveis sem remover funções administrativas.
+
+
+## 50. Revisão atual — Agenda/Conversas, navegação e exclusão segura
+- [x] Preservar módulos, dados, anexos, permissões RLS, notificações e deep links dos módulos agrupados; a navegação existente foi reorganizada sem excluir registros.
+- [x] Implementar **Apagar só para mim** para conversas diretas e grupos, com confirmação; a preferência individual oculta a conversa da própria lista, mantém mensagens/anexos/grupo para os demais e oferece restauração em **Ocultas**.
+- [x] Criar a migration `20261109231000_team_chat_user_hidden_conversations.sql`, com RLS e acesso restrito ao próprio usuário; nenhuma migration foi aplicada ao Supabase remoto por esta entrega.
+- [x] Atualizar README e instruções Netlify/Supabase; executar `pnpm typecheck` e `pnpm build` com sucesso e emular 360, 375 e 390 px, tablet 768 px e desktop 1350 px, sem overflow horizontal.
+- [ ] Aplicar a nova migration somente se ainda não estiver no histórico do Supabase do usuário e validar o fluxo no site publicado com contas autorizadas.

@@ -179,17 +179,18 @@ Total previsto = atividades esperadas para a semana selecionada conforme `isActi
 - `pnpm typecheck`, `pnpm build`, verificação isolada TypeScript da Edge Function e parser das três migrations concluídos sem erro. Não foi feito deploy nem conexão a Supabase remoto; convite por e-mail, presença real e teste mobile autenticado dependem de configuração do projeto e teste do proprietário.
 
 
-## Etapa incremental — navegação/feed estilo LinkedIn (09/11/2026)
+## Etapa incremental — Agenda/Conversas e navegação responsiva (09/11/2026)
 
 ### Direção visual e comportamento
-Usar a imagem de referência do usuário como guia, sem reconstruir a aplicação: cabeçalho azul existente com logo, navegação compacta de abas e perfil; cartões do feed com a paleta azul/laranja já usada. No desktop, a linha superior reúne marca, abas e controles; no mobile, a primeira linha mostra somente logo à esquerda e avatar circular à direita, e a faixa de navegação segue abaixo, sem busca.
+Manter o cabeçalho azul e a paleta azul/laranja existentes, com ícones maiores agora que a navegação foi reduzida para seis áreas. Em desktop, aproximar a logo da equipe da navegação e manter o perfil **Eu** com avatar. Em mobile, alinhar a logo à esquerda e o avatar circular à direita na primeira faixa, sem busca, e distribuir as abas igualmente em uma faixa abaixo.
 
 ### Estrutura e reuso
-- A página **Início** reutiliza as atividades previstas para a semana selecionada, os indicadores, filtros e `WeeklyActivityCard`; o feed adiciona resumo/atalhos em cartão lateral no desktop e layout em coluna no mobile.
-- A ordem solicitada permanece: **Início, Atividades, Chat, Comunicados, Disponibilidades, Arquivos, Manual de funções**. Como **Agenda** deve ser independente e também ficar no cabeçalho, inserir **Agenda** depois de Disponibilidades, sem alterar a ordem relativa das sete abas enumeradas.
-- Colocar **Membros** no extremo direito do cabeçalho/navegação. O diretório existente, Presence privada e ações administrativas não são reimplementados.
-- Preservar a tela de **Reuniões ao vivo**, acessível por um atalho no feed Início, embora não ocupe uma das posições principais enumeradas.
-- Ajustar deep links `push=calendar` e ações “Ver na Agenda” para selecionar a aba independente Agenda, mantendo `initialDate` e `initialEventId`.
-- O perfil mostra foto + **Eu** no desktop e só a foto circular no mobile. Mover **Sair** para o menu aberto pela foto; tema claro/escuro continua disponível ali.
+- **Início** continua usando semana selecionada, indicadores, filtros e `WeeklyActivityCard`, com resumo/atalhos em coluna lateral desktop e empilhados no mobile.
+- A navegação principal reúne **Início**, **Atividades**, **Agenda**, **Conversas**, **Arquivos** e **Manual de funções**. Agenda tem subguias **Calendário**, **Disponibilidades** e **Reunião**; Conversas tem **Chat** e **Comunicados**.
+- Reutilizar `TeamCalendar`, `AvailabilityWorkspace`, `MeetingsWorkspace`, `TeamChat` e `SharedContentWorkspace`; preservar dados, anexos, autorizações, notificações e integração Jitsi. Os atalhos de feed direcionam diretamente à subguia apropriada.
+- Deep links existentes mantêm seu destino: `push=calendar` abre Agenda/Calendário e mantém `initialDate`/`initialEventId`; chat abre Conversas/Chat; comunicado abre Conversas/Comunicados.
+- **Membros** permanece no dock inferior, sem duplicar o controle no cabeçalho, e fica menor em telas móveis. Remover somente o wordmark redundante ao lado da logo da equipe; não alterar o asset da marca do aplicativo no rodapé.
+- O perfil mostra foto + **Eu** no desktop e somente a foto circular no mobile. **Sair** e alternância claro/escuro permanecem dentro do menu de perfil. Troca de subguia/tela confirma antes de desconectar uma reunião Jitsi ativa.
+- Conversas/grupos têm ação **Apagar só para mim**: criar uma preferência individual com RLS própria, ocultar apenas da lista do usuário, preservar mensagens/arquivos/acesso dos demais e permitir restauração; não implementar apagamento global implícito.
 
-Não alterar banco, autenticação, logo ou APIs nesta etapa; validar layout responsivo e as regras de confirmação de saída enquanto houver uma sala Jitsi ativa.
+Foi adicionada a migration `20261109231000_team_chat_user_hidden_conversations.sql`, documentada no README e no guia Netlify/Supabase. `pnpm typecheck` e `pnpm build` passaram; a navegação foi emulada em 360–390 px, 768 px e desktop sem overflow horizontal. Não foi aplicada migration nem publicado código no Supabase/Netlify remoto.

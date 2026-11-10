@@ -98,7 +98,9 @@ type ActivityFormState = {
 };
 type AttachmentSubmission = { files: File[]; driveName: string; driveUrl: string };
 type WeeklyDraft = WeeklyReportDraft;
-type WorkspaceTab = 'home' | 'calendar' | 'availability' | 'activities' | 'files' | 'announcements' | 'chat' | 'meetings' | 'manual';
+type WorkspaceTab = 'home' | 'activities' | 'agenda' | 'conversations' | 'files' | 'manual';
+type AgendaSubtab = 'calendar' | 'availability' | 'meetings';
+type ConversationsSubtab = 'chat' | 'announcements';
 type WorkspaceTabIcon = ComponentType<LucideProps>;
 type PushDeepLink =
   | { type: 'chat'; messageId: string; conversationId: string | null; conversationType: 'team' | 'group' | 'direct' }
@@ -116,11 +118,8 @@ type WeekCalendarEvent = {
 const workspaceTabs: { id: WorkspaceTab; label: string; icon: WorkspaceTabIcon }[] = [
   { id: 'home', label: 'Início', icon: House },
   { id: 'activities', label: 'Atividades', icon: ClipboardList },
-  { id: 'chat', label: 'Chat', icon: MessageCircle },
-  { id: 'meetings', label: 'Reuniões ao vivo', icon: Video },
-  { id: 'announcements', label: 'Comunicados', icon: Megaphone },
-  { id: 'availability', label: 'Disponibilidades', icon: ClockWithArrowsIcon },
-  { id: 'calendar', label: 'Agenda', icon: CalendarDays },
+  { id: 'agenda', label: 'Agenda', icon: CalendarDays },
+  { id: 'conversations', label: 'Conversas', icon: MessageCircle },
   { id: 'files', label: 'Arquivos', icon: Folder },
   { id: 'manual', label: 'Manual de funções', icon: BookOpen },
 ];
@@ -158,10 +157,9 @@ function parsePushDeepLink(): PushDeepLink | null {
 
 function tabForPush(target: PushDeepLink | null): WorkspaceTab {
   if (!target) return 'home';
-  if (target.type === 'chat') return 'chat';
-  if (target.type === 'announcement') return 'announcements';
+  if (target.type === 'chat' || target.type === 'announcement') return 'conversations';
   if (target.type === 'activity') return 'activities';
-  return 'calendar';
+  return 'agenda';
 }
 
 function ClockWithArrowsIcon({ size = 20, className }: LucideProps) {
@@ -359,6 +357,8 @@ function safeDriveUrl(value: string): string | null {
 export default function TeamWorkspace({ client, userId, profile, theme, onThemeChange, onRefreshProfile, onLogout }: TeamWorkspaceProps) {
   const [pushTarget] = useState<PushDeepLink | null>(() => parsePushDeepLink());
   const [tab, setTab] = useState<WorkspaceTab>(() => tabForPush(pushTarget));
+  const [agendaSubtab, setAgendaSubtab] = useState<AgendaSubtab>('calendar');
+  const [conversationsSubtab, setConversationsSubtab] = useState<ConversationsSubtab>(() => pushTarget?.type === 'announcement' ? 'announcements' : 'chat');
   const [homeFiltersOpen, setHomeFiltersOpen] = useState(false);
   const [jitsiRoomActive, setJitsiRoomActive] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -1069,9 +1069,17 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   }
 
   function navigateToTab(nextTab: WorkspaceTab) {
-    if (jitsiRoomActive && nextTab !== tab && !window.confirm('Você está em uma reunião. Sair desta tela desconectará sua chamada. Deseja continuar?')) return;
-    if (jitsiRoomActive && nextTab !== tab) setJitsiRoomActive(false);
+    const leavingLiveMeeting = tab === 'agenda' && agendaSubtab === 'meetings' && nextTab !== 'agenda';
+    if (jitsiRoomActive && (nextTab !== tab || leavingLiveMeeting) && !window.confirm('Você está em uma reunião. Sair desta tela desconectará sua chamada. Deseja continuar?')) return;
+    if (jitsiRoomActive && (nextTab !== tab || leavingLiveMeeting)) setJitsiRoomActive(false);
     setTab(nextTab);
+  }
+
+  function navigateToAgendaSubtab(nextSubtab: AgendaSubtab) {
+    if (jitsiRoomActive && nextSubtab !== 'meetings' && !window.confirm('Você está em uma reunião. Sair desta tela desconectará sua chamada. Deseja continuar?')) return;
+    if (jitsiRoomActive && nextSubtab !== 'meetings') setJitsiRoomActive(false);
+    setAgendaSubtab(nextSubtab);
+    setTab('agenda');
   }
 
   function handleProfileLogout() {
@@ -1081,36 +1089,27 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
 
   const pageHeading = tab === 'home'
     ? { kicker: 'FEED DA EQUIPE', title: 'Início', subtitle: selectedWeek ? `Acompanhe as atividades da semana ${selectedWeek.number} e os próximos compromissos da equipe.` : 'Acompanhe as atividades e os próximos compromissos da equipe.' }
-    : tab === 'calendar'
+    : tab === 'agenda'
       ? { kicker: 'AGENDA DA EQUIPE', title: 'Agenda', subtitle: 'Organize reuniões, treinamentos, eventos e compromissos da equipe.' }
-      : tab === 'availability'
-      ? { kicker: 'HORÁRIOS E ESCALAS', title: 'Disponibilidades.', subtitle: 'Informe seus horários semanais e consulte as disponibilidades ou escalas do time.' }
       : tab === 'activities'
       ? { kicker: 'CADASTRO DA EQUIPE', title: 'Atividades da equipe.', subtitle: 'Consulte, filtre e mantenha as atividades do ciclo atualizadas.' }
       : tab === 'files'
         ? { kicker: 'LINKS COMPARTILHADOS', title: 'Arquivos da equipe.', subtitle: 'Acesse atalhos visuais para as pastas compartilhadas.' }
-        : tab === 'announcements'
-          ? { kicker: 'MURAL DA EQUIPE', title: 'Comunicados da equipe.', subtitle: 'Compartilhe avisos com toda a equipe ou com uma área.' }
-          : tab === 'meetings'
-            ? { kicker: 'CHAMADAS AO VIVO · JITSI MEET', title: 'Reuniões da equipe.', subtitle: 'Inicie uma reunião incorporada ou entre em uma sala do Jitsi e convide participantes pelo link.' }
-            : tab === 'manual'
-              ? { kicker: 'CARGOS E CAPACITAÇÃO', title: 'Manual de funções.', subtitle: 'Consulte as responsabilidades de cada área e as competências a desenvolver.' }
-              : { kicker: 'CONVERSAS DA EQUIPE · CHAT', title: 'Chat', subtitle: 'Converse em grupo ou de forma privada, com chamadas, arquivos e leitura em tempo real.' };
+        : tab === 'conversations'
+          ? { kicker: conversationsSubtab === 'announcements' ? 'MURAL DA EQUIPE' : 'CONVERSAS DA EQUIPE', title: 'Conversas', subtitle: conversationsSubtab === 'announcements' ? 'Acesse o Chat e os comunicados da equipe em um só lugar.' : 'Converse em grupo ou de forma privada, com arquivos e leitura em tempo real.' }
+          : { kicker: 'CARGOS E CAPACITAÇÃO', title: 'Manual de funções.', subtitle: 'Consulte as responsabilidades de cada área e as competências a desenvolver.' };
 
   return (
     <section className="workspace-screen" aria-label="Espaço de trabalho Team Celeris">
       <header className="workspace-topbar">
         <a className="workspace-brand" href="#workspace" aria-label="Team Celeris">
           <img src="/assets/solmar-celeris-site-logo.png" alt="" />
-          <span><strong>Team Celeris</strong></span>
         </a>
         <nav className="workspace-nav" aria-label="Navegação principal">
           {workspaceTabs.map(({ id, label, icon: Icon }) => (
             <button key={id} type="button" title={label} aria-label={label} className={tab === id ? 'is-active' : ''} onClick={() => navigateToTab(id)} aria-current={tab === id ? 'page' : undefined}>
               <span className="workspace-nav-icon"><Icon aria-hidden="true" /></span>
-              <span className="workspace-nav-label">
-                {id === 'announcements' ? <>Comuni<wbr />cados</> : id === 'availability' ? <>Disponi<wbr />bilidades</> : label}
-              </span>
+              <span className="workspace-nav-label">{label}</span>
             </button>
           ))}
         </nav>
@@ -1129,7 +1128,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
       </header>
 
       <div className="workspace-frame">
-        <main className={`workspace-main${tab === 'chat' ? ' is-chat-page' : ''}${tab === 'home' ? ' is-home-page' : ''}`} id="workspace">
+        <main className={`workspace-main${tab === 'conversations' && conversationsSubtab === 'chat' ? ' is-chat-page' : ''}${tab === 'home' ? ' is-home-page' : ''}`} id="workspace">
           <div className="workspace-page-heading">
             <div>
               <p className="workspace-kicker">{pageHeading.kicker}</p>
@@ -1150,6 +1149,16 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
               )}
             </div>
           </div>
+
+          {tab === 'agenda' && <div className="workspace-module-tabs is-agenda" role="tablist" aria-label="Guias da Agenda">
+            <button type="button" role="tab" aria-selected={agendaSubtab === 'calendar'} className={agendaSubtab === 'calendar' ? 'is-active' : ''} onClick={() => navigateToAgendaSubtab('calendar')}><CalendarDays aria-hidden="true" /><span>Calendário</span></button>
+            <button type="button" role="tab" aria-selected={agendaSubtab === 'availability'} className={agendaSubtab === 'availability' ? 'is-active' : ''} onClick={() => navigateToAgendaSubtab('availability')}><ClockWithArrowsIcon size={20} /><span>Disponibilidades</span></button>
+            <button type="button" role="tab" aria-selected={agendaSubtab === 'meetings'} className={agendaSubtab === 'meetings' ? 'is-active' : ''} onClick={() => navigateToAgendaSubtab('meetings')}><Video aria-hidden="true" /><span>Reunião</span></button>
+          </div>}
+          {tab === 'conversations' && <div className="workspace-module-tabs is-conversations" role="tablist" aria-label="Guias de Conversas">
+            <button type="button" role="tab" aria-selected={conversationsSubtab === 'chat'} className={conversationsSubtab === 'chat' ? 'is-active' : ''} onClick={() => setConversationsSubtab('chat')}><MessageCircle aria-hidden="true" /><span>Chat</span></button>
+            <button type="button" role="tab" aria-selected={conversationsSubtab === 'announcements'} className={conversationsSubtab === 'announcements' ? 'is-active' : ''} onClick={() => setConversationsSubtab('announcements')}><Megaphone aria-hidden="true" /><span>Comunicados</span></button>
+          </div>}
 
           {(tab === 'activities' || tab === 'home') && <p className="workspace-permission-note">{permissionSummary}</p>}
 
@@ -1289,7 +1298,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
                           <article className={`workspace-week-event is-${event.event_scope}`} key={event.id}>
                             <div className="workspace-week-event-date"><CalendarDays aria-hidden="true" /><strong>{formatShortDate(event.event_date)}</strong>{event.start_time && <span>{event.start_time.slice(0, 5)}</span>}</div>
                             <div className="workspace-week-event-details"><span>{event.event_scope === 'internal' ? 'EVENTO INTERNO' : 'EVENTO EXTERNO'}</span><h4>{event.title}</h4>{event.location && <p>{event.location}</p>}</div>
-                            <button type="button" onClick={() => { setCalendarFocusDate(event.event_date); navigateToTab('calendar'); }}>Ver na Agenda</button>
+                            <button type="button" onClick={() => { setCalendarFocusDate(event.event_date); navigateToAgendaSubtab('calendar'); }}>Ver na Agenda</button>
                           </article>
                         ))}
                       </div>
@@ -1313,9 +1322,9 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
               </section>
               <section className="workspace-feed-card workspace-feed-shortcuts">
                 <p className="workspace-kicker">ATALHOS DA EQUIPE</p>
-                <button type="button" onClick={() => navigateToTab('calendar')}><CalendarDays aria-hidden="true" /> Abrir Agenda</button>
+                <button type="button" onClick={() => navigateToAgendaSubtab('calendar')}><CalendarDays aria-hidden="true" /> Abrir Agenda</button>
                 <button type="button" onClick={() => navigateToTab('activities')}><ClipboardList aria-hidden="true" /> Ver atividades</button>
-                <button type="button" onClick={() => navigateToTab('meetings')}><Video aria-hidden="true" /> Reuniões ao vivo</button>
+                <button type="button" onClick={() => navigateToAgendaSubtab('meetings')}><Video aria-hidden="true" /> Reuniões ao vivo</button>
                 {weekCalendarEvents.length > 0 && <p className="workspace-feed-events-count">{weekCalendarEvents.length} evento(s) na semana selecionada</p>}
               </section>
             </aside>
@@ -1377,15 +1386,18 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             </section>
           )}
 
-          {(tab === 'files' || tab === 'announcements') && (
-            <SharedContentWorkspace client={client} mode={tab} userId={userId} isAdmin={profile.role === 'admin'} areas={activeAreas} members={members} targetAnnouncementId={pushTarget?.type === 'announcement' ? pushTarget.itemId : undefined} />
+          {tab === 'files' && (
+            <SharedContentWorkspace client={client} mode="files" userId={userId} isAdmin={profile.role === 'admin'} areas={activeAreas} members={members} />
           )}
-          {tab === 'chat' && (
+          {tab === 'conversations' && conversationsSubtab === 'announcements' && (
+            <SharedContentWorkspace client={client} mode="announcements" userId={userId} isAdmin={profile.role === 'admin'} areas={activeAreas} members={members} targetAnnouncementId={pushTarget?.type === 'announcement' ? pushTarget.itemId : undefined} />
+          )}
+          {tab === 'conversations' && conversationsSubtab === 'chat' && (
             <TeamChat client={client} userId={userId} isAdmin={profile.role === 'admin'} members={members} initialMessageId={pushTarget?.type === 'chat' ? pushTarget.messageId : undefined} initialConversationId={pushTarget?.type === 'chat' ? pushTarget.conversationId : undefined} initialConversationType={pushTarget?.type === 'chat' ? pushTarget.conversationType : undefined} />
           )}
-          {tab === 'meetings' && <MeetingsWorkspace displayName={displayName} onRoomActiveChange={setJitsiRoomActive} />}
-          {tab === 'availability' && <AvailabilityWorkspace client={client} userId={userId} profile={profile} />}
-          {tab === 'calendar' && <TeamCalendar client={client} userId={userId} isAdmin={profile.role === 'admin'} initialDate={calendarFocusDate} initialEventId={pushTarget?.type === 'calendar' ? pushTarget.itemId : undefined} />}
+          {tab === 'agenda' && agendaSubtab === 'meetings' && <MeetingsWorkspace displayName={displayName} onRoomActiveChange={setJitsiRoomActive} />}
+          {tab === 'agenda' && agendaSubtab === 'availability' && <AvailabilityWorkspace client={client} userId={userId} profile={profile} />}
+          {tab === 'agenda' && agendaSubtab === 'calendar' && <TeamCalendar client={client} userId={userId} isAdmin={profile.role === 'admin'} initialDate={calendarFocusDate} initialEventId={pushTarget?.type === 'calendar' ? pushTarget.itemId : undefined} />}
           {tab === 'manual' && <ManualFunctions />}
 
           <footer className="workspace-footer" aria-label="Identidade do projeto">

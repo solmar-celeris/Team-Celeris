@@ -92,3 +92,12 @@
   .profile-menu-trigger-name { display: none !important; }
   .profile-menu-trigger-avatar { width: 34px; height: 34px; flex-basis: 34px; }
 }
+
+
+/* O cabeçalho mobile atual tem duas faixas compactas; o menu acompanha essa altura. */
+@media (max-width: 760px) {
+  .profile-menu-popover { top: 122px; max-height: calc(100dvh - 130px); }
+}
+@media (max-width: 420px) {
+  .profile-menu-popover { top: 118px; max-height: calc(100dvh - 126px); }
+}
