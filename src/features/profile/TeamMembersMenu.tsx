@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ChevronDown, LoaderCircle, MailPlus, RefreshCw, ShieldCheck, ShieldPlus, UserRound, Users, X } from 'lucide-react';
+import { ChevronDown, LoaderCircle, MailPlus, RefreshCw, ShieldPlus, UserRound, Users, X } from 'lucide-react';
 import './team-members-menu.css';
 
 type TeamMembersMenuProps = {
@@ -43,14 +43,18 @@ function statusLabel(status: string | null): string {
 
 async function invitationErrorMessage(error: unknown): Promise<string> {
   let code = '';
+  let message = '';
+  let httpStatus = 0;
   if (error && typeof error === 'object') {
     const value = error as { context?: unknown; message?: unknown };
-    if (typeof value.message === 'string') code = value.message;
+    if (typeof value.message === 'string') message = value.message.toLowerCase();
     if (value.context && typeof value.context === 'object') {
       const context = value.context as {
+        status?: unknown;
         clone?: () => { json?: () => Promise<unknown> };
         json?: () => Promise<unknown>;
       };
+      if (typeof context.status === 'number') httpStatus = context.status;
       try {
         const response = typeof context.clone === 'function' ? context.clone() : context;
         if (typeof response.json === 'function') {
@@ -66,11 +70,32 @@ async function invitationErrorMessage(error: unknown): Promise<string> {
       }
     }
   }
-  if (code.includes('email_already_registered')) {
+  if (code === 'email_already_registered' || httpStatus === 409) {
     return 'Este email já está cadastrado na equipe.';
   }
-  if (code.includes('email_rate_limited')) {
+  if (code === 'email_rate_limited' || httpStatus === 429) {
     return 'Muitos convites foram enviados recentemente. Aguarde antes de tentar novamente.';
+  }
+  if (code === 'server_not_configured') {
+    return 'A função de convite está sem configuração. Confira APP_LOGIN_URL (somente a origem HTTPS do site) e os secrets do runtime nas Edge Functions do Supabase.';
+  }
+  if (code === 'admin_required' || httpStatus === 403) {
+    return 'Somente um administrador ativo pode enviar convites. Atualize sua sessão e tente novamente.';
+  }
+  if (code === 'unauthorized' || httpStatus === 401) {
+    return 'Sua sessão expirou ou não foi autorizada. Saia e entre novamente antes de convidar.';
+  }
+  if (code === 'profile_lookup_failed') {
+    return 'Não foi possível validar sua função administrativa no Supabase. Confira a Edge Function e a migration de administração de membros.';
+  }
+  if (code === 'invite_delivery_failed') {
+    return 'O Supabase não conseguiu enviar o email. Verifique o SMTP e autorize a URL `/?flow=invite` em Authentication → URL Configuration; consulte também os logs de manage-team-members.';
+  }
+  if (code === 'invite_failed') {
+    return 'A função de convite encontrou um erro no servidor. Confira os logs de manage-team-members no Supabase.';
+  }
+  if (httpStatus === 404 || message.includes('failed to send a request') || message.includes('fetch')) {
+    return 'Não foi possível alcançar a função de convite. Confirme que manage-team-members foi publicada no Supabase com Verify JWT habilitado.';
   }
   return 'Não foi possível enviar o convite. Verifique os dados e tente novamente.';
 }
@@ -329,7 +354,7 @@ export default function TeamMembersMenu({ client, userId, isAdmin, onSelfProfile
                           onClick={() => void updateMember(member, 'suspend')}
                           disabled={busyUserId !== null}
                         >
-                          <ShieldCheck size={15} aria-hidden="true" />
+                          <X size={15} aria-hidden="true" />
                         </button>
                       </div>
                     )}

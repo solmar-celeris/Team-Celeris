@@ -117,6 +117,7 @@ const workspaceTabs: { id: WorkspaceTab; label: string; icon: WorkspaceTabIcon }
   { id: 'home', label: 'Início', icon: House },
   { id: 'activities', label: 'Atividades', icon: ClipboardList },
   { id: 'chat', label: 'Chat', icon: MessageCircle },
+  { id: 'meetings', label: 'Reuniões ao vivo', icon: Video },
   { id: 'announcements', label: 'Comunicados', icon: Megaphone },
   { id: 'availability', label: 'Disponibilidades', icon: ClockWithArrowsIcon },
   { id: 'calendar', label: 'Agenda', icon: CalendarDays },
@@ -1101,19 +1102,18 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
       <header className="workspace-topbar">
         <a className="workspace-brand" href="#workspace" aria-label="Team Celeris">
           <img src="/assets/solmar-celeris-site-logo.png" alt="" />
-          <span><strong>Team Celeris</strong><small>UFCI/RJ · ESPAÇO DA EQUIPE</small></span>
+          <span><strong>Team Celeris</strong></span>
         </a>
         <nav className="workspace-nav" aria-label="Navegação principal">
           {workspaceTabs.map(({ id, label, icon: Icon }) => (
             <button key={id} type="button" title={label} aria-label={label} className={tab === id ? 'is-active' : ''} onClick={() => navigateToTab(id)} aria-current={tab === id ? 'page' : undefined}>
               <span className="workspace-nav-icon"><Icon aria-hidden="true" /></span>
-              <span className="workspace-nav-label">{label}</span>
+              <span className="workspace-nav-label">
+                {id === 'announcements' ? <>Comuni<wbr />cados</> : id === 'availability' ? <>Disponi<wbr />bilidades</> : label}
+              </span>
             </button>
           ))}
         </nav>
-        <div className="workspace-members-slot">
-          <TeamMembersMenu client={client} userId={userId} isAdmin={profile.role === 'admin'} onSelfProfileChanged={onRefreshProfile} />
-        </div>
         <div className="workspace-top-actions">
           <ProfileMenu
             client={client}
@@ -1396,6 +1396,10 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             <small>· DADOS DO SUPABASE</small>
           </footer>
         </main>
+      </div>
+
+      <div className="workspace-members-dock">
+        <TeamMembersMenu client={client} userId={userId} isAdmin={profile.role === 'admin'} onSelfProfileChanged={onRefreshProfile} />
       </div>
 
       {dialogActivity !== false && (
