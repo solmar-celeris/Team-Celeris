@@ -85,9 +85,13 @@ alter table public.workspace_channel_files enable row level security;
 revoke all on public.workspace_channel_files from public, anon, authenticated;
 grant select, insert, delete on public.workspace_channel_files to authenticated;
 
+drop policy if exists workspace_channel_files_read on public.workspace_channel_files;
+
 create policy workspace_channel_files_read
 on public.workspace_channel_files for select to authenticated
 using (public.can_access_workspace_channel(channel_id));
+
+drop policy if exists workspace_channel_files_insert on public.workspace_channel_files;
 
 create policy workspace_channel_files_insert
 on public.workspace_channel_files for insert to authenticated
@@ -101,6 +105,8 @@ with check (
     (item_kind = 'upload' and storage_path like channel_id::text || '/%')
   )
 );
+
+drop policy if exists workspace_channel_files_delete_owner_admin on public.workspace_channel_files;
 
 create policy workspace_channel_files_delete_owner_admin
 on public.workspace_channel_files for delete to authenticated
@@ -128,6 +134,8 @@ on conflict (id) do update set
   file_size_limit = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
 
+drop policy if exists workspace_channel_files_storage_read on storage.objects;
+
 create policy workspace_channel_files_storage_read
 on storage.objects for select to authenticated
 using (
@@ -138,6 +146,8 @@ using (
       and public.can_access_workspace_channel(f.channel_id)
   )
 );
+
+drop policy if exists workspace_channel_files_storage_insert on storage.objects;
 
 create policy workspace_channel_files_storage_insert
 on storage.objects for insert to authenticated
@@ -151,6 +161,8 @@ with check (
     else false
   end
 );
+
+drop policy if exists workspace_channel_files_storage_delete_owner_admin on storage.objects;
 
 create policy workspace_channel_files_storage_delete_owner_admin
 on storage.objects for delete to authenticated

@@ -67,6 +67,11 @@ const roles: ManualRole[] = [
       'Apoiar a formalização financeira de patrocínios e registrar recursos recebidos.',
       'Manter controles atualizados e disponibilizar informações à Coordenação Geral.',
     ],
+    fronts: [
+      { name: 'Gestão Financeira e Orçamentária', responsibilities: ['Planejar e atualizar o orçamento do projeto, acompanhando receitas, despesas e saldo disponível.', 'Manter fluxo de caixa, previsões de custos e controles financeiros atualizados.', 'Organizar comprovantes e registros para prestação de contas.'] },
+      { name: 'Compras e Fornecedores', responsibilities: ['Levantar necessidades de materiais e serviços junto às áreas.', 'Realizar cotações, comparar propostas, negociar condições e registrar decisões de compra.', 'Acompanhar pedidos, pagamentos, prazos e recebimento dos itens.'] },
+      { name: 'Patrimônio e Documentação', responsibilities: ['Manter inventário de equipamentos, ferramentas, materiais e bens do projeto.', 'Registrar entradas, saídas, responsáveis e movimentações patrimoniais.', 'Organizar documentos administrativos, contratos, notas fiscais e registros de patrocínios.'] },
+    ],
     tools: ['Excel ou Google Sheets e armazenamento compartilhado.', 'Orçamento, controle de custos, compras, negociação, gestão documental, inventário, patrimônio e prestação de contas.'],
     training: ['Excel intermediário ou planilhas equivalentes.', 'Gestão financeira de projetos.', 'Compras, negociação, controle de custos e gestão patrimonial.'],
     deliverables: ['Orçamento atualizado e fluxo de caixa.', 'Controles de receitas e despesas.', 'Registros de compras, cotações, materiais e patrimônio.', 'Documentos de apoio à prestação de contas e formalização de patrocínios.'],
@@ -178,10 +183,15 @@ const roles: ManualRole[] = [
 ];
 
 export function getManualRoleHtml(areaFilter: string): string {
-  const role = roles.find((item) => item.area.toLocaleLowerCase('pt-BR').includes(areaFilter.toLocaleLowerCase('pt-BR')));
+  const normalized = (value: string) => value.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const role = roles.find((item) => normalized(item.area).includes(normalized(areaFilter)));
   if (!role) return '';
-  const section = (title: string, items: string[]) => `<p><strong>${title}</strong></p><ul>${items.map((item) => `<li>${item}</li>`).join('')}</ul>`;
-  return `<p><strong>${role.area}</strong></p><p>${role.summary}</p>${section('Responsabilidades', role.responsibilities)}${section('Ferramentas e conhecimentos', role.tools)}${section('Capacitação recomendada', role.training)}${section('Entregas esperadas', role.deliverables)}`;
+  const list = (items: string[]) => `<ul>${items.map((item) => `<li>${item}</li>`).join('')}</ul>`;
+  const section = (title: string, items: string[]) => `<p><strong>${title}</strong></p>${list(items)}`;
+  const fronts = role.fronts?.length
+    ? `<p><strong>Frentes internas de ${role.area}</strong></p><div class="manual-role-front-grid">${role.fronts.map((front) => `<div><p><strong>${front.name}</strong></p>${list(front.responsibilities)}</div>`).join('')}</div>`
+    : '';
+  return `<p><strong>ÁREA DIRETA</strong></p><p><strong>${role.area}</strong></p><p>${role.summary}</p><hr>${section('Responsabilidades', role.responsibilities)}${fronts}<hr>${section('Ferramentas e conhecimentos', role.tools)}${section('Capacitação recomendada', role.training)}${section('Entregas esperadas', role.deliverables)}`;
 }
 
 const transversal = [

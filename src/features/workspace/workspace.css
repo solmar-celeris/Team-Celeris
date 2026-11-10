@@ -1587,3 +1587,73 @@
   .workspace-nav button { min-width: 54px !important; padding-inline: 4px !important; }
   .workspace-nav-label { font-size: 7.5px !important; }
 }
+
+/* Mobile: diretório de Membros fixo na lateral direita, recolhido como uma aba vertical. */
+@media (max-width: 760px) {
+  .workspace-members-dock {
+    position: fixed;
+    z-index: 90;
+    top: 50%;
+    right: 0;
+    bottom: auto;
+    width: 42px;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+  .workspace-members-dock .team-members-menu {
+    width: 100%;
+    justify-content: flex-end;
+    pointer-events: auto;
+  }
+  .workspace-members-dock .team-members-trigger {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    min-width: 42px;
+    min-height: 126px;
+    gap: 9px;
+    padding: 12px 5px;
+    border: 1px solid rgba(255,255,255,.24);
+    border-right: 0;
+    border-radius: 12px 0 0 12px;
+    writing-mode: vertical-rl;
+    color: #fff;
+    background: #014b89;
+    box-shadow: -5px 0 22px rgba(0,32,58,.2);
+    font-size: 11px;
+  }
+  .workspace-members-dock .team-members-trigger-label {
+    display: inline;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    letter-spacing: .04em;
+  }
+  .workspace-members-dock .team-members-trigger-chevron {
+    display: inline;
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    transform: rotate(90deg);
+  }
+  .workspace-members-dock .team-members-trigger svg {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+  }
+  .workspace-members-dock .team-members-panel {
+    top: 50%;
+    right: calc(100% + 8px);
+    bottom: auto;
+    width: min(350px, calc(100vw - 66px));
+    max-height: min(78dvh, 650px);
+    transform: translateY(-50%);
+  }
+}
+
+@media (max-width: 380px) {
+  .workspace-members-dock { width: 36px; }
+  .workspace-members-dock .team-members-trigger { width: 36px; min-width: 36px; min-height: 112px; }
+  .workspace-members-dock .team-members-panel { width: calc(100vw - 58px); }
+}

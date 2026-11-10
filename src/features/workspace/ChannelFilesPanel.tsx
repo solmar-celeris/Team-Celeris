@@ -34,7 +34,15 @@ export default function ChannelFilesPanel({ client, channelId, userId, isAdmin, 
   const [notice, setNotice] = useState('');
   const load = useCallback(async () => {
     const { data, error: queryError } = await client.from('workspace_channel_files').select('id,channel_id,name,item_kind,storage_path,external_url,content_type,file_size,added_by,created_at').eq('channel_id', channelId).order('created_at', { ascending: false });
-    if (queryError) setError('Não foi possível carregar os arquivos. Aplique a migration de arquivos por canal.');
+    if (queryError) {
+      const missingTable = queryError.code === '42P01' || queryError.code === 'PGRST205';
+      const denied = queryError.code === '42501' || /permission|policy|rls/i.test(queryError.message);
+      setError(missingTable
+        ? 'A estrutura de arquivos ainda não existe no Supabase. Aplique a migration 20261110160000_workspace_it_privacy_and_channel_files.sql e atualize o schema da API.'
+        : denied
+          ? 'O Supabase bloqueou a leitura dos arquivos deste canal. Confira a policy workspace_channel_files_read e a associação do usuário ao canal.'
+          : `Falha ao carregar arquivos (${queryError.code || 'sem código'}): ${queryError.message}`);
+    }
     else { setItems((data ?? []) as Item[]); setError(''); }
     setLoading(false);
   }, [channelId, client]);
