@@ -450,3 +450,6 @@
   .team-chat-read-details { gap: 12px; padding: 12px; }
   .team-chat-message-actions button { min-height: 40px; font-size: 10px; }
 }
+.team-chat-read-summary{margin:2px 0 0;color:var(--muted);font-size:9px;line-height:1.35;text-align:right;overflow-wrap:anywhere}
+:root[data-theme="dark"] .team-chat-read-summary{color:#a9bbca}
+@media(max-width:600px){.team-chat-read-summary{font-size:10px;max-width:100%}}

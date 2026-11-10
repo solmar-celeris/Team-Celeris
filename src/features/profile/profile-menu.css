@@ -101,3 +101,11 @@
 @media (max-width: 420px) {
   .profile-menu-popover { top: 118px; max-height: calc(100dvh - 126px); }
 }
+@media (max-width: 760px) {
+  .profile-menu-popover { top: 58px !important; right: 7px !important; max-height: calc(100dvh - 66px) !important; }
+  .profile-menu-trigger { width: 36px !important; min-width: 36px !important; max-width: 36px !important; height: 36px !important; min-height: 36px !important; padding: 2px !important; }
+  .profile-menu-trigger-avatar { width: 30px !important; height: 30px !important; flex-basis: 30px !important; }
+}
+@media (max-width: 420px) {
+  .profile-menu-trigger { width: 34px !important; min-width: 34px !important; max-width: 34px !important; }
+}

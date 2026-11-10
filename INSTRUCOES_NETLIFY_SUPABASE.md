@@ -197,6 +197,10 @@ No projeto Supabase ligado ao site, confira primeiro o histórico de migrations 
 16. `supabase/migrations/20261109231000_team_chat_user_hidden_conversations.sql` — etapa histórica, agora descontinuada. Se já foi aplicada, mantenha tabela/registros; **se ainda não foi aplicada, pule-a**, pois o front-end atual não depende dela. Não a reaplique.
 17. `supabase/migrations/20261110100000_member_removed_enum.sql` — acrescenta o estado terminal `removed` ao vínculo da equipe, sem apagar usuário Auth, perfil ou histórico.
 18. `supabase/migrations/20261110101000_chat_global_delete_member_revocation.sql` — autoriza a exclusão global via funções de servidor, cria a fila privada para limpeza de Storage, habilita cascata segura de mensagens ao apagar um grupo e acrescenta a RPC administrativa de revogação definitiva. RLS permanece ativo; as RPCs de exclusão só executam com `service_role` no runtime da Edge Function.
+19. `supabase/migrations/20261110112000_workspace_channels.sql` — cria os canais iniciais por área, membros de canais privados, RLS de leitura/gestão e a tabela `workspace_manuals`; associa a estrutura existente por `area_id` sem recriar atividades, comunicados ou pastas.
+20. `supabase/migrations/20261110113000_workspace_manual_storage.sql` — cria o bucket privado dos documentos originais PDF/DOCX dos manuais e políticas de Storage por canal.
+21. `supabase/migrations/20261110114000_workspace_channels_area_seed_fix.sql` — corrige de forma idempotente o vínculo do canal Elétrica ao slug atual `eletrica`, mantendo o UUID do canal quando já existir.
+22. `supabase/migrations/20261110115000_workspace_channel_content_permissions.sql` — aplica o isolamento por canal a atividades, atualizações semanais, histórico, anexos, PERT/CPM, WIP, comunicados, respostas, reações, enquetes, links e Storage; também limita RPCs de edição/remoção ao canal autorizado.
 
 As migrations de anexos criam buckets Supabase Storage **privados**, com limite de 15 MiB e formatos permitidos. Não torne `activity-attachments`, `announcement-attachments`, `team-chat-attachments`, `team-chat-audio` ou `team-chat-group-photos` públicos, não desative RLS e não coloque `service_role` em Netlify/Vite ou no navegador. No Scrumban, os limites WIP começam sem número configurado; a Administração pode configurar limite por etapa e área após observar o fluxo, sem limite arbitrário fixo. O estágio do quadro é separado do status semanal. Em **Conversas → Chat**, integrantes ativos criam DMs e grupos e participantes/Admins veem grupos; foto de grupo JPEG/PNG/WebP de até 3 MiB fica em bucket privado. Qualquer integrante ativo pode apagar uma mensagem para todos na sala geral, em grupo ou DM. Integrantes podem apagar uma conversa direta ou um grupo para todos; a sala geral não pode ser apagada. O conteúdo do banco é removido permanentemente, e a fila de limpeza tenta apagar áudios/anexos/foto do Storage; se houver falha, ela permanece pendente e a próxima abertura do Chat tenta novamente. URLs assinadas previamente emitidas podem funcionar até expirarem. A tabela antiga de ocultação individual e seus dados ficam preservados, mas a interface já não oferece **Apagar só para mim** nem **Ocultas**. Recibos de DMs seguem restritos aos participantes e não são listados para terceiros.
 
@@ -271,3 +275,34 @@ Em **Arquivos**, integrantes ativos podem editar nome, link, área e descrição
 
 Depois da migration e da Edge Function, envie a versão deste pacote ao GitHub conectado ao mesmo Netlify e confira `pnpm build`. O Median apenas carrega o site já publicado; não é necessário alterar a permissão de microfone/câmera nem substituir a chave OneSignal para este recurso. O código foi validado localmente; as migrations e a Edge Function não foram aplicadas/publicadas no projeto remoto por esta entrega.
 
+
+
+## 20. Canais por área, diretório com DM e manuais (10/11/2026)
+
+O seletor de canais está integrado ao cabeçalho, ao lado do perfil; no mobile, logo, abas roláveis, menu de canais e perfil ficam em uma única linha. O Canal Geral apresenta o feed e a visão consolidada; os canais de área filtram Atividades, Comunicados e Arquivos pelo `area_id` existente, sem mover nem recriar os registros. Os seis canais iniciais devem permanecer abertos; canais privados usam `workspace_channel_members` e a função `can_access_workspace_channel` no banco. Somente Administradores podem criar canais e administrar seus convites. Geral e os seis canais fixos têm proteção no banco para permanecerem abertos e não poderem ser renomeados/excluídos. O diretório Membros mostra somente perfis ativos, inclui e-mail via RPC, abre DM ao selecionar a ação de conversa, permite criar grupos pelo próprio diretório e mantém a revogação definitiva sem excluir Auth ou histórico.
+
+### Migrations adicionais
+
+Depois de conferir o histórico de migrations, aplique somente as ausentes, nesta ordem, após `20261110101000_chat_global_delete_member_revocation.sql`:
+
+1. `20261110112000_workspace_channels.sql` — se ainda não estiver aplicada.
+2. `20261110113000_workspace_manual_storage.sql` — cria o bucket privado `workspace-manuals`, com limite de 20 MiB e MIME PDF/DOCX; leitura respeita o canal e upload/edição/remoção exigem Administrador ativo. Também habilita Realtime para `workspace_manuals`.
+3. `20261110114000_workspace_channels_area_seed_fix.sql` — corrige a associação do canal Elétrica ao slug `eletrica` após a renomeação da antiga área Energia, protege os sete canais fixos para permanecerem abertos e mantém os UUIDs/históricos.
+4. `20261110115000_workspace_channel_content_permissions.sql` — reforça RLS e RPCs para que dados, atualizações, anexos e conteúdo secundário de canais privados não possam ser lidos ou alterados por não participantes.
+
+A migration `20261110112000_workspace_channels.sql` foi corrigida no pacote para usar `area_slug='eletrica'` na criação inicial. A migration corretiva seguinte cobre instalações em que o arquivo anterior já tenha sido aplicado com a associação ausente. Canais adicionais sem `area_id` podem guardar seu Manual próprio, mas ainda não recebem Atividades/Comunicados/Arquivos; para suportar isso, será necessária uma evolução com `channel_id` explícito nessas tabelas.
+
+### Upload e extração dos manuais
+
+Em **Geral → Manual de Conduta** e em cada canal de área → **Manual de Função**, Administradores podem enviar PDF/DOCX, escolher adicionar o texto ao conteúdo existente ou substituí-lo, editar o texto extraído e baixar o arquivo original por URL assinada temporária. O bucket é privado. A extração de DOCX usa a estrutura Open XML no navegador; a extração de PDF lê texto disponível nos streams do documento. PDFs digitalizados ou protegidos sem camada de texto exigem OCR externo e podem precisar que o texto seja colado no editor.
+
+### Testes antes de publicar
+
+- Entrar como Administrador e como Membro: confirmar que ambos veem Geral e os seis canais abertos; somente Admin vê **Criar canal** e os controles de gestão de canais.
+- Criar canal privado, adicionar duas contas e confirmar que uma terceira conta não vê o canal nem seus dados.
+- Conferir que atividades, comunicados e pastas com `area_id` ficam no canal correspondente e que registros sem área continuam no Geral.
+- Clicar no ícone de conversa de um membro ativo e confirmar que a DM abre no Chat; testar criação de grupo por membro comum.
+- Enviar mensagem em DM/grupo e conferir os recibos sob a mensagem própria, tanto em desktop quanto em mobile.
+- Enviar DOCX e PDF com texto selecionável, confirmar extração, edição e download original; testar acesso negado a usuário fora do canal.
+
+Nenhuma migration ou deploy remoto foi executado nesta sessão. O projeto precisa ser validado com `pnpm install --frozen-lockfile`, `pnpm typecheck` e `pnpm build` em ambiente com dependências instaladas antes do deploy.

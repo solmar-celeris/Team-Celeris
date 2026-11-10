@@ -52,3 +52,14 @@ Leia [`INSTRUCOES_NETLIFY_SUPABASE.md`](./INSTRUCOES_NETLIFY_SUPABASE.md) antes 
 ## Desenvolvimento local
 
 Copie `.env.example` para `.env.local` e configure a URL e chave publishable do Supabase. Para Web Push desktop, defina também `VITE_ONESIGNAL_APP_ID` como o App ID público do app OneSignal já usado pelo projeto. Não coloque REST API Key ou service role em variáveis `VITE_*` e não compartilhe nem envie `.env.local`. Na raiz do projeto, execute `pnpm install` e `pnpm dev`. Para build: `pnpm build`.
+
+
+## Canais por área e manuais editáveis (10/11/2026)
+
+- O workspace agora integra o seletor de canais no cabeçalho, com canais abertos/privados, gestão de membros de canal por Administradores e navegação contextual. Atividades, pastas e comunicados são filtrados pelo `area_id` do canal; o Canal Geral mantém os registros sem área e a visão consolidada de atividades.
+- O diretório Membros consulta o RPC `get_team_member_directory`, mostra nome/e-mail/função dos perfis ativos, permite iniciar uma DM diretamente pelo membro, criar grupos a partir do próprio diretório e oferece promoção, rebaixamento de Administrador e revogação definitiva do vínculo.
+- Os recibos das mensagens próprias exibem abaixo do balão quem visualizou (ou a contagem resumida), além do painel detalhado já existente.
+- Manuais por canal usam `workspace_manuals`; Administradores podem enviar PDF/DOCX, extrair texto no navegador, editar o texto e baixar o original privado. A página de Manual de Função mantém como fallback a descrição de cargo já incorporada ao app.
+- Migrations novas: `20261110113000_workspace_manual_storage.sql` (bucket privado dos originais) e `20261110114000_workspace_channels_area_seed_fix.sql` (associação da área Elétrica e proteção dos canais fixos) e `20261110115000_workspace_channel_content_permissions.sql` (RLS de conteúdo por canal, incluindo atividades, histórico, anexos, PERT/CPM, WIP e comunicados). A migration `20261110112000_workspace_channels.sql` também foi corrigida para instalações que ainda não a aplicaram.
+
+Canais adicionais sem `area_id` aceitam o Manual próprio, mas ainda não recebem Atividades/Comunicados/Arquivos; para isso, falta uma evolução com `channel_id` explícito nas tabelas desses módulos. Nenhuma migration foi aplicada ao Supabase remoto. Confira o histórico e aplique somente as migrations que ainda faltam, após backup.

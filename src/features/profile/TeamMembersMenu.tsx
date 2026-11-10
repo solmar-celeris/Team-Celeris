@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ChevronDown, LoaderCircle, MailPlus, RefreshCw, ShieldPlus, Trash2, UserRound, Users, X } from 'lucide-react';
+import { ChevronDown, LoaderCircle, MailPlus, MessageCircle, RefreshCw, ShieldMinus, ShieldPlus, Trash2, UserRound, Users, X } from 'lucide-react';
 import './team-members-menu.css';
 
 type TeamMembersMenuProps = {
@@ -8,11 +8,14 @@ type TeamMembersMenuProps = {
   userId: string;
   isAdmin: boolean;
   onSelfProfileChanged: () => void | Promise<void>;
+  onStartConversation: (userId: string) => void;
+  onCreateGroup: () => void;
 };
 
 type TeamMember = {
   user_id: string;
   full_name: string | null;
+  email: string | null;
   role: string | null;
   status: string | null;
   area_id: string | null;
@@ -35,12 +38,6 @@ function roleLabel(role: string | null): string {
   return role || 'Função não definida';
 }
 
-function statusLabel(status: string | null): string {
-  if (status === 'active') return 'Ativo';
-  if (status === 'suspended') return 'Suspenso';
-  if (status === 'removed') return 'Acesso removido';
-  return status || 'Status não definido';
-}
 
 async function invitationErrorMessage(error: unknown): Promise<string> {
   let code = '';
@@ -101,7 +98,7 @@ async function invitationErrorMessage(error: unknown): Promise<string> {
   return 'Não foi possível enviar o convite. Verifique os dados e tente novamente.';
 }
 
-export default function TeamMembersMenu({ client, userId, isAdmin, onSelfProfileChanged }: TeamMembersMenuProps) {
+export default function TeamMembersMenu({ client, userId, isAdmin, onSelfProfileChanged, onStartConversation, onCreateGroup }: TeamMembersMenuProps) {
   const [open, setOpen] = useState(false);
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -126,15 +123,20 @@ export default function TeamMembersMenu({ client, userId, isAdmin, onSelfProfile
     if (manual) setRefreshing(true);
     const request = (async () => {
       try {
-        const { data, error } = await client
-          .from('profiles')
-          .select('user_id,full_name,role,status,area_id')
-          .order('full_name', { ascending: true });
-        if (error) throw error;
-        const roster = (data ?? []) as unknown as TeamMember[];
-        setMembers(roster.filter((member) => member.status !== 'removed'));
+        const [directoryResult, ownProfileResult] = await Promise.all([
+          client.rpc('get_team_member_directory'),
+          client.from('profiles').select('user_id,role,status').eq('user_id', userId).maybeSingle(),
+        ]);
+        if (ownProfileResult.error) throw ownProfileResult.error;
+        let roster: TeamMember[];
+        if (directoryResult.error) {
+          const fallback = await client.from('profiles').select('user_id,full_name,role,status,area_id').eq('status', 'active').order('full_name', { ascending: true });
+          if (fallback.error) throw directoryResult.error;
+          roster = ((fallback.data ?? []) as Omit<TeamMember, 'email'>[]).map((member) => ({ ...member, email: null }));
+        } else roster = (directoryResult.data ?? []) as TeamMember[];
+        setMembers(roster.filter((member) => member.status === 'active'));
         setListError('');
-        const ownProfile = roster.find((member) => member.user_id === userId);
+        const ownProfile = ownProfileResult.data as { user_id: string; role: string | null; status: string | null } | null;
         if (ownProfile && ownProfile.status !== 'active' && !signOutStartedRef.current) {
           signOutStartedRef.current = true;
           void client.auth.signOut().catch(() => undefined);
@@ -214,24 +216,24 @@ export default function TeamMembersMenu({ client, userId, isAdmin, onSelfProfile
   const selfMember = members.find((member) => member.user_id === userId);
   const canManageMembers = isAdmin && selfMember?.status === 'active';
 
-  async function updateMember(member: TeamMember, action: 'promote' | 'remove') {
+  async function updateMember(member: TeamMember, action: 'promote' | 'demote' | 'remove') {
     if (!canManageMembers || member.user_id === userId || busyUserId) return;
-    if (action === 'remove' && !window.confirm('Revogar definitivamente o vínculo desta pessoa? A conta Auth e o histórico serão preservados, mas ela perderá o acesso à equipe. Esta ação não é uma exclusão da conta.')) return;
+    if (action === 'remove' && !window.confirm('Excluir este membro da equipe? O acesso será revogado permanentemente. A conta Auth e o histórico serão preservados.')) return;
     setBusyUserId(member.user_id);
     setActionError('');
     setNotice('');
     try {
       const { error } = await client.rpc(
-        action === 'promote' ? 'admin_promote_team_member' : 'admin_remove_team_member',
+        action === 'promote' ? 'admin_promote_team_member' : action === 'demote' ? 'admin_demote_team_member' : 'admin_remove_team_member',
         { p_user_id: member.user_id },
       );
       if (error) throw error;
       await loadMembers(false, true);
-      setNotice(action === 'promote' ? 'Permissão de administrador atualizada.' : 'Vínculo removido. A conta Auth e o histórico foram preservados; o acesso à equipe foi revogado.');
+      setNotice(action === 'promote' ? 'Permissão de administrador atualizada.' : action === 'demote' ? 'Administrador convertido em membro.' : 'Membro excluído da equipe. A conta Auth e o histórico foram preservados; o acesso foi revogado.');
     } catch {
-      setActionError(action === 'promote'
-        ? 'Não foi possível atualizar a função. Tente novamente ou fale com um administrador.'
-        : 'Não foi possível revogar o vínculo. Confirme que as migrations de membros foram aplicadas.');
+      setActionError(action === 'remove'
+        ? 'Não foi possível excluir o membro. Confirme que as migrations de membros foram aplicadas.'
+        : 'Não foi possível atualizar a função. Tente novamente ou fale com um administrador.');
     } finally {
       setBusyUserId(null);
     }
@@ -290,6 +292,7 @@ export default function TeamMembersMenu({ client, userId, isAdmin, onSelfProfile
               <h2>Membros da equipe</h2>
             </div>
             <div className="team-members-heading-actions">
+              <button className="team-members-icon-button" type="button" title="Criar grupo de conversa" aria-label="Criar grupo de conversa" onClick={() => { setOpen(false); onCreateGroup(); }}><Users size={16} aria-hidden="true" /></button>
               <button
                 className="team-members-icon-button"
                 type="button"
@@ -322,12 +325,14 @@ export default function TeamMembersMenu({ client, userId, isAdmin, onSelfProfile
                     <span className="team-member-avatar" aria-hidden="true">{initialFrom(name)}</span>
                     <div className="team-member-details">
                       <span className="team-member-name">{name}</span>
-                      <span className="team-member-meta">{roleLabel(member.role)} <span aria-hidden="true">·</span> {statusLabel(member.status)}</span>
+                      <span className="team-member-meta">{member.email || 'Email não disponível'}</span>
+                      <span className="team-member-meta">{roleLabel(member.role)} · Ativo</span>
                       <span className={`team-member-presence${online ? ' is-online' : ''}`}>
                         <span className="team-member-presence-dot" aria-hidden="true" />
                         {online ? 'Online' : 'Offline'}
                       </span>
                     </div>
+                    {member.status === 'active' && member.user_id !== userId && <button className="team-member-action" type="button" title={`Conversar com ${name}`} aria-label={`Conversar com ${name}`} onClick={() => { setOpen(false); onStartConversation(member.user_id); }}><MessageCircle size={15} aria-hidden="true" /></button>}
                     {canActOnMember && (
                       <div className="team-member-actions" aria-label={`Ações para ${name}`}>
                         {member.status === 'active' && member.role !== 'admin' && (
@@ -342,11 +347,16 @@ export default function TeamMembersMenu({ client, userId, isAdmin, onSelfProfile
                             {busyUserId === member.user_id ? <LoaderCircle size={15} className="team-members-spinner" aria-hidden="true" /> : <ShieldPlus size={15} aria-hidden="true" />}
                           </button>
                         )}
+                        {member.status === 'active' && member.role === 'admin' && (
+                          <button className="team-member-action" type="button" title="Tirar administrador" aria-label="Tirar administrador" onClick={() => void updateMember(member, 'demote')} disabled={busyUserId !== null}>
+                            {busyUserId === member.user_id ? <LoaderCircle size={15} className="team-members-spinner" aria-hidden="true" /> : <ShieldMinus size={15} aria-hidden="true" />}
+                          </button>
+                        )}
                         <button
                           className="team-member-action is-danger"
                           type="button"
-                          title="Revogar o vínculo permanentemente"
-                          aria-label="Revogar o vínculo permanentemente"
+                          title="Excluir membro"
+                          aria-label="Excluir membro"
                           onClick={() => void updateMember(member, 'remove')}
                           disabled={busyUserId !== null}
                         >

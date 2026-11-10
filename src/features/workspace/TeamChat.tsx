@@ -23,6 +23,8 @@ type ChatMember = Pick<MemberProfile, 'user_id' | 'full_name' | 'avatar_path'>;
 type TeamChatProps = {
   client: SupabaseClient; userId: string; isAdmin: boolean; members: ChatMember[];
   initialMessageId?: string; initialConversationId?: string | null; initialConversationType?: 'team' | 'group' | 'direct';
+  initialDirectUserId?: string | null; onInitialDirectHandled?: () => void;
+  openCreateGroup?: boolean; onCreateGroupHandled?: () => void;
 };
 const PAGE_SIZE = 50;
 const MESSAGE_LIMIT = 2000;
@@ -120,7 +122,7 @@ function chatError(error: unknown): string {
   if (details.code === '23505') return 'Essa conversa ou participante já existe. Atualize a lista de conversas.';
   return details.message || 'Não foi possível concluir a operação. Confira a conexão e tente novamente.';
 }
-export default function TeamChat({ client, userId, isAdmin, members, initialMessageId, initialConversationId, initialConversationType }: TeamChatProps) {
+export default function TeamChat({ client, userId, isAdmin, members, initialMessageId, initialConversationId, initialConversationType, initialDirectUserId, onInitialDirectHandled, openCreateGroup, onCreateGroupHandled }: TeamChatProps) {
   const [messages, setMessages] = useState<TeamChatMessage[]>([]);
   const [groups, setGroups] = useState<TeamChatGroup[]>([]);
   const [groupMembers, setGroupMembers] = useState<TeamChatGroupMember[]>([]);
@@ -741,6 +743,17 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
     } catch (actionError) { setError(chatError(actionError)); }
   }
 
+  useEffect(() => {
+    if (!initialDirectUserId) return;
+    void startDirect(initialDirectUserId).finally(() => onInitialDirectHandled?.());
+  }, [initialDirectUserId, onInitialDirectHandled]);
+
+  useEffect(() => {
+    if (!openCreateGroup) return;
+    setGroupDialogError(''); setGroupDialogMode('create');
+    onCreateGroupHandled?.();
+  }, [openCreateGroup, onCreateGroupHandled]);
+
   async function handleGroupDialogSubmit(value: { name: string; memberIds: string[] }) {
     if (!groupDialogMode || groupActionBusy) return;
     setGroupActionBusy(true); setGroupDialogError(''); setError(''); setFeedback('');
@@ -792,10 +805,6 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
         </div>
       </div>
       <div className="team-chat-shell">
-        <aside className="team-chat-members-sidebar">
-           <h3>Membros</h3>
-           {members.map(m => <button onClick={() => startDirect(m.user_id)}>{m.full_name}</button>)}
-        </aside>
         {showMobileConversations && <button className="team-chat-drawer-backdrop" type="button" aria-label="Fechar lista de conversas" onClick={() => setShowMobileConversations(false)} />}
         <nav className={`team-chat-channels${showMobileConversations ? ' is-mobile-open' : ''}`} aria-label="Conversas do Chat">
           <p className="team-chat-channels-title">CHAT · CONVERSAS</p>
@@ -841,6 +850,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
                 const sender = getMember(message.sender_id); const senderName = message.sender_id === userId && !activeGroupId ? 'Você' : sender?.full_name || (message.sender_id === userId ? 'Você' : 'Integrante da equipe');
                 const readers = (readByMessage[message.id] ?? []).filter((readerId) => readerId !== userId && memberById.has(readerId) && (!activeGroupId || activeGroupMemberIds.has(readerId)));
                 const readCount = readers.length;
+                const readerNames = readers.map((readerId) => memberNames.get(readerId) || 'Integrante');
                 const previous = messages[index - 1]; const showDay = !previous || new Date(previous.created_at).toDateString() !== new Date(message.created_at).toDateString();
                 return <div className="team-chat-message-row-wrap" key={message.id}>{showDay && <div className="team-chat-day-divider"><span>{dayLabel(message.created_at)}</span></div>}
                   <div className={`team-chat-message-row${message.sender_id === userId ? ' is-own' : ''}`}>{!activeDirectId && avatar(message.sender_id, senderName, 'md')}
@@ -856,6 +866,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
                         : <span className="team-chat-audio-loading">Carregando anexo…</span>)}
                       {message.body === 'Mensagem de áudio' && !message.audio_path && <p>Mensagem de áudio indisponível.</p>}
                       <div className="team-chat-message-time"><time dateTime={message.created_at}>{timeLabel(message.created_at)}</time>{message.sender_id === userId && <span className={readCount ? 'is-read' : ''} aria-label={readCount ? (activeGroupId ? `Lida por ${readCount} integrante(s)` : 'Lida') : 'Enviada'} title={readCount ? (activeGroupId ? `Lida por ${readCount} integrante(s)` : 'Lida') : 'Enviada'}>{readCount ? '✓✓' : '✓'}{readCount > 0 && <small>{activeGroupId ? `Lida por ${readCount}` : 'Lida'}</small>}</span>}</div>
+                      {message.sender_id === userId && <p className="team-chat-read-summary">{readCount ? `Visto por ${readerNames.length > 3 ? `${readerNames.slice(0, 3).join(', ')} e mais ${readerNames.length - 3}` : readerNames.join(', ')}` : 'Ainda não visualizada'}</p>}
                       {message.sender_id === userId && canDeleteCurrentConversation && (() => {
                         const recipientIds = (activeGroupId
                           ? groupMembers.filter((item) => item.group_id === activeGroupId).map((item) => item.user_id)

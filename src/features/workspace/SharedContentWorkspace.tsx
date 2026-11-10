@@ -15,6 +15,8 @@ type SharedContentWorkspaceProps = {
   areas: Pick<Area, 'id' | 'name'>[];
   members: Pick<MemberProfile, 'user_id' | 'full_name'>[];
   targetAnnouncementId?: string;
+  areaId: string | null;
+  isGeneralChannel: boolean;
 };
 type DriveFolder = {
   id: string;
@@ -112,7 +114,7 @@ function formatDate(value: string): string {
   return new Date(value).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-export default function SharedContentWorkspace({ client, mode, userId, isAdmin, areas, members, targetAnnouncementId }: SharedContentWorkspaceProps) {
+export default function SharedContentWorkspace({ client, mode, userId, isAdmin, areas, members, targetAnnouncementId, areaId, isGeneralChannel }: SharedContentWorkspaceProps) {
   const [folders, setFolders] = useState<DriveFolder[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,8 +125,8 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
   const [folderFormOpen, setFolderFormOpen] = useState(false);
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [announcementFormOpen, setAnnouncementFormOpen] = useState(false);
-  const [folderForm, setFolderForm] = useState<FolderForm>(emptyFolderForm);
-  const [announcementForm, setAnnouncementForm] = useState<AnnouncementForm>(emptyAnnouncementForm);
+  const [folderForm, setFolderForm] = useState<FolderForm>(() => ({ ...emptyFolderForm, areaId: areaId ?? '' }));
+  const [announcementForm, setAnnouncementForm] = useState<AnnouncementForm>(() => ({ ...emptyAnnouncementForm, areaId: areaId ?? '' }));
   const [confirmFolderId, setConfirmFolderId] = useState<string | null>(null);
   const [confirmAnnouncementId, setConfirmAnnouncementId] = useState<string | null>(null);
   const [pendingPrimaryId, setPendingPrimaryId] = useState<string | null>(null);
@@ -142,25 +144,39 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
   const [signedAttachmentUrls, setSignedAttachmentUrls] = useState<Record<string, string>>({});
   const [announcementFiles, setAnnouncementFiles] = useState<File[]>([]);
 
+  useEffect(() => {
+    setFolderForm({ ...emptyFolderForm, areaId: areaId ?? '' });
+    setAnnouncementForm({ ...emptyAnnouncementForm, areaId: areaId ?? '' });
+    setFolderFormOpen(false); setAnnouncementFormOpen(false); setEditingFolderId(null);
+  }, [areaId]);
+
   const loadContent = useCallback(async (initial = false) => {
     if (initial) setLoading(true);
     else setRefreshing(true);
     setError('');
     try {
+      if (!areaId && !isGeneralChannel) {
+        if (mode === 'files') setFolders([]); else setAnnouncements([]);
+        return;
+      }
       if (mode === 'files') {
-        const { data, error: queryError } = await client
+        let foldersQuery = client
           .from('drive_folders')
           .select('id,name,drive_url,description,area_id,is_primary,added_by,created_at')
-          .is('removed_at', null)
+          .is('removed_at', null);
+        foldersQuery = areaId ? foldersQuery.eq('area_id', areaId) : foldersQuery.is('area_id', null);
+        const { data, error: queryError } = await foldersQuery
           .order('is_primary', { ascending: false })
           .order('created_at', { ascending: true });
         if (queryError) throw queryError;
         setFolders((data ?? []) as DriveFolder[]);
       } else {
-        const { data, error: queryError } = await client
+        let announcementsQuery = client
           .from('announcements')
           .select('id,title,message,audience_area_id,author_id,pinned_at,created_at')
-          .is('removed_at', null)
+          .is('removed_at', null);
+        announcementsQuery = areaId ? announcementsQuery.eq('audience_area_id', areaId) : announcementsQuery.is('audience_area_id', null);
+        const { data, error: queryError } = await announcementsQuery
           .order('created_at', { ascending: false });
         if (queryError) throw queryError;
         const ordered = (data ?? []) as Announcement[];
@@ -177,7 +193,7 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
       setLoading(false);
       setRefreshing(false);
     }
-  }, [client, mode]);
+  }, [areaId, client, isGeneralChannel, mode]);
 
   const announcementIds = useMemo(() => announcements.map(({ id }) => id).sort().join(','), [announcements]);
   const loadInteractions = useCallback(async (ids: string[]) => {
@@ -315,7 +331,7 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
           p_folder_id: editingFolderId,
           p_name: name,
           p_drive_url: parsedUrl.toString(),
-          p_area_id: folderForm.areaId || null,
+          p_area_id: areaId ?? (folderForm.areaId || null),
           p_description: description,
         });
         if (updateError) throw updateError;
@@ -324,13 +340,13 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
         const { error: insertError } = await client.from('drive_folders').insert({
           name,
           drive_url: parsedUrl.toString(),
-          area_id: folderForm.areaId || null,
+          area_id: areaId ?? (folderForm.areaId || null),
           is_primary: needsPrimary,
         });
         if (insertError) throw insertError;
       }
       const wasEditing = Boolean(editingFolderId);
-      setFolderForm(emptyFolderForm);
+      setFolderForm({ ...emptyFolderForm, areaId: areaId ?? '' });
       setFolderFormOpen(false);
       setEditingFolderId(null);
       setFeedback(wasEditing ? 'Pasta atualizada. O link abre em uma nova aba; o site não acessa o conteúdo do Drive.' : 'Pasta adicionada. O link abre em uma nova aba; o site não acessa o conteúdo do Drive.');
@@ -411,14 +427,14 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
     try {
       if (announcementForm.pollEnabled) {
         const { data, error: publishError } = await client.rpc('publish_announcement_with_poll', {
-          p_title: title, p_message: message, p_audience_area_id: announcementForm.areaId || null,
+          p_title: title, p_message: message, p_audience_area_id: areaId ?? (announcementForm.areaId || null),
           p_question: announcementForm.question.trim(), p_options: pollOptions, p_allow_multiple: announcementForm.allowMultiple,
         });
         if (publishError) throw publishError;
         announcementId = data as string;
       } else {
         const { data, error: insertError } = await client.from('announcements').insert({
-          title, message, audience_area_id: announcementForm.areaId || null,
+          title, message, audience_area_id: areaId ?? (announcementForm.areaId || null),
         }).select('id').single();
         if (insertError) throw insertError;
         announcementId = data.id;
@@ -437,7 +453,7 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
         });
         if (metadataError) throw metadataError;
       }
-      setAnnouncementForm(emptyAnnouncementForm);
+      setAnnouncementForm({ ...emptyAnnouncementForm, areaId: areaId ?? '' });
       setAnnouncementFiles([]);
       setAnnouncementFormOpen(false);
       setFeedback('Comunicado publicado. O autor é identificado automaticamente pela sua conta.');
@@ -624,6 +640,7 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
   }
 
   const isFiles = mode === 'files';
+  const channelScopeUnavailable = !isGeneralChannel && !areaId;
   const primaryFolder = folders.find((folder) => folder.is_primary);
   const folderCount = visibleFolders.length;
   const announcementCount = visibleAnnouncements.length;
@@ -635,8 +652,8 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
           <p className="workspace-kicker">{isFiles ? 'ATALHOS COMPARTILHADOS' : 'MURAL DA EQUIPE'}</p>
           <h2 id="shared-content-title">{isFiles ? 'Pastas e arquivos.' : 'Comunicados.'}</h2>
           <p>{isFiles
-            ? 'Pastas visíveis para a equipe; o conteúdo continua no Google Drive.'
-            : 'Avisos para toda a equipe ou para uma área específica. Todas as pessoas ativas podem responder e reagir.'}</p>
+            ? 'Pastas visíveis para os integrantes deste canal; o conteúdo continua no Google Drive.'
+            : 'Avisos compartilhados com todos os integrantes deste canal.'}</p>
         </div>
         <div className="shared-content-actions">
           <button className="workspace-refresh" type="button" onClick={() => {
@@ -646,15 +663,15 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
           }} disabled={loading || refreshing}>
             <RefreshCw size={14} aria-hidden="true" />{refreshing ? 'Atualizando…' : 'Atualizar'}
           </button>
-          {isFiles ? (
+          {!channelScopeUnavailable && (isFiles ? (
             <button className="workspace-add-button" type="button" onClick={() => {
               if (folderFormOpen) {
                 setFolderFormOpen(false);
                 setEditingFolderId(null);
-                setFolderForm(emptyFolderForm);
+                setFolderForm({ ...emptyFolderForm, areaId: areaId ?? '' });
               } else {
                 setEditingFolderId(null);
-                setFolderForm(emptyFolderForm);
+                setFolderForm({ ...emptyFolderForm, areaId: areaId ?? '' });
                 setFolderFormOpen(true);
               }
               setError('');
@@ -665,10 +682,11 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
             <button className="workspace-add-button" type="button" onClick={() => { setAnnouncementFormOpen((open) => !open); setError(''); }}>
               <Plus size={15} aria-hidden="true" /> Novo comunicado
             </button>
-          )}
+          ))}
         </div>
       </div>
 
+      {channelScopeUnavailable && <p className="shared-content-note">Este canal ainda não está vinculado a uma área. Para evitar misturar dados globais com conteúdo privado, arquivos e comunicados ficam indisponíveis até que o canal seja associado a uma área.</p>}
       {error && <div className="workspace-alert workspace-alert-error" role="alert"><strong>Não foi possível concluir.</strong><p>{error}</p></div>}
       {feedback && <p className="workspace-feedback" role="status">{feedback}</p>}
 
@@ -677,7 +695,7 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
           <div className="shared-content-form-heading"><div><strong id="folder-form-title">{editingFolderId ? 'Editar pasta compartilhada' : 'Adicionar pasta à equipe'}</strong><p>{editingFolderId ? 'Atualize o nome, o link, a área e a descrição da pasta.' : 'Informe o endereço compartilhável da pasta no Google Drive.'}</p></div><button type="button" className="shared-close" aria-label="Fechar formulário de pasta" onClick={() => { setFolderFormOpen(false); setEditingFolderId(null); setFolderForm(emptyFolderForm); }} disabled={saving}><X size={17} aria-hidden="true" /></button></div>
           <label><span>Nome da pasta <b>obrigatório</b></span><input required maxLength={120} value={folderForm.name} onChange={(event) => setFolderForm((current) => ({ ...current, name: event.target.value }))} placeholder="Ex.: Documentos de Engenharia" /></label>
           <label><span>Link de redirecionamento do Google Drive <b>obrigatório</b></span><input required type="url" value={folderForm.driveUrl} onChange={(event) => setFolderForm((current) => ({ ...current, driveUrl: event.target.value }))} placeholder="https://drive.google.com/drive/folders/…" /></label>
-          <label><span>Área</span><select value={folderForm.areaId} onChange={(event) => setFolderForm((current) => ({ ...current, areaId: event.target.value }))}><option value="">Geral (toda a equipe)</option>{areas.map((area) => <option key={area.id} value={area.id}>{area.name}</option>)}</select></label>
+          
           {editingFolderId && <label><span>Descrição <small>(opcional; até 500 caracteres)</small></span><textarea id="folder-description" rows={3} maxLength={500} aria-describedby="folder-description-count" value={folderForm.description} onChange={(event) => setFolderForm((current) => ({ ...current, description: event.target.value }))} placeholder="Contexto ou conteúdo desta pasta" /><small id="folder-description-count" className="shared-content-note">{folderForm.description.length}/500 caracteres</small></label>}
           <p className="shared-content-note">A pessoa que abrir precisa ter permissão própria no Drive. O SolMar não lê os arquivos da pasta.</p>
           <div className="shared-content-form-actions"><button className="workspace-cancel-button" type="button" onClick={() => { setFolderFormOpen(false); setEditingFolderId(null); setFolderForm(emptyFolderForm); }} disabled={saving}>Cancelar</button><button className="workspace-save-button" type="submit" disabled={saving}>{saving ? 'Salvando…' : editingFolderId ? 'Salvar alterações' : 'Adicionar pasta'}</button></div>
@@ -689,7 +707,7 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
           <div className="shared-content-form-heading"><div><strong>Publicar comunicado</strong><p>Seu nome será registrado automaticamente como autor.</p></div><button type="button" className="shared-close" aria-label="Fechar formulário" onClick={() => setAnnouncementFormOpen(false)}><X size={17} /></button></div>
           <label><span>Título <b>obrigatório</b></span><input required maxLength={180} value={announcementForm.title} onChange={(event) => setAnnouncementForm((current) => ({ ...current, title: event.target.value }))} placeholder="Um título claro para o aviso" /></label>
           <label><span>Mensagem <b>obrigatória</b></span><textarea required rows={5} maxLength={8000} value={announcementForm.message} onChange={(event) => setAnnouncementForm((current) => ({ ...current, message: event.target.value }))} placeholder="Escreva as informações para a equipe…" /></label>
-          <label><span>Destinatário</span><select value={announcementForm.areaId} onChange={(event) => setAnnouncementForm((current) => ({ ...current, areaId: event.target.value }))}><option value="">Toda a equipe</option>{areas.map((area) => <option key={area.id} value={area.id}>{area.name}</option>)}</select></label>
+          
           <div className="shared-announcement-create-extra">
             <strong><Link2 size={15} aria-hidden="true" /> Link compartilhável do Google Drive (opcional)</strong>
             <label><span>Nome do link</span><input maxLength={180} value={announcementForm.driveName} onChange={(event) => setAnnouncementForm((current) => ({ ...current, driveName: event.target.value }))} placeholder="Ex.: Ata da reunião" /></label>

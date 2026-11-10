@@ -268,13 +268,15 @@ const platforms = [
   { name: 'Curso em Vídeo', url: 'https://www.youtube.com/@CursoemVideo' },
 ];
 
-export default function ManualFunctions() {
+export default function ManualFunctions({ areaFilter }: { areaFilter?: string } = {}) {
   const [query, setQuery] = useState('');
   const [manualFilter, setManualFilter] = useState<'Todas' | 'Coordenação' | 'Áreas diretas' | 'TI transversal'>('Todas');
 
   const filteredRoles = useMemo(() => {
     const term = query.trim().toLocaleLowerCase('pt-BR');
     return roles.filter((role) => {
+      const areaMatches = !areaFilter || role.area.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(areaFilter.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
+      if (!areaMatches) return false;
       const matchesGroup = manualFilter === 'Todas'
         || (manualFilter === 'Coordenação' && role.group === 'coordination')
         || (manualFilter === 'Áreas diretas' && role.group === 'direct')
@@ -285,13 +287,13 @@ export default function ManualFunctions() {
       ].join(' ').toLocaleLowerCase('pt-BR');
       return matchesGroup && (!term || searchable.includes(term));
     });
-  }, [manualFilter, query]);
+  }, [areaFilter, manualFilter, query]);
 
-  const directRoles = roles.filter((role) => role.group === 'direct');
+  const directRoles = roles.filter((role) => role.group === 'direct' && (!areaFilter || role.area.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(areaFilter.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, ''))));
 
   return (
     <section className="workspace-manual" aria-label="Manual de funções e capacitação">
-      <section className="manual-org-intro" aria-labelledby="manual-org-title">
+      {!areaFilter && <section className="manual-org-intro" aria-labelledby="manual-org-title">
         <p className="workspace-kicker">ESTRUTURA ORGANIZACIONAL · MANUAL REVISADO</p>
         <h2 id="manual-org-title">Coordenação Geral e seis áreas diretas, com TI transversal.</h2>
         <p>A Coordenação Geral integra as áreas, define prioridades e acompanha o projeto, sem exclusividade docente ou atribuição automática de execução. As seis áreas diretas são Gestão de Pessoas, Administrativo-Financeiro, Marketing, Mecânica Naval, Elétrica e Eletrônica - ELT. Produtos e Redes Sociais são frentes internas de Marketing.</p>
@@ -302,9 +304,9 @@ export default function ManualFunctions() {
           ))}
         </div>
         <p className="manual-org-footnote"><strong>TI — apoio transversal:</strong> atende às necessidades dos integrantes das áreas com ferramentas, aplicativos, sistemas e automações, sem constituir nível hierárquico nem assumir responsabilidades técnicas. As informações do organograma e dos cards partem da mesma definição de áreas.</p>
-      </section>
+      </section>}
 
-      <div className="manual-controls">
+      {!areaFilter && <div className="manual-controls">
         <label className="manual-search">
           <Search aria-hidden="true" />
           <span className="sr-only">Buscar no manual</span>
@@ -315,7 +317,7 @@ export default function ManualFunctions() {
             <button key={item} type="button" className={manualFilter === item ? 'is-selected' : ''} onClick={() => setManualFilter(item)} aria-pressed={manualFilter === item}>{item}</button>
           ))}
         </div>
-      </div>
+      </div>}
 
       {filteredRoles.length === 0 ? (
         <div className="workspace-empty manual-empty"><span aria-hidden="true">⌕</span><strong>Nenhuma função encontrada.</strong><p>Tente outro termo ou selecione outra categoria.</p></div>
@@ -357,6 +359,7 @@ export default function ManualFunctions() {
         </div>
       )}
 
+      {!areaFilter && <>
       <section className="manual-extra-section" aria-labelledby="manual-transversal-title">
         <div className="manual-section-heading">
           <div><p className="workspace-kicker">COMPETÊNCIAS COMPARTILHADAS</p><h3 id="manual-transversal-title">Simulação e fabricação</h3></div>
@@ -417,6 +420,7 @@ export default function ManualFunctions() {
         <ul>{guidelines.map((item) => <li key={item}>{item}</li>)}</ul>
       </aside>
       <DocumentationPrompts />
+      </>}
     </section>
   );
 }

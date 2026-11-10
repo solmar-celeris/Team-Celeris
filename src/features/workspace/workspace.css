@@ -1308,7 +1308,7 @@
 }
 .workspace-brand { grid-area: brand; }
 .workspace-nav { grid-area: nav; }
-.workspace-top-actions { grid-area: profile; }
+.workspace-top-actions { grid-area: profile; width: auto; min-width: 0; gap: 8px; }
 
 /* Dock inferior do diretório, inspirado na bandeja de mensagens do LinkedIn. */
 .workspace-members-dock {
@@ -1369,7 +1369,7 @@
 
 /* Revisão de navegação: seis áreas principais e subguias agrupadas. */
 .workspace-topbar {
-  grid-template-columns: minmax(120px, 140px) minmax(0, 1fr) 48px;
+  grid-template-columns: minmax(120px, 140px) minmax(0, 1fr) auto;
   grid-template-areas: "brand nav profile";
   gap: 8px;
 }
@@ -1377,6 +1377,7 @@
 .workspace-brand img { width: auto; max-width: 128px; height: 42px; object-fit: contain; }
 .workspace-brand > span { display: none !important; }
 .workspace-nav { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+.workspace-nav.is-area-channel { grid-template-columns: repeat(4, minmax(72px, 112px)); justify-content: center; }
 .workspace-nav button { min-height: 70px; gap: 5px; padding: 5px 4px 8px; font-size: 12px; }
 .workspace-nav-icon { width: 27px; height: 27px; flex-basis: 27px; border-radius: 7px; }
 .workspace-nav-icon svg { width: 23px; height: 23px; }
@@ -1421,7 +1422,7 @@
 
 @media (max-width: 1040px) {
   .workspace-topbar {
-    grid-template-columns: minmax(0, 1fr) 44px;
+    grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas: "brand profile" "nav nav";
     grid-template-rows: 44px 66px;
     align-items: center;
@@ -1445,6 +1446,7 @@
     border-radius: 8px 8px 0 0;
     font-size: clamp(9px, 2.45vw, 11px);
   }
+  .workspace-nav.is-area-channel { grid-template-columns: repeat(4, minmax(0, 1fr)); justify-content: stretch; }
   .workspace-nav-icon { width: clamp(22px, 5.8vw, 26px); height: clamp(22px, 5.8vw, 26px); flex-basis: clamp(22px, 5.8vw, 26px); }
   .workspace-nav-icon svg { width: 82%; height: 82%; }
   .workspace-nav-label { font-size: clamp(8px, 2.2vw, 10px); line-height: 1.08; -webkit-line-clamp: 2; line-clamp: 2; }
@@ -1464,4 +1466,94 @@
   .workspace-members-dock .team-members-trigger svg { width: 16px; height: 16px; }
   .workspace-members-dock .team-members-trigger-chevron { width: 14px; height: 14px; }
   .workspace-members-dock .team-members-panel { width: min(350px, calc(100vw - 16px)); max-height: calc(100dvh - 68px); }
+}
+
+.workspace-channel-context {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 8px;
+  padding: 5px 9px;
+  border: 1px solid color-mix(in srgb, var(--sky) 30%, var(--line));
+  border-radius: 999px;
+  color: var(--ocean);
+  background: color-mix(in srgb, var(--sky) 9%, var(--card));
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+:root[data-theme="dark"] .workspace-channel-context { color: #b9ddff; }
+.workspace-top-actions .channel-switcher { flex: 0 1 auto; }
+@media (max-width: 760px) {
+  .workspace-top-actions { gap: 5px; }
+  .workspace-top-actions .channel-switcher { flex: 0 0 34px; }
+  .workspace-top-actions .channel-switcher-trigger { width: 34px; height: 34px; }
+}
+
+/* O seletor de canais fica imediatamente antes do perfil, inclusive no mobile. */
+.workspace-top-actions .channel-switcher { flex: 0 1 190px; min-width: 0; }
+.workspace-top-actions .profile-menu { flex: 0 0 auto; }
+@media (max-width: 1040px) { .workspace-top-actions { width: auto; justify-content: flex-end; gap: 6px; } .workspace-top-actions .channel-switcher { flex: 0 0 38px; } .workspace-top-actions .channel-switcher-trigger { width: 38px; min-height: 38px; } }
+@media (min-width: 1041px) { .workspace-top-actions { width: auto; } .workspace-top-actions .channel-switcher-trigger { min-width: 0; } }
+
+/* Navegação mobile em uma única linha: logo, abas roláveis, seletor e perfil. */
+@media (max-width: 760px) {
+  .workspace-topbar {
+    display: grid !important;
+    grid-template-columns: 54px minmax(0, 1fr) auto;
+    grid-template-areas: "brand nav profile";
+    grid-template-rows: 50px;
+    min-height: 58px;
+    padding: 4px 7px;
+    gap: 5px;
+    align-items: center;
+  }
+  .workspace-brand { grid-area: brand; align-self: center; }
+  .workspace-brand img { max-width: 50px; height: 34px; }
+  .workspace-nav, .workspace-nav.is-area-channel {
+    grid-area: nav;
+    display: flex;
+    min-width: 0;
+    width: 100%;
+    height: 46px;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 3px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+  .workspace-nav::-webkit-scrollbar { display: none; }
+  .workspace-nav button {
+    display: flex;
+    flex: 0 0 42px;
+    width: 42px;
+    min-width: 42px;
+    min-height: 42px;
+    height: 42px;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 2px;
+    border-radius: 9px;
+  }
+  .workspace-nav-icon { width: 20px; height: 20px; flex: 0 0 20px; }
+  .workspace-nav-icon svg { width: 19px; height: 19px; }
+  .workspace-nav-label { display: none !important; }
+  .workspace-top-actions { grid-area: profile; display: flex; width: auto; height: 46px; min-width: 0; align-items: center; justify-content: flex-end; gap: 4px; }
+  .workspace-top-actions .channel-switcher { flex: 0 0 36px; width: 36px; }
+  .workspace-top-actions .channel-switcher-trigger { width: 36px; min-height: 36px; height: 36px; padding: 0; justify-content: center; }
+  .workspace-top-actions .channel-switcher-icon { width: 28px; height: 28px; flex-basis: 28px; }
+  .workspace-top-actions .profile-menu-trigger { width: 36px; min-width: 36px; max-width: 36px; height: 36px; min-height: 36px; padding: 2px; }
+  .workspace-top-actions .profile-menu-trigger-avatar { width: 30px; height: 30px; flex-basis: 30px; }
+  .profile-menu-popover { top: 58px !important; right: 7px !important; max-height: calc(100dvh - 66px) !important; }
+}
+@media (max-width: 420px) {
+  .workspace-topbar { grid-template-columns: 46px minmax(0, 1fr) auto; gap: 3px; padding-inline: 5px; }
+  .workspace-brand img { max-width: 44px; height: 31px; }
+  .workspace-nav { gap: 1px; }
+  .workspace-nav button { flex-basis: 38px; width: 38px; min-width: 38px; }
+  .workspace-top-actions { gap: 2px; }
+  .workspace-top-actions .channel-switcher, .workspace-top-actions .channel-switcher-trigger { width: 34px; flex-basis: 34px; }
+  .workspace-top-actions .profile-menu-trigger { width: 34px; min-width: 34px; max-width: 34px; }
 }

@@ -376,3 +376,17 @@
 - [x] Criar migrations incrementais `20261110100000_member_removed_enum.sql` e `20261110101000_chat_global_delete_member_revocation.sql`; criar `supabase/functions/delete-chat-content/index.ts` com Verify JWT obrigatório e service role somente no runtime Supabase. RLS fica ativo.
 - [x] Atualizar README/manual e instruções de publicação; validar `pnpm build` localmente. Nenhuma migration ou Edge Function foi executada/publicada no projeto Supabase remoto nem Netlify.
 - [ ] Conferir histórico e aplicar somente migrations faltantes; publicar `delete-chat-content`; depois fazer o deploy Netlify e testar com múltiplas contas ativas, suspensas e não participantes.
+
+
+## 52. Canais por área, diretório com DM e manuais editáveis (10/11/2026)
+- [x] Integrar o seletor de canais ao cabeçalho e alternar a navegação entre Geral e canais de área, mantendo o layout mobile em uma linha.
+- [x] Filtrar atividades, comunicados e arquivos pelo `area_id` do canal; manter os itens sem área no Geral e preservar os IDs/históricos.
+- [x] Conectar o diretório de membros à criação/abertura de DM; mostrar e-mail e função apenas dos perfis ativos; incluir ação de tirar administrador.
+- [x] Exibir abaixo das mensagens próprias os nomes/contagem de quem visualizou, reutilizando os recibos existentes.
+- [x] Criar interface de manuais por canal com upload PDF/DOCX, extração de texto no navegador, edição inline e download do original em Storage privado.
+- [x] Criar migrations aditivas para Storage dos manuais, correção do vínculo da área Elétrica, proteção dos canais fixos e RLS/RPCs de conteúdo por canal; preservar as migrations antigas.
+- [ ] Aplicar somente migrations faltantes no Supabase, publicar Edge Function de exclusão global se ainda faltar, publicar no Netlify e validar com múltiplas contas em desktop/mobile.
+
+**Limitações desta validação:** o ambiente de execução não tem `node_modules` nem acesso ao registry npm; portanto não foi possível rodar `pnpm typecheck` ou `pnpm build`. A transpilação sintática TypeScript/JSX dos arquivos alterados passou sem diagnósticos. Nenhuma migration, Storage ou deploy remoto foi executado.
+
+**Limitação funcional registrada na etapa 52:** canais adicionais sem `area_id` suportam seu Manual, mas não têm escopo próprio de Atividades/Comunicados/Arquivos. Para esses módulos funcionarem em canais arbitrários, é necessário adicionar `channel_id` às tabelas de conteúdo e migrar os registros existentes por associação; a implementação atual mantém os canais fixos por área sem duplicar registros.

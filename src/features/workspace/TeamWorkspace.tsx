@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ComponentType, type DragEvent, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Filter, Folder, GripVertical, House, Megaphone, MessageCircle, Trash2, X, Paperclip, ExternalLink, Video, type LucideProps } from 'lucide-react';
+import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Filter, Folder, GripVertical, House, Megaphone, MessageCircle, Newspaper, Trash2, X, Paperclip, ExternalLink, Video, type LucideProps } from 'lucide-react';
 import {
   activityTypeLabels,
   activityFlowLabels,
@@ -32,10 +32,12 @@ import {
 } from './domain';
 import ProfileMenu from '../profile/ProfileMenu';
 import TeamMembersMenu from '../profile/TeamMembersMenu';
+import ChannelSwitcher, { type WorkspaceChannel } from './ChannelSwitcher';
 import SharedContentWorkspace from './SharedContentWorkspace';
 import TeamChat from './TeamChat';
 import TeamCalendar from './TeamCalendar';
 import ManualFunctions from './ManualFunctions';
+import ChannelManualWorkspace from './ChannelManualWorkspace';
 import AvailabilityWorkspace from './AvailabilityWorkspace';
 import PERTCPMWorkspace from './PERTCPMWorkspace';
 import MeetingsWorkspace from './MeetingsWorkspace';
@@ -357,8 +359,11 @@ function safeDriveUrl(value: string): string | null {
 export default function TeamWorkspace({ client, userId, profile, theme, onThemeChange, onRefreshProfile, onLogout }: TeamWorkspaceProps) {
   const [pushTarget] = useState<PushDeepLink | null>(() => parsePushDeepLink());
   const [tab, setTab] = useState<WorkspaceTab>(() => tabForPush(pushTarget));
+  const [activeChannel, setActiveChannel] = useState<WorkspaceChannel | null>(null);
+  const [chatTargetUserId, setChatTargetUserId] = useState<string | null>(null);
+  const [chatCreateGroupRequest, setChatCreateGroupRequest] = useState(false);
   const [agendaSubtab, setAgendaSubtab] = useState<AgendaSubtab>('calendar');
-  const [conversationsSubtab, setConversationsSubtab] = useState<ConversationsSubtab>(() => pushTarget?.type === 'announcement' ? 'announcements' : 'chat');
+  const [conversationsSubtab, setConversationsSubtab] = useState<ConversationsSubtab>(() => pushTarget?.type === 'chat' ? 'chat' : 'announcements');
   const [homeFiltersOpen, setHomeFiltersOpen] = useState(false);
   const [jitsiRoomActive, setJitsiRoomActive] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -405,6 +410,27 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   const [errorMessage, setErrorMessage] = useState('');
   const [feedback, setFeedback] = useState('');
   const [dialogError, setDialogError] = useState('');
+
+  const handleChannelChange = useCallback((channel: WorkspaceChannel) => {
+    setActiveChannel(channel);
+    setTab(channel.slug === 'geral' ? 'home' : 'activities');
+    setConversationsSubtab('announcements');
+    setFilters(defaultFilters);
+  }, []);
+  const handleStartConversation = useCallback((targetUserId: string) => {
+    setChatTargetUserId(targetUserId);
+    setTab('conversations');
+    setConversationsSubtab('chat');
+  }, []);
+  const handleInitialDirectHandled = useCallback(() => setChatTargetUserId(null), []);
+  const handleCreateGroupFromMembers = useCallback(() => { setChatCreateGroupRequest(true); setTab('conversations'); setConversationsSubtab('chat'); }, []);
+  const handleCreateGroupHandled = useCallback(() => setChatCreateGroupRequest(false), []);
+  const manualAreaName = activeChannel?.slug === 'mecanica-naval' ? 'Mecânica Naval'
+    : activeChannel?.slug === 'eletrica' ? 'Elétrica'
+      : activeChannel?.slug === 'eletronica' ? 'Eletrônica'
+        : activeChannel?.slug === 'gestao-de-pessoas' ? 'Gestão de Pessoas'
+          : activeChannel?.slug === 'marketing' ? 'Marketing'
+            : activeChannel?.slug === 'administrativo-financeiro' ? 'Administrativo-Financeiro' : '';
 
   async function saveProjectPeriod(start: string, end: string) {
     if (profile.role !== 'admin') return;
@@ -624,6 +650,11 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   const areasById = useMemo(() => new Map(areas.map((area) => [area.id, area])), [areas]);
   const activeAreas = useMemo(() => areas.filter((area) => area.is_active), [areas]);
   const isAreaActive = (areaId: string) => areasById.get(areaId)?.is_active === true;
+  const scopedActivities = useMemo(() => {
+    if (!activeChannel || activeChannel.slug === 'geral') return activities;
+    if (!activeChannel.area_id) return [];
+    return activities.filter((activity) => activity.area_id === activeChannel.area_id);
+  }, [activeChannel, activities]);
   const mayUpdateActivity = (activity: Activity) => isAreaActive(activity.area_id) && canUpdateActivityWeek(profile, userId, activity);
   const updatesByActivity = useMemo(() => {
     const map = new Map<string, WeeklyUpdate[]>();
@@ -677,27 +708,27 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
 
   const generalStatusById = useMemo(() => {
     const result = new Map<string, GeneralStatus>();
-    for (const activity of activities) {
+    for (const activity of scopedActivities) {
       result.set(activity.id, getGeneralStatus(activity, updatesByActivity.get(activity.id) ?? []));
     }
     return result;
-  }, [activities, updatesByActivity]);
+  }, [scopedActivities, updatesByActivity]);
 
   const expectedActivities = useMemo(() => {
     if (!selectedWeek) return [];
-    return activities.filter((activity) => isActivityExpected(
+    return scopedActivities.filter((activity) => isActivityExpected(
       activity,
       selectedWeek,
       cycleStart,
       cycleEnd,
       updatesByActivity.get(activity.id) ?? [],
     ));
-  }, [activities, cycleEnd, cycleStart, selectedWeek, updatesByActivity]);
+  }, [scopedActivities, cycleEnd, cycleStart, selectedWeek, updatesByActivity]);
 
-  const responsibleNames = useMemo(() => [...new Set(activities.map((activity) => activity.responsible_name.trim() || 'A definir'))].sort((a, b) => a.localeCompare(b, 'pt-BR')), [activities]);
+  const responsibleNames = useMemo(() => [...new Set(scopedActivities.map((activity) => activity.responsible_name.trim() || 'A definir'))].sort((a, b) => a.localeCompare(b, 'pt-BR')), [scopedActivities]);
 
   const visibleActivities = useMemo(() => {
-    const source = tab === 'home' ? expectedActivities : activities;
+    const source = tab === 'home' ? expectedActivities : scopedActivities;
     const search = filters.search.trim().toLocaleLowerCase('pt-BR');
     return source.filter((activity) => {
       const status = tab === 'home'
@@ -717,7 +748,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
       if (filters.to && activityStart > filters.to) return false;
       return true;
     });
-  }, [activities, expectedActivities, filters, generalStatusById, tab, updatesForWeek]);
+  }, [expectedActivities, filters, generalStatusById, scopedActivities, tab, updatesForWeek]);
 
   const weeklyIndicators = useMemo(() => ({
     planned: visibleActivities.length,
@@ -804,7 +835,14 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
     );
   }
 
-  const activityEditorAreas = useMemo(() => profile.role === 'area_lead' ? activeAreas.filter((area) => area.id === profile.area_id) : activeAreas, [activeAreas, profile.area_id, profile.role]);
+  const activityEditorAreas = useMemo(() => {
+    if (activeChannel && activeChannel.slug !== 'geral') {
+      if (!activeChannel.area_id) return [];
+      const channelAreas = activeAreas.filter((area) => area.id === activeChannel.area_id);
+      return profile.role === 'area_lead' ? channelAreas.filter((area) => area.id === profile.area_id) : channelAreas;
+    }
+    return profile.role === 'area_lead' ? activeAreas.filter((area) => area.id === profile.area_id) : activeAreas;
+  }, [activeAreas, activeChannel, profile.area_id, profile.role]);
 
   const permissionSummary = profile.role === 'admin'
     ? 'Você pode editar atividades e registrar status em toda a equipe.'
@@ -1072,6 +1110,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
     const leavingLiveMeeting = tab === 'agenda' && agendaSubtab === 'meetings' && nextTab !== 'agenda';
     if (jitsiRoomActive && (nextTab !== tab || leavingLiveMeeting) && !window.confirm('Você está em uma reunião. Sair desta tela desconectará sua chamada. Deseja continuar?')) return;
     if (jitsiRoomActive && (nextTab !== tab || leavingLiveMeeting)) setJitsiRoomActive(false);
+    if (nextTab === 'conversations' && activeChannel?.slug !== 'geral') setConversationsSubtab('announcements');
     setTab(nextTab);
   }
 
@@ -1099,32 +1138,62 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           ? { kicker: conversationsSubtab === 'announcements' ? 'MURAL DA EQUIPE' : 'CONVERSAS DA EQUIPE', title: 'Conversas', subtitle: conversationsSubtab === 'announcements' ? 'Acesse o Chat e os comunicados da equipe em um só lugar.' : 'Converse em grupo ou de forma privada, com arquivos e leitura em tempo real.' }
           : { kicker: 'CARGOS E CAPACITAÇÃO', title: 'Manual de funções.', subtitle: 'Consulte as responsabilidades de cada área e as competências a desenvolver.' };
 
+  const contextualPageHeading = activeChannel && activeChannel.slug !== 'geral'
+    ? tab === 'activities'
+      ? { ...pageHeading, kicker: `ATIVIDADES · ${activeChannel.name.toLocaleUpperCase('pt-BR')}`, title: `Atividades · ${activeChannel.name}`, subtitle: `Acompanhe as entregas, responsáveis e prazos do canal ${activeChannel.name}.` }
+      : tab === 'conversations' && conversationsSubtab === 'chat'
+        ? { ...pageHeading, kicker: 'CONVERSA PRIVADA', title: 'Chat', subtitle: 'Converse com integrantes da equipe por mensagem privada ou em grupo.' }
+        : tab === 'conversations'
+          ? { ...pageHeading, kicker: `COMUNICADOS · ${activeChannel.name.toLocaleUpperCase('pt-BR')}`, title: `Comunicados · ${activeChannel.name}`, subtitle: `Avisos compartilhados com todos os integrantes deste canal.` }
+        : tab === 'files'
+          ? { ...pageHeading, kicker: `ARQUIVOS · ${activeChannel.name.toLocaleUpperCase('pt-BR')}`, title: `Arquivos · ${activeChannel.name}`, subtitle: `Documentos e pastas compartilhados do canal ${activeChannel.name}.` }
+          : { ...pageHeading, kicker: `MANUAL DE FUNÇÃO · ${activeChannel.name.toLocaleUpperCase('pt-BR')}`, title: `Manual de Função · ${activeChannel.name}`, subtitle: `Responsabilidades e referências funcionais da área ${activeChannel.name}.` }
+    : activeChannel?.slug === 'geral' && tab === 'home'
+      ? { ...pageHeading, kicker: 'FEED GERAL', title: 'Feed', subtitle: 'Atualizações cronológicas das atividades e entregas de todos os canais.' }
+      : activeChannel?.slug === 'geral' && tab === 'activities'
+        ? { ...pageHeading, kicker: 'ATIVIDADES CONSOLIDADAS', title: 'Atividades', subtitle: 'Visão consolidada das atividades de todos os canais, com acompanhamento PERT/CPM.' }
+        : activeChannel?.slug === 'geral' && tab === 'conversations' && conversationsSubtab === 'announcements'
+          ? { ...pageHeading, kicker: 'COMUNICADOS GLOBAIS', title: 'Comunicados', subtitle: 'Mural de avisos para todos os membros ativos do workspace.' }
+          : activeChannel?.slug === 'geral' && tab === 'conversations' && conversationsSubtab === 'chat'
+            ? { ...pageHeading, kicker: 'CHAT DO WORKSPACE', title: 'Chat', subtitle: 'Converse em grupo ou de forma privada; as DMs também podem ser abertas pelo diretório de membros.' }
+            : activeChannel?.slug === 'geral' && tab === 'manual'
+              ? { ...pageHeading, kicker: 'NORMAS DO WORKSPACE', title: 'Manual de Conduta', subtitle: 'Documento institucional e regras de convivência do workspace.' }
+              : pageHeading;
+
   return (
     <section className="workspace-screen" aria-label="Espaço de trabalho Team Celeris">
       <header className="workspace-topbar">
         <a className="workspace-brand" href="#workspace" aria-label="Team Celeris">
           <img src="/assets/solmar-celeris-site-logo.png" alt="" />
         </a>
-        <div className="workspace-nav-left">
-          <img src="/assets/solmar-celeris-site-logo.png" alt="Logo SolMar Celeris" />
-          <div className="channel-dropdown">
-             <button onClick={() => setChannelMenuOpen(!channelMenuOpen)}>
-                {activeChannel.name} ▾
-             </button>
-             {channelMenuOpen && (
-               <div className="dropdown-menu">
-                 {channels.map(c => <button onClick={() => setActiveChannel(c)}>{c.name}</button>)}
-               </div>
-             )}
-          </div>
-        </div>
-        <nav className="workspace-nav">
-           {workspaceTabs.map(({ id, label, icon: Icon }) => (
-            <button key={id} onClick={() => navigateToTab(id)}><Icon size={18} /><span>{label}</span></button>
-           ))}
+        <nav className={`workspace-nav${activeChannel && activeChannel.slug !== 'geral' ? ' is-area-channel' : ''}`} aria-label="Navegação principal">
+          {(activeChannel && activeChannel.slug !== 'geral'
+            ? workspaceTabs.filter(({ id }) => ['activities', 'conversations', 'files', 'manual'].includes(id))
+            : workspaceTabs).map(({ id, label: baseLabel, icon: Icon }) => {
+            const label = activeChannel?.slug === 'geral'
+              ? (id === 'home' ? 'Feed' : id === 'conversations' ? 'Comunicados' : id === 'manual' ? 'Manual de Conduta' : baseLabel)
+              : id === 'conversations' ? (conversationsSubtab === 'chat' ? 'Chat' : 'Comunicados') : id === 'manual' ? 'Manual de Função' : baseLabel;
+            const NavIcon = id === 'home' && activeChannel?.slug === 'geral' ? Newspaper
+              : id === 'conversations' ? (conversationsSubtab === 'chat' ? MessageCircle : Megaphone) : Icon;
+            return (
+            <button key={id} type="button" title={label} aria-label={label} className={tab === id ? 'is-active' : ''} onClick={() => navigateToTab(id)} aria-current={tab === id ? 'page' : undefined}>
+              <span className="workspace-nav-icon"><NavIcon aria-hidden="true" /></span>
+              <span className="workspace-nav-label">{label}</span>
+            </button>
+          );})}
         </nav>
         <div className="workspace-top-actions">
-          <ProfileMenu ... />
+          <ChannelSwitcher client={client} userId={userId} isAdmin={profile.role === 'admin'} areas={activeAreas} members={members} onChange={handleChannelChange} />
+          <ProfileMenu
+            client={client}
+            userId={userId}
+            fallbackName={displayName}
+            photoUrl={avatarUrl}
+            theme={theme}
+            onThemeChange={onThemeChange}
+            onUpdated={handleProfileUpdated}
+            onLogout={handleProfileLogout}
+          />
         </div>
       </header>
 
@@ -1132,9 +1201,10 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
         <main className={`workspace-main${tab === 'conversations' && conversationsSubtab === 'chat' ? ' is-chat-page' : ''}${tab === 'home' ? ' is-home-page' : ''}`} id="workspace">
           <div className="workspace-page-heading">
             <div>
-              <p className="workspace-kicker">{pageHeading.kicker}</p>
-              <h1>{pageHeading.title}</h1>
-              <p className="workspace-subtitle">{pageHeading.subtitle}</p>
+              {activeChannel && <p className="workspace-channel-context">{activeChannel.name}{activeChannel.is_open ? ' · CANAL ABERTO' : ' · CANAL PRIVADO'}</p>}
+              <p className="workspace-kicker">{contextualPageHeading.kicker}</p>
+              <h1>{contextualPageHeading.title}</h1>
+              <p className="workspace-subtitle">{contextualPageHeading.subtitle}</p>
             </div>
             <div className="workspace-heading-actions">
               {(tab === 'activities' || tab === 'home') && <span className="workspace-cycle-chip">PERÍODO · {formatFullDate(cycleStart)} – {formatFullDate(cycleEnd)} · {cycleWeeksCount} SEMANAS</span>}
@@ -1156,7 +1226,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             <button type="button" role="tab" aria-selected={agendaSubtab === 'availability'} className={agendaSubtab === 'availability' ? 'is-active' : ''} onClick={() => navigateToAgendaSubtab('availability')}><ClockWithArrowsIcon size={20} /><span>Disponibilidades</span></button>
             <button type="button" role="tab" aria-selected={agendaSubtab === 'meetings'} className={agendaSubtab === 'meetings' ? 'is-active' : ''} onClick={() => navigateToAgendaSubtab('meetings')}><Video aria-hidden="true" /><span>Reunião</span></button>
           </div>}
-          {tab === 'conversations' && <div className="workspace-module-tabs is-conversations" role="tablist" aria-label="Guias de Conversas">
+          {tab === 'conversations' && activeChannel?.slug === 'geral' && <div className="workspace-module-tabs is-conversations" role="tablist" aria-label="Guias de Conversas">
             <button type="button" role="tab" aria-selected={conversationsSubtab === 'chat'} className={conversationsSubtab === 'chat' ? 'is-active' : ''} onClick={() => setConversationsSubtab('chat')}><MessageCircle aria-hidden="true" /><span>Chat</span></button>
             <button type="button" role="tab" aria-selected={conversationsSubtab === 'announcements'} className={conversationsSubtab === 'announcements' ? 'is-active' : ''} onClick={() => setConversationsSubtab('announcements')}><Megaphone aria-hidden="true" /><span>Comunicados</span></button>
           </div>}
@@ -1188,7 +1258,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
               <span>Área</span>
               <select value={filters.area} onChange={(event) => updateFilter('area', event.target.value)}>
                 <option value="">Todas</option>
-                {areas.map((area) => <option key={area.id} value={area.id}>{area.is_active ? area.name : `${area.name} · inativa`}</option>)}
+                {(activeChannel && activeChannel.slug !== 'geral' ? activityEditorAreas : areas).map((area) => <option key={area.id} value={area.id}>{area.is_active ? area.name : `${area.name} · inativa`}</option>)}
               </select>
             </label>
             <label>
@@ -1347,7 +1417,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
                     const areaId = event.target.value; setWipAreaEditor(areaId);
                     const next: Record<string, string> = {}; for (const stage of activityFlowStages) { const setting = wipLimits.find((item) => item.area_id === areaId && item.flow_status === stage); next[stage] = setting?.limit_count == null ? '' : String(setting.limit_count); }
                     setWipDrafts(next);
-                  }}><option value="">Selecione uma área</option>{activeAreas.map((area) => <option value={area.id} key={area.id}>{area.name}</option>)}</select></label>
+                  }}><option value="">Selecione uma área</option>{activityEditorAreas.map((area) => <option value={area.id} key={area.id}>{area.name}</option>)}</select></label>
                   {wipAreaEditor && <div className="activity-wip-fields">{activityFlowStages.map((stage) => <label key={stage}><span>{activityFlowLabels[stage]}</span><input aria-label={`Limite WIP para ${activityFlowLabels[stage]}`} type="number" min="0" step="1" placeholder="Sem limite" value={wipDrafts[stage] ?? ''} onChange={(event) => setWipDrafts((current) => ({ ...current, [stage]: event.target.value }))} /></label>)}<button type="button" onClick={() => void saveWipSettings()} disabled={savingWipKey === wipAreaEditor}>{savingWipKey ? 'Salvando…' : 'Salvar limites'}</button></div>}
                 </section>
               )}
@@ -1388,18 +1458,19 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           )}
 
           {tab === 'files' && (
-            <SharedContentWorkspace client={client} mode="files" userId={userId} isAdmin={profile.role === 'admin'} areas={activeAreas} members={members} />
+            <SharedContentWorkspace client={client} mode="files" userId={userId} isAdmin={profile.role === 'admin'} areas={activeAreas} members={members} areaId={activeChannel?.slug === 'geral' ? null : activeChannel?.area_id ?? null} isGeneralChannel={activeChannel?.slug === 'geral'} />
           )}
           {tab === 'conversations' && conversationsSubtab === 'announcements' && (
-            <SharedContentWorkspace client={client} mode="announcements" userId={userId} isAdmin={profile.role === 'admin'} areas={activeAreas} members={members} targetAnnouncementId={pushTarget?.type === 'announcement' ? pushTarget.itemId : undefined} />
+            <SharedContentWorkspace client={client} mode="announcements" userId={userId} isAdmin={profile.role === 'admin'} areas={activeAreas} members={members} areaId={activeChannel?.slug === 'geral' ? null : activeChannel?.area_id ?? null} isGeneralChannel={activeChannel?.slug === 'geral'} targetAnnouncementId={pushTarget?.type === 'announcement' ? pushTarget.itemId : undefined} />
           )}
           {tab === 'conversations' && conversationsSubtab === 'chat' && (
-            <TeamChat client={client} userId={userId} isAdmin={profile.role === 'admin'} members={members} initialMessageId={pushTarget?.type === 'chat' ? pushTarget.messageId : undefined} initialConversationId={pushTarget?.type === 'chat' ? pushTarget.conversationId : undefined} initialConversationType={pushTarget?.type === 'chat' ? pushTarget.conversationType : undefined} />
+            <TeamChat client={client} userId={userId} isAdmin={profile.role === 'admin'} members={members} initialMessageId={pushTarget?.type === 'chat' ? pushTarget.messageId : undefined} initialConversationId={pushTarget?.type === 'chat' ? pushTarget.conversationId : undefined} initialConversationType={pushTarget?.type === 'chat' ? pushTarget.conversationType : undefined} initialDirectUserId={chatTargetUserId} onInitialDirectHandled={handleInitialDirectHandled} openCreateGroup={chatCreateGroupRequest} onCreateGroupHandled={handleCreateGroupHandled} />
           )}
           {tab === 'agenda' && agendaSubtab === 'meetings' && <MeetingsWorkspace displayName={displayName} onRoomActiveChange={setJitsiRoomActive} />}
           {tab === 'agenda' && agendaSubtab === 'availability' && <AvailabilityWorkspace client={client} userId={userId} profile={profile} />}
           {tab === 'agenda' && agendaSubtab === 'calendar' && <TeamCalendar client={client} userId={userId} isAdmin={profile.role === 'admin'} initialDate={calendarFocusDate} initialEventId={pushTarget?.type === 'calendar' ? pushTarget.itemId : undefined} />}
-          {tab === 'manual' && <ManualFunctions />}
+          {tab === 'manual' && activeChannel?.slug === 'geral' && <ChannelManualWorkspace client={client} userId={userId} channelId={activeChannel.id} kind="conduct" title="Manual de Conduta" isAdmin={profile.role === 'admin'} />}
+          {tab === 'manual' && activeChannel && activeChannel.slug !== 'geral' && <ChannelManualWorkspace client={client} userId={userId} channelId={activeChannel.id} kind="function" title={`Manual de Função · ${activeChannel.name}`} isAdmin={profile.role === 'admin'} fallback={<ManualFunctions areaFilter={manualAreaName} />} />}
 
           <footer className="workspace-footer" aria-label="Identidade do projeto">
             <img src="/assets/teamceleris-app-mark.png" alt="Símbolo do app Team Celeris" />
@@ -1412,7 +1483,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
       </div>
 
       <div className="workspace-members-dock">
-        <TeamMembersMenu client={client} userId={userId} isAdmin={profile.role === 'admin'} onSelfProfileChanged={onRefreshProfile} />
+        <TeamMembersMenu client={client} userId={userId} isAdmin={profile.role === 'admin'} onSelfProfileChanged={onRefreshProfile} onStartConversation={handleStartConversation} onCreateGroup={handleCreateGroupFromMembers} />
       </div>
 
       {dialogActivity !== false && (
