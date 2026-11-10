@@ -1860,3 +1860,126 @@
   .workspace-nav-label { font-size: 7.5px; }
   .workspace-brand img { max-width: 68px; height: 39px; }
 }
+
+/* FIX MOBILE NAV 2026-11-10
+   Sobrescreve explicitamente os layouts antigos com !important que mantinham
+   a navegação na mesma linha do cabeçalho e cortavam as demais abas. */
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-topbar {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto !important;
+    grid-template-areas: "brand actions" "navigation navigation" !important;
+    align-items: center !important;
+    column-gap: 10px !important;
+    row-gap: 7px !important;
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 8px 10px 9px !important;
+    overflow: visible !important;
+  }
+
+  .workspace-topbar > .workspace-brand {
+    grid-area: brand !important;
+    display: flex !important;
+    width: auto !important;
+    min-width: 0 !important;
+    justify-self: start !important;
+  }
+
+  .workspace-topbar > .workspace-brand img {
+    display: block !important;
+    width: auto !important;
+    max-width: 76px !important;
+    height: 40px !important;
+    object-fit: contain !important;
+  }
+
+  .workspace-topbar > .workspace-nav,
+  .workspace-topbar > .workspace-nav.is-area-channel {
+    grid-area: navigation !important;
+    display: grid !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    grid-auto-flow: row !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 3px !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+    overflow: visible !important;
+  }
+
+  .workspace-topbar > .workspace-nav.is-area-channel {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  .workspace-topbar > .workspace-nav > button {
+    display: flex !important;
+    flex: initial !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 54px !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    padding: 5px 2px !important;
+    overflow: visible !important;
+    white-space: normal !important;
+  }
+
+  .workspace-topbar > .workspace-nav .workspace-nav-icon {
+    display: grid !important;
+    width: 23px !important;
+    height: 23px !important;
+    flex: 0 0 23px !important;
+    place-items: center !important;
+  }
+
+  .workspace-topbar > .workspace-nav .workspace-nav-icon svg {
+    width: 19px !important;
+    height: 19px !important;
+  }
+
+  .workspace-topbar > .workspace-nav .workspace-nav-label {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    clip: auto !important;
+    font-size: clamp(8px, 2.15vw, 10px) !important;
+    line-height: 1.12 !important;
+    text-align: center !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .workspace-topbar > .workspace-top-actions {
+    grid-area: actions !important;
+    display: flex !important;
+    width: auto !important;
+    min-width: 0 !important;
+    justify-self: end !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 7px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .workspace-topbar > .workspace-nav,
+  .workspace-topbar > .workspace-nav.is-area-channel { gap: 1px !important; }
+  .workspace-topbar > .workspace-nav > button { min-height: 51px !important; padding-inline: 1px !important; }
+  .workspace-topbar > .workspace-nav .workspace-nav-label { font-size: 7.5px !important; }
+}
