@@ -1,16 +1,18 @@
-# SolMar Celeris · Gestão da equipe
+# Team Celeris · Gestão da equipe
 
 Aplicação responsiva em português, construída com React, TypeScript e Vite. Supabase fornece autenticação e banco compartilhado; Netlify hospeda o site estático.
 
 ## Funcionalidades desta versão
 
 - Login/cadastro por e-mail e senha; após a migration de ativação, novos cadastros ficam ativos automaticamente como Integrante. A confirmação de e-mail continua conforme a configuração já existente no Supabase.
-- Navegação com ícones na ordem **Chat**, **Comunicados**, **Semana**, **Atividades**, **Arquivos**, **Manual de funções** e **IA** (atalhos externos ChatGPT, Claude AI e Gemini).
+- Navegação principal na ordem **Início**, **Atividades**, **Chat**, **Comunicados**, **Disponibilidades**, **Agenda**, **Arquivos** e **Manual de funções**. Início é o feed da equipe com atividades semanais e indicadores; Agenda é uma aba independente e notificações/deep links de calendário abrem essa aba diretamente. Em celulares e tablets, as oito opções ficam em uma única linha de oito colunas, sem rolagem horizontal.
+- Reuniões ao vivo fica disponível por atalho no feed Início, sem ocupar uma aba principal. Prompts e templates institucionais ficam no Manual de funções; não há aba IA.
 - Atividades e atualizações semanais ligadas ao Supabase, com filtros, permissões RLS, edição autorizada e justificativa obrigatória quando o status é Pendente.
 - Arquivos: links de pastas do Google Drive, mostrados como cartões clicáveis; o app não lê o conteúdo das pastas.
 - Comunicados: publicação para a equipe ou uma área, autoria automática, fixação/desafixação e remoção lógica auditada.
 - Chat geral e grupos de texto em tempo real; perfis ativos criam grupos e adicionam integrantes ativos, somente participantes/Admins veem cada grupo, e somente Administradores removem mensagens.
-- Configurações de perfil: editar o próprio nome e foto privada; sem foto, o cabeçalho mostra a inicial do nome.
+- Diretório da equipe no cabeçalho: presença online/offline temporária e, para Administradores, promoção e suspensão seguras e convites por e-mail.
+- Perfil no cabeçalho: no desktop exibe “Eu” com foto/iniciais; no mobile fica somente o avatar. O menu contém tema claro/escuro e **Sair**; a ação Sair não aparece fora dele. O perfil permite editar nome e foto privada.
 - Avisos de atividade/semana por e-mail preparados via Edge Function, restritos ao responsável ativo e Administradores ativos; desligados por padrão até configurar o provedor.
 - Push OneSignal/Median para Chat, comunicados e atividades atribuídas, com suporte Web Push para navegador desktop mediante `VITE_ONESIGNAL_APP_ID`, inscrição consentida no menu do perfil e service worker em escopo isolado.
 - Login e workspace usam a logo original `public/assets/celeris-logo.png`; o arquivo de imagem não foi editado nem substituído.

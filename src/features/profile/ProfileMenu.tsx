@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ChevronDown, Moon, Sun } from 'lucide-react';
+import { LogOut, Moon, Sun } from 'lucide-react';
 import {
   disableDesktopNotifications,
   enableDesktopNotifications,
@@ -25,6 +25,7 @@ type ProfileMenuProps = {
   theme: 'light' | 'dark';
   onThemeChange: (theme: 'light' | 'dark') => void;
   onUpdated: (value: { fullName: string; photoUrl: string | null }) => void;
+  onLogout: () => void;
 };
 
 type ProfileRecord = { full_name: string; avatar_path: string | null };
@@ -40,7 +41,7 @@ function initialFrom(name: string): string {
   return Array.from(name.trim())[0]?.toLocaleUpperCase('pt-BR') ?? '?';
 }
 
-export default function ProfileMenu({ client, userId, fallbackName, photoUrl, theme, onThemeChange, onUpdated }: ProfileMenuProps) {
+export default function ProfileMenu({ client, userId, fallbackName, photoUrl, theme, onThemeChange, onUpdated, onLogout }: ProfileMenuProps) {
   const [open, setOpen] = useState(false);
   const [fullName, setFullName] = useState(fallbackName);
   const [avatarPath, setAvatarPath] = useState<string | null>(null);
@@ -262,15 +263,14 @@ export default function ProfileMenu({ client, userId, fallbackName, photoUrl, th
         type="button"
         aria-expanded={open}
         aria-haspopup="dialog"
-        aria-label={`${open ? 'Fechar' : 'Abrir'} configurações de perfil de ${shownName}`}
-        title={shownName}
+        aria-label={`${open ? 'Fechar' : 'Abrir'} menu do perfil`}
+        title="Perfil · Eu"
         onClick={() => setOpen((value) => !value)}
       >
         <span className="profile-avatar profile-menu-trigger-avatar" aria-hidden="true">
           {shownPhoto ? <img src={shownPhoto} alt="" /> : <span>{initialFrom(shownName)}</span>}
         </span>
-        <span className="profile-menu-trigger-name">{shownName}</span>
-        <ChevronDown className="profile-menu-trigger-chevron" aria-hidden="true" />
+        <span className="profile-menu-trigger-name">Eu</span>
       </button>
 
       {open && (
@@ -367,6 +367,11 @@ export default function ProfileMenu({ client, userId, fallbackName, photoUrl, th
               </button>
             </div>
           </form>
+          <div className="profile-account-actions">
+            <button className="profile-logout-button" type="button" onClick={onLogout}>
+              <LogOut size={15} aria-hidden="true" /> Sair
+            </button>
+          </div>
         </section>
       )}
     </div>

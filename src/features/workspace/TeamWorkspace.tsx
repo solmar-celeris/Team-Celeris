@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState, type DragEvent, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ComponentType, type DragEvent, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { BookOpen, CalendarDays, Check, ClipboardList, Clock3, Folder, GripVertical, Megaphone, MessageCircle, Moon, Sun, Trash2, X, Paperclip, ExternalLink, Video, type LucideIcon } from 'lucide-react';
+import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Filter, Folder, GripVertical, House, Megaphone, MessageCircle, Trash2, X, Paperclip, ExternalLink, Video, type LucideProps } from 'lucide-react';
 import {
   activityTypeLabels,
   activityFlowLabels,
@@ -31,6 +31,7 @@ import {
   weeklyStatusLabels,
 } from './domain';
 import ProfileMenu from '../profile/ProfileMenu';
+import TeamMembersMenu from '../profile/TeamMembersMenu';
 import SharedContentWorkspace from './SharedContentWorkspace';
 import TeamChat from './TeamChat';
 import TeamCalendar from './TeamCalendar';
@@ -48,6 +49,7 @@ type TeamWorkspaceProps = {
   profile: MemberProfile;
   theme: 'light' | 'dark';
   onThemeChange: (theme: 'light' | 'dark') => void;
+  onRefreshProfile: () => void | Promise<void>;
   onLogout: () => void;
 };
 
@@ -96,8 +98,8 @@ type ActivityFormState = {
 };
 type AttachmentSubmission = { files: File[]; driveName: string; driveUrl: string };
 type WeeklyDraft = WeeklyReportDraft;
-type WorkspaceTab = 'week' | 'availability' | 'activities' | 'files' | 'announcements' | 'chat' | 'meetings' | 'manual';
-type WeekSection = 'tracking' | 'agenda';
+type WorkspaceTab = 'home' | 'calendar' | 'availability' | 'activities' | 'files' | 'announcements' | 'chat' | 'meetings' | 'manual';
+type WorkspaceTabIcon = ComponentType<LucideProps>;
 type PushDeepLink =
   | { type: 'chat'; messageId: string; conversationId: string | null; conversationType: 'team' | 'group' | 'direct' }
   | { type: 'announcement' | 'activity'; itemId: string }
@@ -111,15 +113,15 @@ type WeekCalendarEvent = {
   start_time: string | null;
   location: string;
 };
-const workspaceTabs: { id: WorkspaceTab; label: string; mobileLabel: string; icon: LucideIcon }[] = [
-  { id: 'chat', label: 'Chat', mobileLabel: 'Chat', icon: MessageCircle },
-  { id: 'meetings', label: 'Reuniões ao vivo', mobileLabel: 'Reu.', icon: Video },
-  { id: 'announcements', label: 'Comunicados', mobileLabel: 'Avis.', icon: Megaphone },
-  { id: 'week', label: 'Semanas', mobileLabel: 'Sem.', icon: Clock3 },
-  { id: 'availability', label: 'Disponibilidades', mobileLabel: 'Disp.', icon: Clock3 },
-  { id: 'activities', label: 'Atividades', mobileLabel: 'Ativ.', icon: ClipboardList },
-  { id: 'files', label: 'Arquivos', mobileLabel: 'Arq.', icon: Folder },
-  { id: 'manual', label: 'Manual de funções', mobileLabel: 'Man.', icon: BookOpen },
+const workspaceTabs: { id: WorkspaceTab; label: string; icon: WorkspaceTabIcon }[] = [
+  { id: 'home', label: 'Início', icon: House },
+  { id: 'activities', label: 'Atividades', icon: ClipboardList },
+  { id: 'chat', label: 'Chat', icon: MessageCircle },
+  { id: 'announcements', label: 'Comunicados', icon: Megaphone },
+  { id: 'availability', label: 'Disponibilidades', icon: ClockWithArrowsIcon },
+  { id: 'calendar', label: 'Agenda', icon: CalendarDays },
+  { id: 'files', label: 'Arquivos', icon: Folder },
+  { id: 'manual', label: 'Manual de funções', icon: BookOpen },
 ];
 
 const defaultFilters: FilterState = {
@@ -154,19 +156,22 @@ function parsePushDeepLink(): PushDeepLink | null {
 }
 
 function tabForPush(target: PushDeepLink | null): WorkspaceTab {
-  if (!target) return 'week';
+  if (!target) return 'home';
   if (target.type === 'chat') return 'chat';
   if (target.type === 'announcement') return 'announcements';
   if (target.type === 'activity') return 'activities';
-  return 'week';
+  return 'calendar';
 }
 
-const roleLabels: Record<MemberProfile['role'], string> = {
-  admin: 'Administrador',
-  area_lead: 'Líder de área',
-  member: 'Membro',
-  reader: 'Leitor',
-};
+function ClockWithArrowsIcon({ size = 20, className }: LucideProps) {
+  const dimension = typeof size === 'number' ? size : 20;
+  return (
+    <span className={`workspace-clock-arrows${className ? ` ${className}` : ''}`} style={{ width: size, height: size }} aria-hidden="true">
+      <Clock3 className="workspace-clock-arrows-face" size={dimension} aria-hidden="true" />
+      <ArrowLeftRight className="workspace-clock-arrows-directions" size={Math.max(10, Math.round(dimension * 0.62))} aria-hidden="true" />
+    </span>
+  );
+}
 
 const defaultCycleStart = '2026-11-09';
 const defaultCycleEnd = '2027-12-22';
@@ -350,10 +355,10 @@ function safeDriveUrl(value: string): string | null {
   } catch { return null; }
 }
 
-export default function TeamWorkspace({ client, userId, profile, theme, onThemeChange, onLogout }: TeamWorkspaceProps) {
+export default function TeamWorkspace({ client, userId, profile, theme, onThemeChange, onRefreshProfile, onLogout }: TeamWorkspaceProps) {
   const [pushTarget] = useState<PushDeepLink | null>(() => parsePushDeepLink());
   const [tab, setTab] = useState<WorkspaceTab>(() => tabForPush(pushTarget));
-  const [weekSection, setWeekSection] = useState<WeekSection>(() => pushTarget?.type === 'calendar' ? 'agenda' : 'tracking');
+  const [homeFiltersOpen, setHomeFiltersOpen] = useState(false);
   const [jitsiRoomActive, setJitsiRoomActive] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [activityAttachments, setActivityAttachments] = useState<ActivityAttachment[]>([]);
@@ -691,10 +696,10 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   const responsibleNames = useMemo(() => [...new Set(activities.map((activity) => activity.responsible_name.trim() || 'A definir'))].sort((a, b) => a.localeCompare(b, 'pt-BR')), [activities]);
 
   const visibleActivities = useMemo(() => {
-    const source = tab === 'week' ? expectedActivities : activities;
+    const source = tab === 'home' ? expectedActivities : activities;
     const search = filters.search.trim().toLocaleLowerCase('pt-BR');
     return source.filter((activity) => {
-      const status = tab === 'week'
+      const status = tab === 'home'
         ? (updatesForWeek.get(activity.id)?.status ?? 'not_started')
         : generalStatusById.get(activity.id) ?? 'not_started';
       const haystack = [activity.code, activity.name, activity.description, activity.responsible_name, activity.expected_deliverable]
@@ -703,7 +708,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
       if (filters.responsible && activity.responsible_name !== filters.responsible) return false;
       if (filters.area && activity.area_id !== filters.area) return false;
       if (filters.type && activity.activity_type !== filters.type) return false;
-      const selectedStatus = tab === 'week' && filters.status === 'overdue' ? '' : filters.status;
+      const selectedStatus = tab === 'home' && filters.status === 'overdue' ? '' : filters.status;
       if (selectedStatus && status !== selectedStatus) return false;
       const activityStart = activity.start_date ?? '0001-01-01';
       const activityEnd = activity.due_date ?? '9999-12-31';
@@ -1062,15 +1067,22 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
     setFilters((current) => ({ ...current, [key]: value }));
   }
 
-  const pageHeading = tab === 'week'
-    ? {
-      kicker: weekSection === 'tracking' ? 'ACOMPANHAMENTO SEMANAL' : 'AGENDA DA EQUIPE',
-      title: 'Semanas da equipe.',
-      subtitle: weekSection === 'tracking'
-        ? 'Registre o que avançou e sinalize o que precisa de atenção.'
-        : 'Organize reuniões, treinamentos e compromissos da equipe.',
-    }
-    : tab === 'availability'
+  function navigateToTab(nextTab: WorkspaceTab) {
+    if (jitsiRoomActive && nextTab !== tab && !window.confirm('Você está em uma reunião. Sair desta tela desconectará sua chamada. Deseja continuar?')) return;
+    if (jitsiRoomActive && nextTab !== tab) setJitsiRoomActive(false);
+    setTab(nextTab);
+  }
+
+  function handleProfileLogout() {
+    if (jitsiRoomActive && !window.confirm('Você está em uma reunião. Sair do Team Celeris desconectará sua chamada. Deseja continuar?')) return;
+    onLogout();
+  }
+
+  const pageHeading = tab === 'home'
+    ? { kicker: 'FEED DA EQUIPE', title: 'Início', subtitle: selectedWeek ? `Acompanhe as atividades da semana ${selectedWeek.number} e os próximos compromissos da equipe.` : 'Acompanhe as atividades e os próximos compromissos da equipe.' }
+    : tab === 'calendar'
+      ? { kicker: 'AGENDA DA EQUIPE', title: 'Agenda', subtitle: 'Organize reuniões, treinamentos, eventos e compromissos da equipe.' }
+      : tab === 'availability'
       ? { kicker: 'HORÁRIOS E ESCALAS', title: 'Disponibilidades.', subtitle: 'Informe seus horários semanais e consulte as disponibilidades ou escalas do time.' }
       : tab === 'activities'
       ? { kicker: 'CADASTRO DA EQUIPE', title: 'Atividades da equipe.', subtitle: 'Consulte, filtre e mantenha as atividades do ciclo atualizadas.' }
@@ -1091,8 +1103,18 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           <img src="/assets/solmar-celeris-site-logo.png" alt="" />
           <span><strong>Team Celeris</strong><small>UFCI/RJ · ESPAÇO DA EQUIPE</small></span>
         </a>
+        <nav className="workspace-nav" aria-label="Navegação principal">
+          {workspaceTabs.map(({ id, label, icon: Icon }) => (
+            <button key={id} type="button" title={label} aria-label={label} className={tab === id ? 'is-active' : ''} onClick={() => navigateToTab(id)} aria-current={tab === id ? 'page' : undefined}>
+              <span className="workspace-nav-icon"><Icon aria-hidden="true" /></span>
+              <span className="workspace-nav-label">{label}</span>
+            </button>
+          ))}
+        </nav>
+        <div className="workspace-members-slot">
+          <TeamMembersMenu client={client} userId={userId} isAdmin={profile.role === 'admin'} onSelfProfileChanged={onRefreshProfile} />
+        </div>
         <div className="workspace-top-actions">
-          <span className="workspace-role"><i aria-hidden="true" />{roleLabels[profile.role]}</span>
           <ProfileMenu
             client={client}
             userId={userId}
@@ -1101,42 +1123,13 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             theme={theme}
             onThemeChange={onThemeChange}
             onUpdated={handleProfileUpdated}
+            onLogout={handleProfileLogout}
           />
-          <button
-            className="workspace-theme-toggle"
-            type="button"
-            aria-label={theme === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'}
-            title={theme === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'}
-            onClick={() => onThemeChange(theme === 'light' ? 'dark' : 'light')}
-          >
-            {theme === 'light' ? <Moon aria-hidden="true" /> : <Sun aria-hidden="true" />}
-          </button>
-          <button className="workspace-logout" type="button" onClick={() => {
-            if (jitsiRoomActive && !window.confirm('Você está em uma reunião. Sair do Team Celeris desconectará sua chamada. Deseja continuar?')) return;
-            onLogout();
-          }}>Sair</button>
         </div>
       </header>
 
       <div className="workspace-frame">
-        <aside className="workspace-sidebar" aria-label="Navegação do espaço da equipe">
-          <p className="workspace-sidebar-label">ROTINA DA EQUIPE</p>
-          <nav className="workspace-nav">
-            {workspaceTabs.map(({ id, label, mobileLabel, icon: Icon }) => (
-              <button key={id} type="button" title={label} aria-label={label} className={tab === id ? 'is-active' : ''} onClick={() => {
-                if (jitsiRoomActive && id !== tab && !window.confirm('Você está em uma reunião. Sair desta aba desconectará sua chamada. Deseja sair mesmo assim?')) return;
-                if (jitsiRoomActive && id !== tab) setJitsiRoomActive(false);
-                setTab(id);
-              }} aria-current={tab === id ? 'page' : undefined}>
-                <span className="workspace-nav-icon"><Icon aria-hidden="true" /></span>
-                <span className="workspace-nav-label">{label}</span>
-                <span className="workspace-nav-mobile-label" aria-hidden="true">{mobileLabel}</span>
-              </button>
-            ))}
-          </nav>
-        </aside>
-
-        <main className={`workspace-main${tab === 'chat' ? ' is-chat-page' : ''}`} id="workspace">
+        <main className={`workspace-main${tab === 'chat' ? ' is-chat-page' : ''}${tab === 'home' ? ' is-home-page' : ''}`} id="workspace">
           <div className="workspace-page-heading">
             <div>
               <p className="workspace-kicker">{pageHeading.kicker}</p>
@@ -1144,11 +1137,12 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
               <p className="workspace-subtitle">{pageHeading.subtitle}</p>
             </div>
             <div className="workspace-heading-actions">
-              {(tab === 'activities' || (tab === 'week' && weekSection === 'tracking')) && <span className="workspace-cycle-chip">PERÍODO · {formatFullDate(cycleStart)} – {formatFullDate(cycleEnd)} · {cycleWeeksCount} SEMANAS</span>}
-              {(tab === 'activities' || (tab === 'week' && weekSection === 'tracking')) && profile.role === 'admin' && <button className="workspace-refresh workspace-period-button" type="button" onClick={() => { setPeriodError(''); setPeriodDialogOpen(true); }}>Editar período</button>}
-              {(tab === 'activities' || (tab === 'week' && weekSection === 'tracking')) && <button className="workspace-refresh" type="button" onClick={() => void loadData(true)} disabled={loading || refreshing}>
+              {(tab === 'activities' || tab === 'home') && <span className="workspace-cycle-chip">PERÍODO · {formatFullDate(cycleStart)} – {formatFullDate(cycleEnd)} · {cycleWeeksCount} SEMANAS</span>}
+              {(tab === 'activities' || tab === 'home') && profile.role === 'admin' && <button className="workspace-refresh workspace-period-button" type="button" onClick={() => { setPeriodError(''); setPeriodDialogOpen(true); }}>Editar período</button>}
+              {(tab === 'activities' || tab === 'home') && <button className="workspace-refresh" type="button" onClick={() => void loadData(true)} disabled={loading || refreshing}>
                 {refreshing ? 'Atualizando…' : '↻ Atualizar'}
               </button>}
+              {tab === 'home' && <button className="workspace-refresh workspace-feed-filter-toggle" type="button" aria-expanded={homeFiltersOpen} aria-controls="workspace-filter-panel" onClick={() => setHomeFiltersOpen((current) => !current)}><Filter size={14} aria-hidden="true" /> {homeFiltersOpen ? 'Ocultar filtros' : 'Filtrar'}</button>}
               {tab === 'activities' && (profile.role === 'admin' || profile.role === 'area_lead') && (
                 <button className="workspace-add-button" type="button" onClick={() => { setDialogError(''); setDialogActivity(null); }}>
                   <span aria-hidden="true">+</span> Nova atividade
@@ -1157,18 +1151,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             </div>
           </div>
 
-          {tab === 'week' && <nav className="workspace-week-subnav" aria-label="Seções de Semanas">
-            {([
-              { id: 'tracking', label: 'Acompanhamento semanal', icon: Clock3 },
-              { id: 'agenda', label: 'Agenda', icon: CalendarDays },
-            ] as const).map(({ id, label, icon: Icon }) => (
-              <button key={id} type="button" aria-pressed={weekSection === id} className={weekSection === id ? 'is-active' : ''} onClick={() => setWeekSection(id)}>
-                <Icon aria-hidden="true" /> <span>{label}</span>
-              </button>
-            ))}
-          </nav>}
-
-          {(tab === 'activities' || (tab === 'week' && weekSection === 'tracking')) && <p className="workspace-permission-note">{permissionSummary}</p>}
+          {(tab === 'activities' || tab === 'home') && <p className="workspace-permission-note">{permissionSummary}</p>}
 
           {errorMessage && (
             <div className="workspace-alert workspace-alert-error" role="alert">
@@ -1179,7 +1162,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           )}
           {feedback && <p className="workspace-feedback" role="status">{feedback}</p>}
 
-          {((tab === 'week' && weekSection === 'tracking') || (tab === 'activities' && activityView !== 'pert')) && <div className="workspace-filter-panel">
+          {((tab === 'home' && homeFiltersOpen) || (tab === 'activities' && activityView !== 'pert')) && <div className="workspace-filter-panel" id={tab === 'home' ? 'workspace-filter-panel' : undefined}>
             <label className="workspace-search">
               <span>Buscar</span>
               <input value={filters.search} onChange={(event) => updateFilter('search', event.target.value)} placeholder="Código, nome, descrição…" />
@@ -1206,10 +1189,10 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
               </select>
             </label>
             <label>
-              <span>{tab === 'week' ? 'Status da semana' : 'Situação geral'}</span>
-              <select value={tab === 'week' && filters.status === 'overdue' ? '' : filters.status} onChange={(event) => updateFilter('status', event.target.value)}>
+              <span>{tab === 'home' ? 'Status da semana' : 'Situação geral'}</span>
+              <select value={tab === 'home' && filters.status === 'overdue' ? '' : filters.status} onChange={(event) => updateFilter('status', event.target.value)}>
                 <option value="">Todos</option>
-                {(tab === 'week' ? Object.entries(weeklyStatusLabels) : Object.entries(generalStatusLabels)).map(([status, label]) => <option key={status} value={status}>{label}</option>)}
+                {(tab === 'home' ? Object.entries(weeklyStatusLabels) : Object.entries(generalStatusLabels)).map(([status, label]) => <option key={status} value={status}>{label}</option>)}
               </select>
             </label>
             <label>
@@ -1223,8 +1206,9 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             <button className="workspace-clear-filters" type="button" onClick={() => setFilters(defaultFilters)}>Limpar filtros</button>
           </div>}
 
-          {tab === 'week' && weekSection === 'tracking' && (
-            <section className="workspace-week-section" aria-labelledby="selected-week-title">
+          {tab === 'home' && (
+            <div className="workspace-feed-layout">
+            <section className="workspace-week-section workspace-feed-main" aria-labelledby="selected-week-title">
               <div className="workspace-week-heading">
                 <div>
                   <p className="workspace-kicker">REGISTRO DA SEMANA</p>
@@ -1239,14 +1223,6 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
                 </label>
               </div>
 
-              <div className="workspace-week-indicators" aria-label="Indicadores da semana">
-                <article><span>Previstas</span><strong>{weeklyIndicators.planned}</strong></article>
-                <article><span>Concluídas</span><strong>{weeklyIndicators.completed}</strong></article>
-                <article><span>Em andamento</span><strong>{weeklyIndicators.inProgress}</strong></article>
-                <article><span>Atrasadas</span><strong>{weeklyIndicators.overdue}</strong></article>
-                <article><span>Bloqueadas</span><strong>{weeklyIndicators.blocked}</strong></article>
-              </div>
-              <p className="workspace-week-indicator-note">Atrasadas segue o status geral da atividade; bloqueadas usa o status do fluxo. Os filtros aplicados também afetam os totais.</p>
               {!weeklyDetailsMigrationAvailable && <div className="workspace-alert" role="status">
                 <strong>Relato detalhado e histórico ainda não estão habilitados.</strong>
                 <p>Aplique <code>supabase/migrations/20261108122000_weekly_update_details_history.sql</code> no Supabase para liberar os novos campos. O acompanhamento existente continua disponível.</p>
@@ -1313,7 +1289,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
                           <article className={`workspace-week-event is-${event.event_scope}`} key={event.id}>
                             <div className="workspace-week-event-date"><CalendarDays aria-hidden="true" /><strong>{formatShortDate(event.event_date)}</strong>{event.start_time && <span>{event.start_time.slice(0, 5)}</span>}</div>
                             <div className="workspace-week-event-details"><span>{event.event_scope === 'internal' ? 'EVENTO INTERNO' : 'EVENTO EXTERNO'}</span><h4>{event.title}</h4>{event.location && <p>{event.location}</p>}</div>
-                            <button type="button" onClick={() => { setCalendarFocusDate(event.event_date); setWeekSection('agenda'); setTab('week'); }}>Ver na Agenda</button>
+                            <button type="button" onClick={() => { setCalendarFocusDate(event.event_date); navigateToTab('calendar'); }}>Ver na Agenda</button>
                           </article>
                         ))}
                       </div>
@@ -1322,6 +1298,28 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
                 </>
               )}
             </section>
+            <aside className="workspace-feed-sidebar" aria-label="Resumo da semana e atalhos">
+              <section className="workspace-feed-card">
+                <p className="workspace-kicker">RESUMO DA SEMANA</p>
+                <h2>{selectedWeek ? formatWeekRange(selectedWeek) : 'Ciclo sem semanas'}</h2>
+                <p className="workspace-feed-total"><strong>{weeklyIndicators.planned}</strong> atividade(s) previstas</p>
+                <div className="workspace-week-indicators" aria-label="Indicadores da semana">
+                  <article><span>Concluídas</span><strong>{weeklyIndicators.completed}</strong></article>
+                  <article><span>Em andamento</span><strong>{weeklyIndicators.inProgress}</strong></article>
+                  <article><span>Atrasadas</span><strong>{weeklyIndicators.overdue}</strong></article>
+                  <article><span>Bloqueadas</span><strong>{weeklyIndicators.blocked}</strong></article>
+                </div>
+                <p className="workspace-week-indicator-note">Atrasadas usa a situação geral; bloqueadas, o fluxo Kanban. Os filtros ajustam os totais.</p>
+              </section>
+              <section className="workspace-feed-card workspace-feed-shortcuts">
+                <p className="workspace-kicker">ATALHOS DA EQUIPE</p>
+                <button type="button" onClick={() => navigateToTab('calendar')}><CalendarDays aria-hidden="true" /> Abrir Agenda</button>
+                <button type="button" onClick={() => navigateToTab('activities')}><ClipboardList aria-hidden="true" /> Ver atividades</button>
+                <button type="button" onClick={() => navigateToTab('meetings')}><Video aria-hidden="true" /> Reuniões ao vivo</button>
+                {weekCalendarEvents.length > 0 && <p className="workspace-feed-events-count">{weekCalendarEvents.length} evento(s) na semana selecionada</p>}
+              </section>
+            </aside>
+            </div>
           )}
 
           {tab === 'activities' && (
@@ -1387,7 +1385,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           )}
           {tab === 'meetings' && <MeetingsWorkspace displayName={displayName} onRoomActiveChange={setJitsiRoomActive} />}
           {tab === 'availability' && <AvailabilityWorkspace client={client} userId={userId} profile={profile} />}
-          {tab === 'week' && weekSection === 'agenda' && <TeamCalendar client={client} userId={userId} isAdmin={profile.role === 'admin'} initialDate={calendarFocusDate} initialEventId={pushTarget?.type === 'calendar' ? pushTarget.itemId : undefined} />}
+          {tab === 'calendar' && <TeamCalendar client={client} userId={userId} isAdmin={profile.role === 'admin'} initialDate={calendarFocusDate} initialEventId={pushTarget?.type === 'calendar' ? pushTarget.itemId : undefined} />}
           {tab === 'manual' && <ManualFunctions />}
 
           <footer className="workspace-footer" aria-label="Identidade do projeto">

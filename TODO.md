@@ -315,3 +315,47 @@
 - [x] Centralizar ícones compactos acima dos nomes completos; limitar cada nome a no máximo duas linhas sem aumentar a altura fixa da barra; manter o destaque azul/laranja da aba ativa e preservar eventos e funcionalidades.
 - [x] Usar CSS Grid com `repeat(8, minmax(0, 1fr))`, sem `wrap`; ajustar proporcionalmente ícones, texto e espaçamento para telas estreitas e maiores, sem modificar cabeçalho, logo, perfil ou outras seções.
 **Evidência:** Chromium confirmou 8 colunas/1 linha, todos os botões alinhados, rótulos visíveis em até 2 linhas e zero overflow horizontal para contentores de 360, 375 e 390 px; `pnpm typecheck` e `pnpm build` aprovados.
+
+
+## 44. Atualizar o Manual de funções pelo DOCX revisado
+- [x] Usar o arquivo `Manual_Cargos_Funcoes_Competencias_Capacitacao_SolMar_Celeris_revisado.docx` como fonte canônica; preservar busca, filtros e seção de prompts/templates.
+- [x] Atualizar organograma: Coordenação Geral integrada e sem restrição exclusiva a professores; Gestão de Pessoas, Administrativo-Financeiro, Marketing, Mecânica Naval, Elétrica e **Eletrônica - ELT** como áreas diretas; TI como apoio transversal. Produtos e Redes Sociais são frentes internas de Marketing.
+- [x] Consolidar responsabilidades históricas de Telemetria dentro de Eletrônica; corrigir as interfaces entre áreas e a matriz de competências/capacitação, recomendações, níveis e alertas de segurança.
+- [x] Preservar informação sem respaldo novo como complemento identificado, ou remover afirmações antigas em conflito com o manual (p.ex. exclusividade docente, “não operacional”, antiga Telemetria como área independente).
+- [x] Incluir sete indicadores sugeridos, registros de aplicação prática, integrações e diretrizes gerais do DOCX.
+- [x] Verificar manualmente as células desalinhadas/ambíguas da matriz do DOCX antes de transcrever; manter explícita a ambiguidade indicada no Manual.
+
+## 45. Pastas de Arquivos editáveis
+- [x] Permitir editar nome, link do Google Drive e descrição opcional de uma pasta já cadastrada; mostrar a descrição no card e incluí-la na busca.
+- [x] Adicionar `description` por migration incremental sem recriar nem excluir registros existentes; manter validação HTTPS/host do Drive.
+- [x] Fazer update por RPC `SECURITY DEFINER` validada para membro ativo (não conceder UPDATE geral na tabela); registrar mudanças na auditoria existente com URLs redigidas.
+- [x] Preservar áreas, pasta principal, remoção lógica, autoria e links atuais.
+
+## 46. Diretório e presença dos membros
+- [x] Disponibilizar no cabeçalho um menu no canto com os perfis/membros; mostrar ponto azul se presente e vermelho se ausente e indicar papel/situação sem expor e-mail no diretório geral.
+- [x] Usar Supabase Realtime Presence em canal privado, com RLS para membros ativos; não persistir um booleano online nem deixar canal de presença público.
+- [x] Ajustar layout desktop/mobile para não cobrir navegação ou controles existentes; atualizar o papel do próprio usuário após uma promoção.
+
+## 47. Ações administrativas e convites por e-mail
+- [x] Apenas administrador ativo pode promover a admin, remover membro e convidar por e-mail; validar no backend/banco e na UI.
+- [x] “Remover da equipe” suspende o perfil sem apagar usuário nem histórico; impedir auto-remoção e suspensão do último administrador ativo; auditar mudanças.
+- [x] Convidar por Supabase Auth Admin via Edge Function autenticada; redirect fixo para a tela de login, sem aceitar redirect arbitrário nem expor service-role no front-end.
+- [x] Tratar o retorno do link `invite` no app e encaminhar o convidado ao fluxo de criação de senha antes de entrar; também manter recuperação de senha nesse fluxo.
+- [x] Manter o cadastro público existente e documentar que convite não torna o acesso exclusivamente por convite enquanto Auth permitir `signUp` público.
+- [x] Documentar requisitos externos de SMTP, URL allow-list e secrets. Nenhuma migration/função/site remoto foi aplicado/publicado.
+
+**Validação da etapa:** `pnpm typecheck` e `pnpm build` aprovados; TypeScript isolado da Edge Function checado com stubs temporários; parser PostgreSQL validou as 28 instruções nas três migrations. Não foram testados e-mail real, Supabase/Realtime remoto, multiusuário, cadastro de convite nem aparelho móvel autenticado.
+
+
+## 48. Feed de equipe e navegação estilo LinkedIn
+- [ ] Renomear **Semanas** para **Início**, usar ícone de casa e apresentar um feed da equipe com as atividades previstas para a semana selecionada, mantendo filtros, indicadores, atualizações e registros existentes.
+- [ ] Tornar **Agenda** uma aba principal independente; a ordem relativa das abas deve continuar: **Início, Atividades, Chat, Comunicados, Disponibilidades, Arquivos, Manual de funções**. Inserir **Agenda** após Disponibilidades, sem substituir nenhuma aba da lista.
+- [ ] Colocar **Membros** no extremo direito da navegação em vez de um atalho de mensagens; preservar lista, presença, convites e ações administrativas.
+- [ ] Preservar **Reuniões ao vivo** acessível como atalho em Início, ainda que não ocupe uma aba principal da ordem solicitada.
+- [ ] Reaproveitar os dados e cartões semanais atuais no feed; ajustar deep links de calendário e ações “Ver na Agenda” para abrir a aba Agenda, com evento/data recebidos.
+
+## 49. Cabeçalho e perfil responsivos
+- [ ] Desktop: usar o cabeçalho existente com logo, navegação compacta, Membros no canto e perfil identificado como **Eu** com foto circular.
+- [ ] Mobile: na primeira linha, exibir somente a logo do projeto à esquerda e um pequeno círculo com a foto de perfil à direita; manter a faixa de abas abaixo do cabeçalho e não adicionar barra de busca.
+- [ ] Em desktop e mobile, mostrar **Sair** somente dentro do menu aberto ao clicar na foto; manter dentro do perfil a opção de tema claro/escuro.
+- [ ] Preservar a confirmação ao trocar de tela ou sair quando uma chamada Jitsi estiver ativa; manter funções e links existentes.

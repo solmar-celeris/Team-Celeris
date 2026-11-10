@@ -126,3 +126,13 @@
 @media (prefers-reduced-motion: reduce) {
   .shared-poll-result-track > span { transition: none; }
 }
+
+
+.shared-folder-description { display: -webkit-box; max-width: 100%; overflow: hidden; color: var(--muted); font-size: 10px; line-height: 1.45; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.shared-content-form label > small.shared-content-note { justify-self: end; }
+@media (max-width: 520px) {
+  .shared-folder-open { min-height: 0; }
+  .shared-card-actions > button { min-height: 34px; }
+  .shared-content-form-actions { flex-wrap: wrap; }
+  .shared-content-form-actions > button { flex: 1 1 130px; min-height: 38px; }
+}

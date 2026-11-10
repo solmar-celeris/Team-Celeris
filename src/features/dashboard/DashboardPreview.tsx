@@ -9,8 +9,8 @@ const metrics = [
 
 const activities = [
   { code: 'MEC-08', title: 'Revisão do conjunto de propulsão', area: 'Mecânica Naval', due: '10 nov', status: 'Em andamento', tone: 'sky' },
-  { code: 'ENE-04', title: 'Conferir dimensionamento do painel', area: 'Energia', due: '11 nov', status: 'Pendente', tone: 'orange' },
-  { code: 'TEL-02', title: 'Validar coleta de telemetria', area: 'Telemetria', due: '12 nov', status: 'Concluída', tone: 'green' },
+  { code: 'ENE-04', title: 'Conferir dimensionamento do painel', area: 'Elétrica', due: '11 nov', status: 'Pendente', tone: 'orange' },
+  { code: 'ELT-02', title: 'Validar coleta de telemetria', area: 'Eletrônica - ELT', due: '12 nov', status: 'Concluída', tone: 'green' },
 ];
 
 const weeklyBars = [36, 47, 43, 58, 51, 68, 61, 74, 66, 82, 76, 52];

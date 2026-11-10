@@ -20,6 +20,7 @@ type DriveFolder = {
   id: string;
   name: string;
   drive_url: string;
+  description: string;
   area_id: string | null;
   is_primary: boolean;
   added_by: string | null;
@@ -51,10 +52,10 @@ type AnnouncementAttachment = { id: string; announcement_id: string; storage_pat
 type AnnouncementDriveLink = { id: string; announcement_id: string; name: string; url: string; added_by: string };
 type PollOption = { id: string; label: string; votes: number };
 type AnnouncementPoll = { id: string; announcement_id: string; question: string; allow_multiple: boolean; closed_at: string | null; options: PollOption[]; my_option_ids: string[] };
-type FolderForm = { name: string; driveUrl: string; areaId: string };
+type FolderForm = { name: string; driveUrl: string; areaId: string; description: string };
 type AnnouncementForm = { title: string; message: string; areaId: string; driveName: string; driveUrl: string; pollEnabled: boolean; question: string; options: string[]; allowMultiple: boolean };
 
-const emptyFolderForm: FolderForm = { name: '', driveUrl: '', areaId: '' };
+const emptyFolderForm: FolderForm = { name: '', driveUrl: '', areaId: '', description: '' };
 const emptyAnnouncementForm: AnnouncementForm = { title: '', message: '', areaId: '', driveName: '', driveUrl: '', pollEnabled: false, question: '', options: ['', ''], allowMultiple: false };
 const ANNOUNCEMENT_REACTIONS = ['👍', '❤️', '😂', '👏', '🔥'];
 const MAX_ANNOUNCEMENT_FILE_SIZE = 15 * 1024 * 1024;
@@ -85,6 +86,12 @@ function errorMessage(error: unknown): string {
   if (candidate.code === '42501' || /row-level security|permission denied/i.test(message)) {
     return 'O Supabase ainda está bloqueando essa ação. Confirme que as migrations incrementais estão aplicadas no projeto certo; não desative o RLS.';
   }
+  if (candidate.code === 'PGRST202' && /update_drive_folder/i.test(message)) {
+    return 'A função segura de edição de pastas ainda não existe neste banco. Aplique a migration incremental de edição e publique o site atualizado.';
+  }
+  if ((candidate.code === 'PGRST204' || candidate.code === '42703') && /drive_folders/i.test(message) && /description/i.test(message)) {
+    return 'A descrição/edição de pastas ainda não está habilitada neste banco. Aplique a migration 20261109213000_drive_folder_edit_description.sql.';
+  }
   if (['42P01', 'PGRST202', 'PGRST204', 'PGRST205'].includes(candidate.code ?? '') || /announcement_(attachments|drive_links|polls|poll_options).*not found/i.test(message)) {
     return 'Anexos, links e enquetes de Comunicados ainda não estão habilitados neste banco. Aplique a migration 20261106194000_announcement_attachments_drive_polls.sql.';
   }
@@ -114,6 +121,7 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
   const [error, setError] = useState('');
   const [feedback, setFeedback] = useState('');
   const [folderFormOpen, setFolderFormOpen] = useState(false);
+  const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [announcementFormOpen, setAnnouncementFormOpen] = useState(false);
   const [folderForm, setFolderForm] = useState<FolderForm>(emptyFolderForm);
   const [announcementForm, setAnnouncementForm] = useState<AnnouncementForm>(emptyAnnouncementForm);
@@ -142,7 +150,7 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
       if (mode === 'files') {
         const { data, error: queryError } = await client
           .from('drive_folders')
-          .select('id,name,drive_url,area_id,is_primary,added_by,created_at')
+          .select('id,name,drive_url,description,area_id,is_primary,added_by,created_at')
           .is('removed_at', null)
           .order('is_primary', { ascending: false })
           .order('created_at', { ascending: true });
@@ -270,7 +278,7 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
   const areasById = useMemo(() => new Map(areas.map((area) => [area.id, area.name])), [areas]);
   const membersById = useMemo(() => new Map(members.map((member) => [member.user_id, member.full_name])), [members]);
   const normalizedQuery = query.trim().toLocaleLowerCase('pt-BR');
-  const visibleFolders = folders.filter((folder) => !normalizedQuery || `${folder.name} ${areasById.get(folder.area_id ?? '') ?? 'Geral'}`.toLocaleLowerCase('pt-BR').includes(normalizedQuery));
+  const visibleFolders = folders.filter((folder) => !normalizedQuery || `${folder.name} ${folder.description} ${areasById.get(folder.area_id ?? '') ?? 'Geral'}`.toLocaleLowerCase('pt-BR').includes(normalizedQuery));
   const visibleAnnouncements = announcements.filter((item) => !normalizedQuery || `${item.title} ${item.message} ${areasById.get(item.audience_area_id ?? '') ?? 'Toda a equipe'}`.toLocaleLowerCase('pt-BR').includes(normalizedQuery));
 
   async function saveFolder(event: FormEvent<HTMLFormElement>) {
@@ -292,28 +300,55 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
       setError('Informe o nome da pasta.');
       return;
     }
+    const description = folderForm.description.trim();
+    if (description.length > 500) {
+      setError('A descrição deve ter no máximo 500 caracteres.');
+      return;
+    }
 
     setSaving(true);
     setError('');
     setFeedback('');
     try {
-      const needsPrimary = !folders.some((folder) => folder.is_primary);
-      const { error: insertError } = await client.from('drive_folders').insert({
-        name,
-        drive_url: parsedUrl.toString(),
-        area_id: folderForm.areaId || null,
-        is_primary: needsPrimary,
-      });
-      if (insertError) throw insertError;
+      if (editingFolderId) {
+        const { error: updateError } = await client.rpc('update_drive_folder', {
+          p_folder_id: editingFolderId,
+          p_name: name,
+          p_drive_url: parsedUrl.toString(),
+          p_area_id: folderForm.areaId || null,
+          p_description: description,
+        });
+        if (updateError) throw updateError;
+      } else {
+        const needsPrimary = !folders.some((folder) => folder.is_primary);
+        const { error: insertError } = await client.from('drive_folders').insert({
+          name,
+          drive_url: parsedUrl.toString(),
+          area_id: folderForm.areaId || null,
+          is_primary: needsPrimary,
+        });
+        if (insertError) throw insertError;
+      }
+      const wasEditing = Boolean(editingFolderId);
       setFolderForm(emptyFolderForm);
       setFolderFormOpen(false);
-      setFeedback('Pasta adicionada. O link abre em uma nova aba; o site não acessa o conteúdo do Drive.');
+      setEditingFolderId(null);
+      setFeedback(wasEditing ? 'Pasta atualizada. O link abre em uma nova aba; o site não acessa o conteúdo do Drive.' : 'Pasta adicionada. O link abre em uma nova aba; o site não acessa o conteúdo do Drive.');
       await loadContent(false);
     } catch (saveError) {
       setError(errorMessage(saveError));
     } finally {
       setSaving(false);
     }
+  }
+
+  function editFolder(folder: DriveFolder) {
+    setFolderForm({ name: folder.name, driveUrl: folder.drive_url, areaId: folder.area_id ?? '', description: folder.description ?? '' });
+    setEditingFolderId(folder.id);
+    setFolderFormOpen(true);
+    setConfirmFolderId(null);
+    setError('');
+    setFeedback('');
   }
 
   async function setPrimary(folder: DriveFolder) {
@@ -612,7 +647,18 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
             <RefreshCw size={14} aria-hidden="true" />{refreshing ? 'Atualizando…' : 'Atualizar'}
           </button>
           {isFiles ? (
-            <button className="workspace-add-button" type="button" onClick={() => { setFolderFormOpen((open) => !open); setError(''); }}>
+            <button className="workspace-add-button" type="button" onClick={() => {
+              if (folderFormOpen) {
+                setFolderFormOpen(false);
+                setEditingFolderId(null);
+                setFolderForm(emptyFolderForm);
+              } else {
+                setEditingFolderId(null);
+                setFolderForm(emptyFolderForm);
+                setFolderFormOpen(true);
+              }
+              setError('');
+            }}>
               <Plus size={15} aria-hidden="true" /> Adicionar pasta
             </button>
           ) : (
@@ -627,13 +673,14 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
       {feedback && <p className="workspace-feedback" role="status">{feedback}</p>}
 
       {isFiles && folderFormOpen && (
-        <form className="shared-content-form" onSubmit={(event) => void saveFolder(event)}>
-          <div className="shared-content-form-heading"><div><strong>Adicionar pasta à equipe</strong><p>Informe o endereço compartilhável da pasta no Google Drive.</p></div><button type="button" className="shared-close" aria-label="Fechar formulário" onClick={() => setFolderFormOpen(false)}><X size={17} /></button></div>
+        <form className="shared-content-form" aria-labelledby="folder-form-title" onSubmit={(event) => void saveFolder(event)}>
+          <div className="shared-content-form-heading"><div><strong id="folder-form-title">{editingFolderId ? 'Editar pasta compartilhada' : 'Adicionar pasta à equipe'}</strong><p>{editingFolderId ? 'Atualize o nome, o link, a área e a descrição da pasta.' : 'Informe o endereço compartilhável da pasta no Google Drive.'}</p></div><button type="button" className="shared-close" aria-label="Fechar formulário de pasta" onClick={() => { setFolderFormOpen(false); setEditingFolderId(null); setFolderForm(emptyFolderForm); }} disabled={saving}><X size={17} aria-hidden="true" /></button></div>
           <label><span>Nome da pasta <b>obrigatório</b></span><input required maxLength={120} value={folderForm.name} onChange={(event) => setFolderForm((current) => ({ ...current, name: event.target.value }))} placeholder="Ex.: Documentos de Engenharia" /></label>
           <label><span>Link de redirecionamento do Google Drive <b>obrigatório</b></span><input required type="url" value={folderForm.driveUrl} onChange={(event) => setFolderForm((current) => ({ ...current, driveUrl: event.target.value }))} placeholder="https://drive.google.com/drive/folders/…" /></label>
           <label><span>Área</span><select value={folderForm.areaId} onChange={(event) => setFolderForm((current) => ({ ...current, areaId: event.target.value }))}><option value="">Geral (toda a equipe)</option>{areas.map((area) => <option key={area.id} value={area.id}>{area.name}</option>)}</select></label>
+          {editingFolderId && <label><span>Descrição <small>(opcional; até 500 caracteres)</small></span><textarea id="folder-description" rows={3} maxLength={500} aria-describedby="folder-description-count" value={folderForm.description} onChange={(event) => setFolderForm((current) => ({ ...current, description: event.target.value }))} placeholder="Contexto ou conteúdo desta pasta" /><small id="folder-description-count" className="shared-content-note">{folderForm.description.length}/500 caracteres</small></label>}
           <p className="shared-content-note">A pessoa que abrir precisa ter permissão própria no Drive. O SolMar não lê os arquivos da pasta.</p>
-          <div className="shared-content-form-actions"><button className="workspace-cancel-button" type="button" onClick={() => setFolderFormOpen(false)} disabled={saving}>Cancelar</button><button className="workspace-save-button" type="submit" disabled={saving}>{saving ? 'Salvando…' : 'Adicionar pasta'}</button></div>
+          <div className="shared-content-form-actions"><button className="workspace-cancel-button" type="button" onClick={() => { setFolderFormOpen(false); setEditingFolderId(null); setFolderForm(emptyFolderForm); }} disabled={saving}>Cancelar</button><button className="workspace-save-button" type="submit" disabled={saving}>{saving ? 'Salvando…' : editingFolderId ? 'Salvar alterações' : 'Adicionar pasta'}</button></div>
         </form>
       )}
 
@@ -672,7 +719,7 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
               <ArrowUpRight size={18} aria-hidden="true" />
             </a>
           )}
-          <label className="shared-content-search"><span>Buscar pasta</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nome ou área" /></label>
+          <label className="shared-content-search"><span>Buscar pasta</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nome, descrição ou área" /></label>
           {loading ? <div className="workspace-loading" role="status"><span />Carregando pastas…</div> : folderCount === 0 ? (
             <div className="workspace-empty"><FolderOpen size={25} aria-hidden="true" /><strong>{folders.length ? 'Nenhuma pasta corresponde à busca.' : 'Ainda não há pastas compartilhadas.'}</strong><p>{folders.length ? 'Tente outra busca.' : 'Adicione um link do Google Drive para deixá-lo visível para a equipe.'}</p></div>
           ) : (
@@ -683,9 +730,11 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
                     <span className="shared-folder-icon"><FolderOpen size={25} aria-hidden="true" /></span>
                     <span className="shared-folder-name">{folder.name}</span>
                     <span className="shared-folder-area">{areasById.get(folder.area_id ?? '') ?? 'Geral'}{folder.is_primary ? ' · Principal' : ''}</span>
+                    {folder.description && <span className="shared-folder-description">{folder.description}</span>}
                     <ArrowUpRight className="shared-folder-external" size={16} aria-hidden="true" />
                   </a>
                   <div className="shared-card-actions">
+                    <button type="button" onClick={() => editFolder(folder)} aria-label={`Editar pasta ${folder.name}`}><FileText size={13} aria-hidden="true" />Editar</button>
                     {!folder.is_primary && <button type="button" onClick={() => void setPrimary(folder)} disabled={saving || pendingPrimaryId !== null}><Pin size={13} aria-hidden="true" />{pendingPrimaryId === folder.id ? 'Atualizando…' : 'Tornar principal'}</button>}
                     {confirmFolderId === folder.id ? <div className="shared-confirm-actions"><span>Remover da lista?</span><button type="button" className="is-danger" onClick={() => void removeFolder(folder)} disabled={saving}><Check size={13} aria-hidden="true" />Confirmar</button><button type="button" onClick={() => setConfirmFolderId(null)} disabled={saving}><X size={13} aria-hidden="true" />Cancelar</button></div> : <button type="button" className="is-danger" onClick={() => setConfirmFolderId(folder.id)}><Trash2 size={13} aria-hidden="true" />Remover</button>}
                   </div>

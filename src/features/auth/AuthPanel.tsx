@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
 import { syncMedianOneSignalIdentity } from '../../lib/medianOneSignal';
 import { syncDesktopOneSignalIdentity } from '../../lib/desktopNotifications';
@@ -103,6 +103,16 @@ export default function AuthPanel({ theme, onThemeChange }: AuthPanelProps) {
 
   useEffect(() => {
     const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const queryParams = new URLSearchParams(window.location.search);
+    const inviteFlow = hashParams.get('type') === 'invite'
+      || queryParams.get('type') === 'invite'
+      || queryParams.get('flow') === 'invite';
+    const inviteStorageKey = 'team-celeris-invite-password-setup';
+    if (inviteFlow) {
+      window.sessionStorage.setItem(inviteStorageKey, 'true');
+      setMode('update-password');
+      setNotice('Seu convite foi validado. Crie uma senha para concluir a entrada na equipe.');
+    }
     const authError = window.location.search
       ? new URLSearchParams(window.location.search).get('error_description')
       : null;
@@ -142,18 +152,26 @@ export default function AuthPanel({ theme, onThemeChange }: AuthPanelProps) {
       const currentSession = data.session;
       setSession(currentSession);
       if (currentSession) {
+        if (window.sessionStorage.getItem(inviteStorageKey) === 'true') {
+              setMode('update-password');
+          setNotice('Seu convite foi validado. Crie uma senha para concluir a entrada na equipe.');
+        }
         setProfileLoading(true);
         try {
           const currentProfile = await readMemberProfile(client, currentSession.user.id);
           if (mounted) {
             setProfile(currentProfile);
-            setAccessState(currentProfile?.status ?? 'missing');
+          if (mounted) setAccessState(currentProfile?.status ?? 'missing');
           }
         } catch {
           if (mounted) setAccessState('error');
         } finally {
           if (mounted) setProfileLoading(false);
         }
+      } else if (window.sessionStorage.getItem(inviteStorageKey) === 'true') {
+        window.sessionStorage.removeItem(inviteStorageKey);
+        setMode('login');
+        setErrorMessage('Não foi possível validar este convite. Solicite ao administrador um novo link.');
       }
       if (mounted) setBooting(false);
     }).catch(() => {
@@ -319,6 +337,7 @@ export default function AuthPanel({ theme, onThemeChange }: AuthPanelProps) {
       setPassword('');
       setConfirmPassword('');
       const { error: signOutError } = await supabase.auth.signOut();
+      window.sessionStorage.removeItem('team-celeris-invite-password-setup');
       if (!signOutError) {
         setSession(null);
         setProfile(null);
@@ -346,6 +365,7 @@ export default function AuthPanel({ theme, onThemeChange }: AuthPanelProps) {
         return;
       }
       setSession(null);
+      window.sessionStorage.removeItem('team-celeris-invite-password-setup');
       setProfile(null);
       setAccessState(null);
       setEmail('');
@@ -357,9 +377,20 @@ export default function AuthPanel({ theme, onThemeChange }: AuthPanelProps) {
     }
   }
 
+  const refreshOwnProfile = useCallback(async () => {
+    if (!supabase || !session) return;
+    try {
+      const currentProfile = await readMemberProfile(supabase, session.user.id);
+      setProfile(currentProfile);
+      setAccessState(currentProfile?.status ?? 'missing');
+    } catch {
+      // Mantém a sessão atual e tenta novamente no próximo refresh do diretório.
+    }
+  }, [session]);
+
   const displayName = profile?.full_name.trim() || session?.user.email || 'Integrante';
 
-  if (session && accessState === 'active' && profile && supabase) {
+  if (session && accessState === 'active' && profile && supabase && mode !== 'update-password') {
     return (
       <TeamWorkspace
         client={supabase}
@@ -367,6 +398,7 @@ export default function AuthPanel({ theme, onThemeChange }: AuthPanelProps) {
         profile={{ ...profile, user_id: session.user.id, status: 'active' }}
         theme={theme}
         onThemeChange={onThemeChange}
+        onRefreshProfile={refreshOwnProfile}
         onLogout={() => void handleLogout()}
       />
     );

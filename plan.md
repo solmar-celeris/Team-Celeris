@@ -151,3 +151,45 @@ Adicionar migration incremental para relatos semanais estruturados e snapshots a
 
 ### Regras de indicadores
 Total previsto = atividades esperadas para a semana selecionada conforme `isActivityExpected` (com filtros aplicados, se ativos). Concluídas e Em andamento = estado semanal da linha da semana selecionada. Atrasadas = `getGeneralStatus(activity) === 'overdue'`, mantendo a regra geral preexistente. Bloqueadas = `activity.flow_status === 'blocked'`; estes contadores são categorias independentes e podem se sobrepor quando os sistemas semanal e Kanban indicarem estados diferentes.
+
+
+## Etapa incremental — manual revisado, pastas e membros (09/11/2026)
+
+### Fonte e interface do Manual
+- Fonte canônica: DOCX revisado anexado pelo usuário. Atualizar a estrutura, cards, competências e matriz, indicadores, interfaces e diretrizes; conservar busca/filtros e a seção existente de prompts/templates.
+- Taxonomia direta: Gestão de Pessoas, Administrativo-Financeiro, Marketing, Mecânica Naval, Elétrica e Eletrônica - ELT. Telemetria passa a ser responsabilidade dentro de Eletrônica; TI continua transversal. Produtos e Redes Sociais são frentes de Marketing.
+- Não reproduzir a exclusividade docente, nem declarar que Coordenação não executa tarefas operacionais, pois o DOCX não contém essas restrições. Conferir células desalinhadas da matriz antes de incorporá-las.
+
+### Pastas do módulo Arquivos
+- A tabela existente `drive_folders` já guarda nome, URL, área e status de pasta principal, mas não possui descrição e não permite editar pelo cliente.
+- Migration nova e aditiva: adicionar descrição opcional; permitir edição por RPC segura para perfis ativos e adicionar os campos de link/descrição à auditoria. Preservar a validação de URL e o modelo de soft delete.
+
+### Diretório, presença e gestão da equipe
+- Exibir diretório no canto do cabeçalho; usar azul/vermelho para presence online/offline sem armazenar estado de presença em `profiles`.
+- Usar canal Realtime privado com policies RLS limitadas a `team-presence` e perfil ativo.
+- Alteração de papel/suspensão deve ser feita por funções seguras no banco que exigem `active/admin`, impedem auto-remoção e impedem remover o último admin; registrar no `audit_log` existente.
+- Convites via Edge Function com JWT do usuário verificado, autorização admin server-side, `auth.admin.inviteUserByEmail` e URL de retorno fixa. Nenhuma service-role no bundle ou `.env` público.
+- Tratar link de convite e senha no front-end; não mudar o cadastro público ativo sem decisão explícita. Convite não é controle de entrada exclusivo enquanto cadastro público continuar habilitado.
+- Sem acesso autorizado ao Supabase/Netlify nesta etapa: implementar e validar localmente, documentar secrets/SMTP/redirects e deixar deployment/migrations pendentes.
+
+
+### Resultado e limites desta entrega (09/11/2026)
+- Implementados o Manual revisado, pastas editáveis, diretório de membros, Presence privada, convites e retorno para definição de senha, ações admin auditadas e a área **Eletrônica - ELT**.
+- Migrations em ordem: `20261109213000_drive_folder_edit_description.sql`, `20261109220000_team_member_admin_presence.sql`, `20261109223000_rename_telemetry_to_electronics.sql`; Edge Function: `supabase/functions/manage-team-members/index.ts`.
+- `pnpm typecheck`, `pnpm build`, verificação isolada TypeScript da Edge Function e parser das três migrations concluídos sem erro. Não foi feito deploy nem conexão a Supabase remoto; convite por e-mail, presença real e teste mobile autenticado dependem de configuração do projeto e teste do proprietário.
+
+
+## Etapa incremental — navegação/feed estilo LinkedIn (09/11/2026)
+
+### Direção visual e comportamento
+Usar a imagem de referência do usuário como guia, sem reconstruir a aplicação: cabeçalho azul existente com logo, navegação compacta de abas e perfil; cartões do feed com a paleta azul/laranja já usada. No desktop, a linha superior reúne marca, abas e controles; no mobile, a primeira linha mostra somente logo à esquerda e avatar circular à direita, e a faixa de navegação segue abaixo, sem busca.
+
+### Estrutura e reuso
+- A página **Início** reutiliza as atividades previstas para a semana selecionada, os indicadores, filtros e `WeeklyActivityCard`; o feed adiciona resumo/atalhos em cartão lateral no desktop e layout em coluna no mobile.
+- A ordem solicitada permanece: **Início, Atividades, Chat, Comunicados, Disponibilidades, Arquivos, Manual de funções**. Como **Agenda** deve ser independente e também ficar no cabeçalho, inserir **Agenda** depois de Disponibilidades, sem alterar a ordem relativa das sete abas enumeradas.
+- Colocar **Membros** no extremo direito do cabeçalho/navegação. O diretório existente, Presence privada e ações administrativas não são reimplementados.
+- Preservar a tela de **Reuniões ao vivo**, acessível por um atalho no feed Início, embora não ocupe uma das posições principais enumeradas.
+- Ajustar deep links `push=calendar` e ações “Ver na Agenda” para selecionar a aba independente Agenda, mantendo `initialDate` e `initialEventId`.
+- O perfil mostra foto + **Eu** no desktop e só a foto circular no mobile. Mover **Sair** para o menu aberto pela foto; tema claro/escuro continua disponível ali.
+
+Não alterar banco, autenticação, logo ou APIs nesta etapa; validar layout responsivo e as regras de confirmação de saída enquanto houver uma sala Jitsi ativa.

@@ -728,10 +728,10 @@
     "obs": "Exemplo: ajustar datas e responsável."
   },
   {
-    "id": "TL-01",
+    "id": "ELT-01",
     "nome": "Verificar funcionamento dos sensores",
     "desc": "Checar sensores e leituras da telemetria.",
-    "area": "Telemetria",
+    "area": "Eletrônica - ELT",
     "tipo": "Rotina",
     "freq": "Semanal",
     "cond": "",
@@ -742,10 +742,10 @@
     "obs": "Executar também durante os testes."
   },
   {
-    "id": "TL-02",
+    "id": "ELT-02",
     "nome": "Realizar testes de comunicação",
     "desc": "Testar a comunicação entre barco e base.",
-    "area": "Telemetria",
+    "area": "Eletrônica - ELT",
     "tipo": "Condicional",
     "freq": "Conforme planejamento",
     "cond": "Teste previsto no planejamento",
@@ -756,10 +756,10 @@
     "obs": ""
   },
   {
-    "id": "TL-03",
+    "id": "ELT-03",
     "nome": "Atualizar códigos e programas",
     "desc": "Implementar e versionar alterações de código.",
-    "area": "Telemetria",
+    "area": "Eletrônica - ELT",
     "tipo": "Condicional",
     "freq": "Sob demanda",
     "cond": "Houve alteração a implementar",
@@ -770,10 +770,10 @@
     "obs": ""
   },
   {
-    "id": "TL-04",
+    "id": "ELT-04",
     "nome": "Registrar dados de telemetria",
     "desc": "Armazenar os dados coletados nos testes.",
-    "area": "Telemetria",
+    "area": "Eletrônica - ELT",
     "tipo": "Condicional",
     "freq": "Durante testes",
     "cond": "Teste em andamento",
@@ -784,10 +784,10 @@
     "obs": ""
   },
   {
-    "id": "TL-05",
+    "id": "ELT-05",
     "nome": "Corrigir falhas identificadas",
     "desc": "Corrigir falhas encontradas na telemetria.",
-    "area": "Telemetria",
+    "area": "Eletrônica - ELT",
     "tipo": "Condicional",
     "freq": "Sob demanda",
     "cond": "Falha identificada",
@@ -798,10 +798,10 @@
     "obs": ""
   },
   {
-    "id": "TL-06",
+    "id": "ELT-06",
     "nome": "Instalar e calibrar sensores de telemetria",
     "desc": "Instalar e calibrar os sensores previstos.",
-    "area": "Telemetria",
+    "area": "Eletrônica - ELT",
     "tipo": "Pontual",
     "freq": "Única",
     "cond": "",

@@ -76,3 +76,19 @@
 @media (max-width: 760px) {
   .profile-menu-popover { top: 226px; max-height: calc(100dvh - 234px); }
 }
+
+
+/* O avatar é o único controle de conta no topo mobile; Sair fica no menu do perfil. */
+.profile-menu-trigger { max-width: 150px; height: 44px; gap: 7px; padding: 3px 9px 3px 4px; border-radius: 999px; }
+.profile-menu-trigger-avatar { width: 32px; height: 32px; flex-basis: 32px; }
+.profile-menu-trigger-name { max-width: 72px; font-size: 11px; }
+.profile-menu-trigger-chevron { display: none !important; }
+.profile-account-actions { display: flex; justify-content: flex-end; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line, #d9e2ea); }
+.profile-logout-button { display: inline-flex; min-width: 88px; min-height: 44px; align-items: center; justify-content: center; gap: 7px; padding: 7px 12px; border: 1px solid color-mix(in srgb, #d64c4c 36%, var(--line, #d9e2ea)); border-radius: 9px; color: #a93434; background: color-mix(in srgb, #d64c4c 6%, var(--card, #fff)); cursor: pointer; font: inherit; font-size: 12px; font-weight: 760; }
+.profile-logout-button:hover { border-color: #d64c4c; background: color-mix(in srgb, #d64c4c 11%, var(--card, #fff)); }
+:root[data-theme="dark"] .profile-logout-button { color: #ffbbb5; }
+@media (max-width: 760px) {
+  .profile-menu-trigger { width: 42px; min-width: 42px; max-width: 42px; height: 42px; justify-content: center; padding: 3px; border-color: transparent; background: transparent; }
+  .profile-menu-trigger-name { display: none !important; }
+  .profile-menu-trigger-avatar { width: 34px; height: 34px; flex-basis: 34px; }
+}
