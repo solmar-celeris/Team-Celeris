@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ComponentType, type DragEvent, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type DragEvent, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Filter, Folder, GripVertical, House, Megaphone, MessageCircle, Newspaper, Trash2, X, Paperclip, ExternalLink, Video, type LucideProps } from 'lucide-react';
 import {
@@ -36,7 +36,7 @@ import ChannelSwitcher, { type WorkspaceChannel } from './ChannelSwitcher';
 import SharedContentWorkspace from './SharedContentWorkspace';
 import TeamChat from './TeamChat';
 import TeamCalendar from './TeamCalendar';
-import ManualFunctions from './ManualFunctions';
+import ManualFunctions, { getManualRoleHtml } from './ManualFunctions';
 import ChannelManualWorkspace from './ChannelManualWorkspace';
 import AvailabilityWorkspace from './AvailabilityWorkspace';
 import PERTCPMWorkspace from './PERTCPMWorkspace';
@@ -100,9 +100,9 @@ type ActivityFormState = {
 };
 type AttachmentSubmission = { files: File[]; driveName: string; driveUrl: string };
 type WeeklyDraft = WeeklyReportDraft;
-type WorkspaceTab = 'home' | 'activities' | 'agenda' | 'conversations' | 'files' | 'manual';
+type WorkspaceTab = 'home' | 'activities' | 'agenda' | 'conversations' | 'membersChat' | 'files' | 'manual';
 type AgendaSubtab = 'calendar' | 'availability' | 'meetings';
-type ConversationsSubtab = 'chat' | 'announcements';
+type ConversationsSubtab = 'announcements';
 type WorkspaceTabIcon = ComponentType<LucideProps>;
 type PushDeepLink =
   | { type: 'chat'; messageId: string; conversationId: string | null; conversationType: 'team' | 'group' | 'direct' }
@@ -159,7 +159,8 @@ function parsePushDeepLink(): PushDeepLink | null {
 
 function tabForPush(target: PushDeepLink | null): WorkspaceTab {
   if (!target) return 'home';
-  if (target.type === 'chat' || target.type === 'announcement') return 'conversations';
+  if (target.type === 'chat') return 'membersChat';
+  if (target.type === 'announcement') return 'conversations';
   if (target.type === 'activity') return 'activities';
   return 'agenda';
 }
@@ -360,10 +361,12 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   const [pushTarget] = useState<PushDeepLink | null>(() => parsePushDeepLink());
   const [tab, setTab] = useState<WorkspaceTab>(() => tabForPush(pushTarget));
   const [activeChannel, setActiveChannel] = useState<WorkspaceChannel | null>(null);
+  const initialChannelSelection = useRef(true);
   const [chatTargetUserId, setChatTargetUserId] = useState<string | null>(null);
+  const [chatReturnTab, setChatReturnTab] = useState<WorkspaceTab>('home');
   const [chatCreateGroupRequest, setChatCreateGroupRequest] = useState(false);
   const [agendaSubtab, setAgendaSubtab] = useState<AgendaSubtab>('calendar');
-  const [conversationsSubtab, setConversationsSubtab] = useState<ConversationsSubtab>(() => pushTarget?.type === 'chat' ? 'chat' : 'announcements');
+  const [conversationsSubtab, setConversationsSubtab] = useState<ConversationsSubtab>('announcements');
   const [homeFiltersOpen, setHomeFiltersOpen] = useState(false);
   const [jitsiRoomActive, setJitsiRoomActive] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -412,25 +415,28 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   const [dialogError, setDialogError] = useState('');
 
   const handleChannelChange = useCallback((channel: WorkspaceChannel) => {
+    const initialChannelLoad = initialChannelSelection.current;
+    initialChannelSelection.current = false;
     setActiveChannel(channel);
-    setTab(channel.slug === 'geral' ? 'home' : 'activities');
+    setTab(initialChannelLoad && pushTarget?.type === 'chat' ? 'membersChat' : initialChannelLoad && pushTarget?.type === 'announcement' ? 'conversations' : channel.slug === 'geral' ? 'home' : 'activities');
     setConversationsSubtab('announcements');
     setFilters(defaultFilters);
-  }, []);
+  }, [pushTarget]);
   const handleStartConversation = useCallback((targetUserId: string) => {
+    setChatReturnTab(tab === 'membersChat' ? 'home' : tab);
     setChatTargetUserId(targetUserId);
-    setTab('conversations');
-    setConversationsSubtab('chat');
-  }, []);
+    setTab('membersChat');
+  }, [tab]);
   const handleInitialDirectHandled = useCallback(() => setChatTargetUserId(null), []);
-  const handleCreateGroupFromMembers = useCallback(() => { setChatCreateGroupRequest(true); setTab('conversations'); setConversationsSubtab('chat'); }, []);
+  const handleCreateGroupFromMembers = useCallback(() => { setChatReturnTab(tab === 'membersChat' ? 'home' : tab); setChatCreateGroupRequest(true); setTab('membersChat'); }, [tab]);
   const handleCreateGroupHandled = useCallback(() => setChatCreateGroupRequest(false), []);
   const manualAreaName = activeChannel?.slug === 'mecanica-naval' ? 'Mecânica Naval'
     : activeChannel?.slug === 'eletrica' ? 'Elétrica'
       : activeChannel?.slug === 'eletronica' ? 'Eletrônica'
         : activeChannel?.slug === 'gestao-de-pessoas' ? 'Gestão de Pessoas'
           : activeChannel?.slug === 'marketing' ? 'Marketing'
-            : activeChannel?.slug === 'administrativo-financeiro' ? 'Administrativo-Financeiro' : '';
+            : activeChannel?.slug === 'administrativo-financeiro' ? 'Administrativo-Financeiro'
+              : activeChannel?.slug === 'ti' ? 'Tecnologia da Informação' : '';
 
   async function saveProjectPeriod(start: string, end: string) {
     if (profile.role !== 'admin') return;
@@ -1133,18 +1139,20 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
       : tab === 'activities'
       ? { kicker: 'CADASTRO DA EQUIPE', title: 'Atividades da equipe.', subtitle: 'Consulte, filtre e mantenha as atividades do ciclo atualizadas.' }
       : tab === 'files'
-        ? { kicker: 'LINKS COMPARTILHADOS', title: 'Arquivos da equipe.', subtitle: 'Acesse atalhos visuais para as pastas compartilhadas.' }
+        ? { kicker: 'LINKS COMPARTILHADOS', title: 'Arquivos da equipe.', subtitle: 'Consulte documentos enviados, pastas e atalhos de internet compartilhados.' }
         : tab === 'conversations'
-          ? { kicker: conversationsSubtab === 'announcements' ? 'MURAL DA EQUIPE' : 'CONVERSAS DA EQUIPE', title: 'Conversas', subtitle: conversationsSubtab === 'announcements' ? 'Acesse o Chat e os comunicados da equipe em um só lugar.' : 'Converse em grupo ou de forma privada, com arquivos e leitura em tempo real.' }
-          : { kicker: 'CARGOS E CAPACITAÇÃO', title: 'Manual de funções.', subtitle: 'Consulte as responsabilidades de cada área e as competências a desenvolver.' };
+          ? { kicker: 'MURAL DA EQUIPE', title: 'Comunicados', subtitle: 'Avisos compartilhados com todos os integrantes deste canal.' }
+          : tab === 'membersChat'
+            ? { kicker: 'MENSAGENS PRIVADAS', title: 'Chat', subtitle: 'Conversas abertas pelo diretório de membros.' }
+            : { kicker: 'CARGOS E CAPACITAÇÃO', title: 'Manual de funções.', subtitle: 'Consulte as responsabilidades de cada área e as competências a desenvolver.' };
 
   const contextualPageHeading = activeChannel && activeChannel.slug !== 'geral'
     ? tab === 'activities'
       ? { ...pageHeading, kicker: `ATIVIDADES · ${activeChannel.name.toLocaleUpperCase('pt-BR')}`, title: `Atividades · ${activeChannel.name}`, subtitle: `Acompanhe as entregas, responsáveis e prazos do canal ${activeChannel.name}.` }
-      : tab === 'conversations' && conversationsSubtab === 'chat'
-        ? { ...pageHeading, kicker: 'CONVERSA PRIVADA', title: 'Chat', subtitle: 'Converse com integrantes da equipe por mensagem privada ou em grupo.' }
-        : tab === 'conversations'
+      : tab === 'conversations'
           ? { ...pageHeading, kicker: `COMUNICADOS · ${activeChannel.name.toLocaleUpperCase('pt-BR')}`, title: `Comunicados · ${activeChannel.name}`, subtitle: `Avisos compartilhados com todos os integrantes deste canal.` }
+        : tab === 'membersChat'
+        ? pageHeading
         : tab === 'files'
           ? { ...pageHeading, kicker: `ARQUIVOS · ${activeChannel.name.toLocaleUpperCase('pt-BR')}`, title: `Arquivos · ${activeChannel.name}`, subtitle: `Documentos e pastas compartilhados do canal ${activeChannel.name}.` }
           : { ...pageHeading, kicker: `MANUAL DE FUNÇÃO · ${activeChannel.name.toLocaleUpperCase('pt-BR')}`, title: `Manual de Função · ${activeChannel.name}`, subtitle: `Responsabilidades e referências funcionais da área ${activeChannel.name}.` }
@@ -1152,12 +1160,10 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
       ? { ...pageHeading, kicker: 'FEED GERAL', title: 'Feed', subtitle: 'Atualizações cronológicas das atividades e entregas de todos os canais.' }
       : activeChannel?.slug === 'geral' && tab === 'activities'
         ? { ...pageHeading, kicker: 'ATIVIDADES CONSOLIDADAS', title: 'Atividades', subtitle: 'Visão consolidada das atividades de todos os canais, com acompanhamento PERT/CPM.' }
-        : activeChannel?.slug === 'geral' && tab === 'conversations' && conversationsSubtab === 'announcements'
+        : activeChannel?.slug === 'geral' && tab === 'conversations'
           ? { ...pageHeading, kicker: 'COMUNICADOS GLOBAIS', title: 'Comunicados', subtitle: 'Mural de avisos para todos os membros ativos do workspace.' }
-          : activeChannel?.slug === 'geral' && tab === 'conversations' && conversationsSubtab === 'chat'
-            ? { ...pageHeading, kicker: 'CHAT DO WORKSPACE', title: 'Chat', subtitle: 'Converse em grupo ou de forma privada; as DMs também podem ser abertas pelo diretório de membros.' }
-            : activeChannel?.slug === 'geral' && tab === 'manual'
-              ? { ...pageHeading, kicker: 'NORMAS DO WORKSPACE', title: 'Manual de Conduta', subtitle: 'Documento institucional e regras de convivência do workspace.' }
+          : activeChannel?.slug === 'geral' && tab === 'manual'
+            ? { ...pageHeading, kicker: 'NORMAS DO WORKSPACE', title: 'Manual de Conduta', subtitle: 'Documento institucional e regras de convivência do workspace.' }
               : pageHeading;
 
   return (
@@ -1172,9 +1178,9 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             : workspaceTabs).map(({ id, label: baseLabel, icon: Icon }) => {
             const label = activeChannel?.slug === 'geral'
               ? (id === 'home' ? 'Feed' : id === 'conversations' ? 'Comunicados' : id === 'manual' ? 'Manual de Conduta' : baseLabel)
-              : id === 'conversations' ? (conversationsSubtab === 'chat' ? 'Chat' : 'Comunicados') : id === 'manual' ? 'Manual de Função' : baseLabel;
+              : id === 'conversations' ? 'Comunicados' : id === 'manual' ? 'Manual de Função' : baseLabel;
             const NavIcon = id === 'home' && activeChannel?.slug === 'geral' ? Newspaper
-              : id === 'conversations' ? (conversationsSubtab === 'chat' ? MessageCircle : Megaphone) : Icon;
+              : id === 'conversations' ? Megaphone : Icon;
             return (
             <button key={id} type="button" title={label} aria-label={label} className={tab === id ? 'is-active' : ''} onClick={() => navigateToTab(id)} aria-current={tab === id ? 'page' : undefined}>
               <span className="workspace-nav-icon"><NavIcon aria-hidden="true" /></span>
@@ -1198,7 +1204,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
       </header>
 
       <div className="workspace-frame">
-        <main className={`workspace-main${tab === 'conversations' && conversationsSubtab === 'chat' ? ' is-chat-page' : ''}${tab === 'home' ? ' is-home-page' : ''}`} id="workspace">
+        <main className={`workspace-main${tab === 'membersChat' ? ' is-chat-page' : ''}${tab === 'home' ? ' is-home-page' : ''}`} id="workspace">
           <div className="workspace-page-heading">
             <div>
               {activeChannel && <p className="workspace-channel-context">{activeChannel.name}{activeChannel.is_open ? ' · CANAL ABERTO' : ' · CANAL PRIVADO'}</p>}
@@ -1207,6 +1213,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
               <p className="workspace-subtitle">{contextualPageHeading.subtitle}</p>
             </div>
             <div className="workspace-heading-actions">
+              {tab === 'membersChat' && <button className="workspace-refresh" type="button" onClick={() => setTab(chatReturnTab)}><ArrowLeftRight size={14} /> Voltar ao workspace</button>}
               {(tab === 'activities' || tab === 'home') && <span className="workspace-cycle-chip">PERÍODO · {formatFullDate(cycleStart)} – {formatFullDate(cycleEnd)} · {cycleWeeksCount} SEMANAS</span>}
               {(tab === 'activities' || tab === 'home') && profile.role === 'admin' && <button className="workspace-refresh workspace-period-button" type="button" onClick={() => { setPeriodError(''); setPeriodDialogOpen(true); }}>Editar período</button>}
               {(tab === 'activities' || tab === 'home') && <button className="workspace-refresh" type="button" onClick={() => void loadData(true)} disabled={loading || refreshing}>
@@ -1225,10 +1232,6 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             <button type="button" role="tab" aria-selected={agendaSubtab === 'calendar'} className={agendaSubtab === 'calendar' ? 'is-active' : ''} onClick={() => navigateToAgendaSubtab('calendar')}><CalendarDays aria-hidden="true" /><span>Calendário</span></button>
             <button type="button" role="tab" aria-selected={agendaSubtab === 'availability'} className={agendaSubtab === 'availability' ? 'is-active' : ''} onClick={() => navigateToAgendaSubtab('availability')}><ClockWithArrowsIcon size={20} /><span>Disponibilidades</span></button>
             <button type="button" role="tab" aria-selected={agendaSubtab === 'meetings'} className={agendaSubtab === 'meetings' ? 'is-active' : ''} onClick={() => navigateToAgendaSubtab('meetings')}><Video aria-hidden="true" /><span>Reunião</span></button>
-          </div>}
-          {tab === 'conversations' && activeChannel?.slug === 'geral' && <div className="workspace-module-tabs is-conversations" role="tablist" aria-label="Guias de Conversas">
-            <button type="button" role="tab" aria-selected={conversationsSubtab === 'chat'} className={conversationsSubtab === 'chat' ? 'is-active' : ''} onClick={() => setConversationsSubtab('chat')}><MessageCircle aria-hidden="true" /><span>Chat</span></button>
-            <button type="button" role="tab" aria-selected={conversationsSubtab === 'announcements'} className={conversationsSubtab === 'announcements' ? 'is-active' : ''} onClick={() => setConversationsSubtab('announcements')}><Megaphone aria-hidden="true" /><span>Comunicados</span></button>
           </div>}
 
           {(tab === 'activities' || tab === 'home') && <p className="workspace-permission-note">{permissionSummary}</p>}
@@ -1458,19 +1461,19 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           )}
 
           {tab === 'files' && (
-            <SharedContentWorkspace client={client} mode="files" userId={userId} isAdmin={profile.role === 'admin'} areas={activeAreas} members={members} areaId={activeChannel?.slug === 'geral' ? null : activeChannel?.area_id ?? null} isGeneralChannel={activeChannel?.slug === 'geral'} />
+            <SharedContentWorkspace client={client} mode="files" userId={userId} isAdmin={profile.role === 'admin'} areas={activeAreas} members={members} areaId={activeChannel?.slug === 'geral' ? null : activeChannel?.area_id ?? null} isGeneralChannel={activeChannel?.slug === 'geral'} channelId={activeChannel?.id ?? ''} />
           )}
           {tab === 'conversations' && conversationsSubtab === 'announcements' && (
-            <SharedContentWorkspace client={client} mode="announcements" userId={userId} isAdmin={profile.role === 'admin'} areas={activeAreas} members={members} areaId={activeChannel?.slug === 'geral' ? null : activeChannel?.area_id ?? null} isGeneralChannel={activeChannel?.slug === 'geral'} targetAnnouncementId={pushTarget?.type === 'announcement' ? pushTarget.itemId : undefined} />
+            <SharedContentWorkspace client={client} mode="announcements" userId={userId} isAdmin={profile.role === 'admin'} areas={activeAreas} members={members} areaId={activeChannel?.slug === 'geral' ? null : activeChannel?.area_id ?? null} isGeneralChannel={activeChannel?.slug === 'geral'} channelId={activeChannel?.id ?? ''} targetAnnouncementId={pushTarget?.type === 'announcement' ? pushTarget.itemId : undefined} />
           )}
-          {tab === 'conversations' && conversationsSubtab === 'chat' && (
+          {tab === 'membersChat' && (
             <TeamChat client={client} userId={userId} isAdmin={profile.role === 'admin'} members={members} initialMessageId={pushTarget?.type === 'chat' ? pushTarget.messageId : undefined} initialConversationId={pushTarget?.type === 'chat' ? pushTarget.conversationId : undefined} initialConversationType={pushTarget?.type === 'chat' ? pushTarget.conversationType : undefined} initialDirectUserId={chatTargetUserId} onInitialDirectHandled={handleInitialDirectHandled} openCreateGroup={chatCreateGroupRequest} onCreateGroupHandled={handleCreateGroupHandled} />
           )}
           {tab === 'agenda' && agendaSubtab === 'meetings' && <MeetingsWorkspace displayName={displayName} onRoomActiveChange={setJitsiRoomActive} />}
           {tab === 'agenda' && agendaSubtab === 'availability' && <AvailabilityWorkspace client={client} userId={userId} profile={profile} />}
           {tab === 'agenda' && agendaSubtab === 'calendar' && <TeamCalendar client={client} userId={userId} isAdmin={profile.role === 'admin'} initialDate={calendarFocusDate} initialEventId={pushTarget?.type === 'calendar' ? pushTarget.itemId : undefined} />}
           {tab === 'manual' && activeChannel?.slug === 'geral' && <ChannelManualWorkspace client={client} userId={userId} channelId={activeChannel.id} kind="conduct" title="Manual de Conduta" isAdmin={profile.role === 'admin'} />}
-          {tab === 'manual' && activeChannel && activeChannel.slug !== 'geral' && <ChannelManualWorkspace client={client} userId={userId} channelId={activeChannel.id} kind="function" title={`Manual de Função · ${activeChannel.name}`} isAdmin={profile.role === 'admin'} fallback={<ManualFunctions areaFilter={manualAreaName} />} />}
+          {tab === 'manual' && activeChannel && activeChannel.slug !== 'geral' && <ChannelManualWorkspace client={client} userId={userId} channelId={activeChannel.id} kind="function" title={`Manual de Função · ${activeChannel.name}`} isAdmin={profile.role === 'admin'} fallback={<ManualFunctions areaFilter={manualAreaName} />} resetContent={activeChannel.slug === 'administrativo-financeiro' ? getManualRoleHtml('Administrativo-Financeiro') : undefined} />}
 
           <footer className="workspace-footer" aria-label="Identidade do projeto">
             <img src="/assets/teamceleris-app-mark.png" alt="Símbolo do app Team Celeris" />

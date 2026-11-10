@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ChevronDown, Cpu, Globe2, LockKeyhole, Megaphone, Menu, Plus, Ship, Users, Wallet, Zap } from 'lucide-react';
+import { ChevronDown, Cpu, Globe2, Laptop, LockKeyhole, Megaphone, Menu, Plus, Ship, Users, Wallet, Zap, Pencil, Check, X } from 'lucide-react';
 import type { Area, MemberProfile } from './domain';
 import './channel-switcher.css';
 
 export type WorkspaceChannel = { id: string; slug: string; name: string; icon: string; is_open: boolean; area_id: string | null };
 type Props = { client: SupabaseClient; userId: string; isAdmin: boolean; areas: Area[]; members: Pick<MemberProfile, 'user_id' | 'full_name' | 'status'>[]; onChange: (channel: WorkspaceChannel) => void };
-const icons = { globe: Globe2, ship: Ship, zap: Zap, cpu: Cpu, users: Users, megaphone: Megaphone, wallet: Wallet } as const;
+const icons = { globe: Globe2, ship: Ship, zap: Zap, cpu: Cpu, users: Users, megaphone: Megaphone, wallet: Wallet, laptop: Laptop } as const;
 function ChannelIcon({ name }: { name: string }) { const Icon = icons[name as keyof typeof icons] ?? Globe2; return <Icon size={16} aria-hidden="true" />; }
 
 export default function ChannelSwitcher({ client, userId, isAdmin, areas, members, onChange }: Props) {
@@ -14,6 +14,8 @@ export default function ChannelSwitcher({ client, userId, isAdmin, areas, member
   const [selectedId, setSelectedId] = useState('');
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [editingPrivacy, setEditingPrivacy] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(true);
   const [name, setName] = useState('');
   const [isOpen, setIsOpen] = useState(true);
   const [areaId, setAreaId] = useState('');
@@ -33,7 +35,7 @@ export default function ChannelSwitcher({ client, userId, isAdmin, areas, member
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
     if (selected) onChange(selected);
-  }, [selected?.id, onChange]);
+  }, [selected?.id, selected?.is_open, selected?.name, selected?.area_id, selected?.slug, selected?.icon, onChange]);
   useEffect(() => {
     const channel = client.channel(`workspace-channels-${userId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'workspace_channels' }, () => { void load(); })
@@ -65,6 +67,15 @@ export default function ChannelSwitcher({ client, userId, isAdmin, areas, member
     else { const channel = data as WorkspaceChannel; setChannels((current) => [...current, channel]); setSelectedId(channel.id); setName(''); setAreaId(''); setIsOpen(true); setCreating(false); setNotice('Canal criado.'); }
     setBusy(false);
   }
+  async function savePrivacy() {
+    if (!selected || !isAdmin || busy) return;
+    if (selected.slug === 'geral' && !privacyOpen) { setNotice('O canal Geral deve permanecer aberto.'); return; }
+    setBusy(true); setNotice('');
+    const { error } = await client.from('workspace_channels').update({ is_open: privacyOpen, updated_at: new Date().toISOString() }).eq('id', selected.id);
+    if (error) setNotice('Não foi possível atualizar a privacidade. Verifique as migrations e a permissão de administrador.');
+    else { setChannels((current) => current.map((channel) => channel.id === selected.id ? { ...channel, is_open: privacyOpen } : channel)); setEditingPrivacy(false); setNotice('Privacidade do canal atualizada.'); }
+    setBusy(false);
+  }
   async function removeMember(targetUserId: string) {
     if (!selected || !isAdmin || busy) return; setBusy(true);
     const { error } = await client.from('workspace_channel_members').delete().eq('channel_id', selected.id).eq('user_id', targetUserId);
@@ -77,22 +88,23 @@ export default function ChannelSwitcher({ client, userId, isAdmin, areas, member
     setNotice(error ? 'Não foi possível adicionar o membro.' : 'Membro adicionado ao canal.'); if (!error) setChannelMemberIds((current) => [...current, memberId]); setMemberId(''); setBusy(false);
   }
   return <div className="channel-switcher" ref={root}>
-    <button type="button" className="channel-switcher-trigger" aria-label={`Abrir canais. Canal atual: ${selected?.name ?? 'não selecionado'}`} title="Alternar canal" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+    <button type="button" className="channel-switcher-trigger" aria-label={`Canais. Canal atual: ${selected?.name ?? 'não selecionado'}`} title="Canais" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
       <span className="channel-switcher-icon channel-switcher-desktop-icon">{selected ? <ChannelIcon name={selected.icon} /> : <Menu size={16} />}</span>
       <span className="channel-switcher-icon channel-switcher-mobile-icon"><Menu size={17} /></span>
-      <span className="channel-switcher-label"><small>CANAL ATUAL</small><strong>{selected?.name ?? 'Canais'}</strong></span>
+      <span className="channel-switcher-label"><small className="channel-switcher-mobile-title">CANAIS</small><small className="channel-switcher-desktop-title">CANAL ATUAL</small><strong>{selected?.name ?? 'Canais'}</strong></span>
       <ChevronDown size={15} />
     </button>
     {open && <div className="channel-switcher-menu" role="menu">
-      <p className="channel-switcher-caption">SEUS CANAIS</p>
+      <p className="channel-switcher-caption">SELECIONE UM CANAL</p>
       {channels.map((channel) => <button type="button" role="menuitem" key={channel.id} className={`channel-switcher-option${channel.id === selectedId ? ' is-active' : ''}`} onClick={() => { setSelectedId(channel.id); setOpen(false); }}>
         <ChannelIcon name={channel.icon} /><span>{channel.name}</span>{channel.is_open ? <Globe2 size={12} /> : <LockKeyhole size={12} />}
       </button>)}
       {selected && selected.slug !== 'geral' && !selected.area_id && <p className="channel-switcher-notice">Canal sem área vinculada: use o Manual para publicar conteúdo próprio. Atividades, comunicados e arquivos são organizados pelos canais de área.</p>}
-      {selected && !selected.is_open && isAdmin && <div className="channel-switcher-admin">
-        {channelMemberIds.length > 0 && <div className="channel-switcher-members"><small>Membros com acesso</small>{channelMemberIds.map((id) => <div key={id}><span>{members.find((member) => member.user_id === id)?.full_name || 'Integrante'}</span><button type="button" onClick={() => void removeMember(id)} disabled={busy}>Remover</button></div>)}</div>}
-        <label>Adicionar membro<select value={memberId} onChange={(event) => setMemberId(event.target.value)}><option value="">Selecione...</option>{members.filter((member) => member.status === 'active' && !channelMemberIds.includes(member.user_id)).map((member) => <option key={member.user_id} value={member.user_id}>{member.full_name || 'Integrante'}</option>)}</select></label>
-        <button type="button" onClick={() => void addMember()} disabled={!memberId || busy}>Adicionar</button>
+      {selected && isAdmin && <div className="channel-switcher-admin">
+        <div className="channel-switcher-privacy"><strong>Privacidade: {selected.is_open ? 'Aberto' : 'Privado'}</strong>{editingPrivacy ? <><label className="channel-switcher-check"><input type="checkbox" checked={privacyOpen} disabled={selected.slug === 'geral'} onChange={(event) => setPrivacyOpen(event.target.checked)} /> Aberto para todos os membros</label><div className="channel-switcher-privacy-actions"><button type="button" onClick={() => setEditingPrivacy(false)} disabled={busy}><X size={13}/> Cancelar</button><button type="button" onClick={() => void savePrivacy()} disabled={busy}><Check size={13}/> Salvar privacidade</button></div></> : <button type="button" onClick={() => { setPrivacyOpen(selected.is_open); setEditingPrivacy(true); }}><Pencil size={13}/> Alterar privacidade</button>}</div>
+        {!selected.is_open && channelMemberIds.length > 0 && <div className="channel-switcher-members"><small>Membros com acesso</small>{channelMemberIds.map((id) => <div key={id}><span>{members.find((member) => member.user_id === id)?.full_name || 'Integrante'}</span><button type="button" onClick={() => void removeMember(id)} disabled={busy}>Remover</button></div>)}</div>}
+        {!selected.is_open && <><label>Adicionar membro<select value={memberId} onChange={(event) => setMemberId(event.target.value)}><option value="">Selecione...</option>{members.filter((member) => member.status === 'active' && !channelMemberIds.includes(member.user_id)).map((member) => <option key={member.user_id} value={member.user_id}>{member.full_name || 'Integrante'}</option>)}</select></label>
+        <button type="button" onClick={() => void addMember()} disabled={!memberId || busy}>Adicionar</button></>}
       </div>}
       {isAdmin && !creating && <button type="button" className="channel-switcher-create" onClick={() => setCreating(true)}><Plus size={15} /> Criar canal</button>}
       {creating && <form className="channel-switcher-form" onSubmit={(event) => void createChannel(event)}>

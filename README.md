@@ -5,8 +5,8 @@ Aplicação responsiva em português, construída com React, TypeScript e Vite. 
 ## Funcionalidades desta versão
 
 - Login/cadastro por e-mail e senha; após a migration de ativação, novos cadastros ficam ativos automaticamente como Integrante. A confirmação de e-mail continua conforme a configuração já existente no Supabase.
-- Navegação principal: **Início**, **Atividades**, **Agenda**, **Conversas**, **Arquivos** e **Manual de funções**. Agenda reúne as subguias **Calendário**, **Disponibilidades** e **Reunião**; Conversas reúne **Chat** e **Comunicados**. O feed Início mostra as atividades da semana e indicadores, além de atalhos para Agenda e reunião ao vivo. Em celulares, logo e perfil ficam alinhados na faixa superior, com as seis áreas distribuídas em uma linha abaixo.
-- Os deep links abrem a área e subguia adequadas: calendário → Agenda/Calendário; chat → Conversas/Chat; comunicado → Conversas/Comunicados. Prompts e templates institucionais ficam no Manual de funções; não há aba IA.
+- Navegação principal: **Feed**, **Atividades**, **Agenda**, **Comunicados**, **Arquivos** e Manual do canal. O Chat é aberto pelo diretório **Membros**, sem guia própria na navegação principal. O feed Início mostra as atividades da semana e indicadores, além de atalhos para Agenda e reunião ao vivo. Em celulares, logo e perfil ficam alinhados na faixa superior, com as seis áreas distribuídas em uma linha abaixo.
+- Os deep links abrem a área adequada: calendário → Agenda/Calendário; chat → conversa correspondente; comunicado → Comunicados. Prompts e templates institucionais ficam no Manual de funções; não há aba IA.
 - Atividades e atualizações semanais ligadas ao Supabase, com filtros, permissões RLS, edição autorizada e justificativa obrigatória quando o status é Pendente.
 - Arquivos: links de pastas do Google Drive, mostrados como cartões clicáveis; o app não lê o conteúdo das pastas.
 - Comunicados: disponíveis na subguia **Conversas → Comunicados**, com publicação para a equipe ou uma área, autoria automática, fixação/desafixação e remoção lógica auditada.
@@ -63,3 +63,14 @@ Copie `.env.example` para `.env.local` e configure a URL e chave publishable do 
 - Migrations novas: `20261110113000_workspace_manual_storage.sql` (bucket privado dos originais) e `20261110114000_workspace_channels_area_seed_fix.sql` (associação da área Elétrica e proteção dos canais fixos) e `20261110115000_workspace_channel_content_permissions.sql` (RLS de conteúdo por canal, incluindo atividades, histórico, anexos, PERT/CPM, WIP e comunicados). A migration `20261110112000_workspace_channels.sql` também foi corrigida para instalações que ainda não a aplicaram.
 
 Canais adicionais sem `area_id` aceitam o Manual próprio, mas ainda não recebem Atividades/Comunicados/Arquivos; para isso, falta uma evolução com `channel_id` explícito nas tabelas desses módulos. Nenhuma migration foi aplicada ao Supabase remoto. Confira o histórico e aplique somente as migrations que ainda faltam, após backup.
+
+
+## Ajustes complementares de canais, editor e arquivos (10/11/2026)
+
+- Canal fixo TI vinculado à área Tecnologia da Informação existente.
+- Administradores podem alterar a privacidade dos canais após a criação; Geral permanece sempre aberto.
+- Chat acessado pelo diretório Membros, sem guia própria na navegação principal.
+- Editor rico em Comunicados e Manuais: tamanhos pequeno/médio/grande, negrito, itálico e marca-texto colorido.
+- Arquivos por canal com uploads e atalhos HTTPS, alternância em blocos/listas e ícones para Word, Excel, PowerPoint, PDF e web.
+- Manual Administrativo-Financeiro com ação para restaurar o conteúdo-base de cargos e responsabilidades.
+- Nova migration: `supabase/migrations/20261110160000_workspace_it_privacy_and_channel_files.sql`. Aplicar somente depois das migrations de canais anteriores e após conferir o histórico do Supabase.

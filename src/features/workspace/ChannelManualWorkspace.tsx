@@ -2,13 +2,14 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { Download, FileText, Pencil, Save, Upload } from 'lucide-react';
 import { extractManualText } from './extractManualText';
+import RichTextEditor, { RichTextContent } from './RichTextEditor';
 import './channel-manual.css';
 
 type ManualKind = 'conduct' | 'function';
 type ManualRecord = { id: string; channel_id: string; manual_kind: ManualKind; title: string; content: string; original_file_path: string | null; original_file_name: string | null; updated_at: string; updated_by: string | null };
-type Props = { client: SupabaseClient; userId: string; channelId: string; kind: ManualKind; title: string; isAdmin: boolean; fallback?: ReactNode };
+type Props = { client: SupabaseClient; userId: string; channelId: string; kind: ManualKind; title: string; isAdmin: boolean; fallback?: ReactNode; resetContent?: string };
 
-export default function ChannelManualWorkspace({ client, userId, channelId, kind, title, isAdmin, fallback }: Props) {
+export default function ChannelManualWorkspace({ client, userId, channelId, kind, title, isAdmin, fallback, resetContent }: Props) {
   const [manual, setManual] = useState<ManualRecord | null>(null);
   const [draft, setDraft] = useState('');
   const [editing, setEditing] = useState(false);
@@ -86,8 +87,8 @@ export default function ChannelManualWorkspace({ client, userId, channelId, kind
     </header>
     {error && <p className="channel-manual-error" role="alert">{error}</p>}{notice && <p className="channel-manual-notice" role="status">{notice}</p>}
     {manual?.original_file_name && <div className="channel-manual-file"><FileText size={17} /><span>{manual.original_file_name}</span>{downloadUrl && <a href={downloadUrl} target="_blank" rel="noreferrer"><Download size={14} /> Baixar original</a>}</div>}
-    {isAdmin && <div className="channel-manual-editor-actions">{editing ? <><button type="button" onClick={() => { setDraft(manual?.content ?? ''); setEditing(false); }}>Cancelar</button><button type="button" onClick={() => void saveContent()} disabled={saving}><Save size={14} /> {saving ? 'Salvando…' : 'Salvar alterações'}</button></> : <button type="button" onClick={() => setEditing(true)}><Pencil size={14} /> Editar texto</button>}</div>}
-    {editing ? <textarea className="channel-manual-editor" value={draft} onChange={(event) => setDraft(event.target.value)} aria-label="Texto editável do manual" rows={22} /> : manual?.content.trim() ? <article className="channel-manual-content">{manual.content.split(/\n{2,}/).map((paragraph, index) => <p key={index}>{paragraph}</p>)}</article> : fallback ?? <div className="channel-manual-empty"><FileText size={24} /><strong>Manual ainda não cadastrado</strong><span>{isAdmin ? 'Adicione um PDF ou DOCX para extrair o texto e armazenar o original.' : 'Um Administrador ainda não publicou o documento deste canal.'}</span></div>}
+    {isAdmin && <div className="channel-manual-editor-actions">{editing ? <><button type="button" onClick={() => { setDraft(manual?.content ?? ''); setEditing(false); }}>Cancelar</button><button type="button" onClick={() => void saveContent()} disabled={saving}><Save size={14} /> {saving ? 'Salvando…' : 'Salvar alterações'}</button></> : <><button type="button" onClick={() => setEditing(true)}><Pencil size={14} /> Editar texto</button>{resetContent && <button type="button" onClick={() => { if (window.confirm('Restaurar o conteúdo-base do Manual Administrativo-Financeiro? O texto atual será substituído.')) { setDraft(resetContent); setEditing(true); } }}><FileText size={14} /> Restaurar versão-base</button>}</>}</div>}
+    {editing ? <RichTextEditor value={draft} onChange={setDraft} placeholder="Edite o conteúdo do manual…" minHeight={360} /> : manual?.content.trim() ? <RichTextContent html={manual.content} className="channel-manual-content rich-text-content" /> : fallback ?? <div className="channel-manual-empty"><FileText size={24} /><strong>Manual ainda não cadastrado</strong><span>{isAdmin ? 'Adicione um PDF ou DOCX para extrair o texto e armazenar o original.' : 'Um Administrador ainda não publicou o documento deste canal.'}</span></div>}
     {manual?.updated_at && <small className="channel-manual-updated">Atualizado em {new Date(manual.updated_at).toLocaleString('pt-BR')}</small>}
   </section>;
 }

@@ -4,7 +4,7 @@
 
 ## O que esta versão acrescenta
 
-Após entrar com um perfil `active`, o menu principal mostra **Início**, **Atividades**, **Agenda**, **Conversas**, **Arquivos** e **Manual de funções**. Agenda contém **Calendário**, **Disponibilidades** e **Reunião**; Conversas contém **Chat** e **Comunicados**. Início é o feed semanal da equipe e também tem um atalho para a reunião ao vivo. Em mobile, logo e perfil ficam alinhados no topo e as seis áreas aparecem em uma única linha abaixo, sem rolagem horizontal, com ícones ampliados. Os prompts completos de Registro de Atividades e POP, com os templates oficiais, ficam no fim do Manual de funções. O dock **Membros** no canto inferior direito abre o diretório, com pontos azuis (online) e vermelhos (offline); apenas administradores ativos podem promover, revogar vínculo permanentemente ou convidar por e-mail. O nome/foto do perfil e o botão de tema continuam disponíveis no menu do perfil. A marca do aplicativo no rodapé permanece intacta.
+Após entrar com um perfil `active`, o menu principal mostra **Feed**, **Atividades**, **Agenda**, **Comunicados**, **Arquivos** e o Manual correspondente ao canal. O Chat é aberto exclusivamente pelo diretório **Membros**, ao selecionar uma pessoa ou criar um grupo. Agenda contém **Calendário**, **Disponibilidades** e **Reunião**. Início é o feed semanal da equipe e também tem um atalho para a reunião ao vivo. Em mobile, logo e perfil ficam alinhados no topo e as seis áreas aparecem em uma única linha abaixo, sem rolagem horizontal, com ícones ampliados. Os prompts completos de Registro de Atividades e POP, com os templates oficiais, ficam no fim do Manual de funções. O dock **Membros** no canto inferior direito abre o diretório, com pontos azuis (online) e vermelhos (offline); apenas administradores ativos podem promover, revogar vínculo permanentemente ou convidar por e-mail. O nome/foto do perfil e o botão de tema continuam disponíveis no menu do perfil. A marca do aplicativo no rodapé permanece intacta.
 
 Em **Conversas → Chat**, preserva-se a sala **Equipe** para todos os perfis ativos, além de DMs e grupos. Mensagens, áudio em MP3, fotos, documentos e câmera ficam em buckets privados. Qualquer participante ativo pode apagar qualquer mensagem para todos na sala geral, em grupo ou DM; participantes também podem apagar grupos ou DMs para todos. A sala geral não pode ser apagada. A confirmação é explícita; anexos/áudio/foto são removidos por uma fila segura do servidor, com retry se o Storage falhar. Recibos de DMs seguem visíveis somente aos participantes. A antiga tabela de ocultação individual permanece preservada, mas o aplicativo não consulta nem grava nela e não oferece **Apagar só para mim** ou **Ocultas**. Os push de Chat mostram o texto exato da mensagem no corpo da notificação e o nome do remetente no título; não envie segredos ou informações que não devam aparecer na tela bloqueada. Mensagens não enviam e-mail.
 
@@ -277,32 +277,35 @@ Depois da migration e da Edge Function, envie a versão deste pacote ao GitHub c
 
 
 
-## 20. Canais por área, diretório com DM e manuais (10/11/2026)
+## 20. Canais, diretório com DM, manuais e arquivos (10/11/2026)
 
-O seletor de canais está integrado ao cabeçalho, ao lado do perfil; no mobile, logo, abas roláveis, menu de canais e perfil ficam em uma única linha. O Canal Geral apresenta o feed e a visão consolidada; os canais de área filtram Atividades, Comunicados e Arquivos pelo `area_id` existente, sem mover nem recriar os registros. Os seis canais iniciais devem permanecer abertos; canais privados usam `workspace_channel_members` e a função `can_access_workspace_channel` no banco. Somente Administradores podem criar canais e administrar seus convites. Geral e os seis canais fixos têm proteção no banco para permanecerem abertos e não poderem ser renomeados/excluídos. O diretório Membros mostra somente perfis ativos, inclui e-mail via RPC, abre DM ao selecionar a ação de conversa, permite criar grupos pelo próprio diretório e mantém a revogação definitiva sem excluir Auth ou histórico.
+O seletor de canais fica no cabeçalho. Os canais iniciais são Geral, Mecânica Naval, Elétrica, Eletrônica, Gestão de Pessoas, Marketing, Administrativo Financeiro e TI. Geral permanece sempre aberto; Administradores podem alterar a privacidade dos demais canais, inclusive depois de criados, e administrar manualmente os participantes quando privados. A criação continua restrita a Administradores.
+
+A navegação principal apresenta Feed, Atividades, Agenda, Comunicados, Arquivos e o Manual correspondente ao canal. O Chat não aparece como guia: DMs e grupos são abertos pelo diretório **Membros**. Deep links de notificações de Chat continuam podendo abrir a conversa correspondente.
+
+Comunicados e Manuais usam editor rico com tamanhos pequeno/médio/grande, negrito, itálico e marca-texto em cores. No Manual Administrativo-Financeiro, Administradores têm a ação **Restaurar versão-base**, que substitui o texto atual pelo conteúdo-base de cargos e responsabilidades incorporado ao app. Confira o texto antes de salvar.
+
+Em Arquivos, a seção **Arquivos e atalhos** permite enviar documentos e adicionar URLs HTTPS. A visualização pode alternar entre blocos e lista. Word, Excel, PowerPoint, PDF e atalhos de internet têm ícones diferentes. Os uploads ficam em bucket privado por canal; os links externos abrem em nova aba. As pastas legadas do Google Drive continuam disponíveis para canais vinculados a uma área.
 
 ### Migrations adicionais
 
 Depois de conferir o histórico de migrations, aplique somente as ausentes, nesta ordem, após `20261110101000_chat_global_delete_member_revocation.sql`:
 
-1. `20261110112000_workspace_channels.sql` — se ainda não estiver aplicada.
-2. `20261110113000_workspace_manual_storage.sql` — cria o bucket privado `workspace-manuals`, com limite de 20 MiB e MIME PDF/DOCX; leitura respeita o canal e upload/edição/remoção exigem Administrador ativo. Também habilita Realtime para `workspace_manuals`.
-3. `20261110114000_workspace_channels_area_seed_fix.sql` — corrige a associação do canal Elétrica ao slug `eletrica` após a renomeação da antiga área Energia, protege os sete canais fixos para permanecerem abertos e mantém os UUIDs/históricos.
-4. `20261110115000_workspace_channel_content_permissions.sql` — reforça RLS e RPCs para que dados, atualizações, anexos e conteúdo secundário de canais privados não possam ser lidos ou alterados por não participantes.
+1. `20261110112000_workspace_channels.sql` — cria os canais e a estrutura de manuais.
+2. `20261110113000_workspace_manual_storage.sql` — cria o bucket privado dos originais PDF/DOCX.
+3. `20261110114000_workspace_channels_area_seed_fix.sql` — corrige o vínculo da área Elétrica e instala proteção dos canais fixos.
+4. `20261110115000_workspace_channel_content_permissions.sql` — reforça RLS/RPCs para conteúdo por canal.
+5. `20261110160000_workspace_it_privacy_and_channel_files.sql` — inclui TI, permite alterar a privacidade dos canais (Geral continua aberto), cria a tabela/bucket privados de arquivos e atalhos e habilita Realtime para esses itens.
 
-A migration `20261110112000_workspace_channels.sql` foi corrigida no pacote para usar `area_slug='eletrica'` na criação inicial. A migration corretiva seguinte cobre instalações em que o arquivo anterior já tenha sido aplicado com a associação ausente. Canais adicionais sem `area_id` podem guardar seu Manual próprio, mas ainda não recebem Atividades/Comunicados/Arquivos; para suportar isso, será necessária uma evolução com `channel_id` explícito nessas tabelas.
-
-### Upload e extração dos manuais
-
-Em **Geral → Manual de Conduta** e em cada canal de área → **Manual de Função**, Administradores podem enviar PDF/DOCX, escolher adicionar o texto ao conteúdo existente ou substituí-lo, editar o texto extraído e baixar o arquivo original por URL assinada temporária. O bucket é privado. A extração de DOCX usa a estrutura Open XML no navegador; a extração de PDF lê texto disponível nos streams do documento. PDFs digitalizados ou protegidos sem camada de texto exigem OCR externo e podem precisar que o texto seja colado no editor.
+A migration `20261110160000` pressupõe que a área `tecnologia-da-informacao` já existe, conforme o schema inicial. Ela não altera os dados históricos de atividades, comunicados, arquivos nem mensagens. Não reaplique migrations já executadas; confira o histórico do Supabase antes de cada execução.
 
 ### Testes antes de publicar
 
-- Entrar como Administrador e como Membro: confirmar que ambos veem Geral e os seis canais abertos; somente Admin vê **Criar canal** e os controles de gestão de canais.
-- Criar canal privado, adicionar duas contas e confirmar que uma terceira conta não vê o canal nem seus dados.
-- Conferir que atividades, comunicados e pastas com `area_id` ficam no canal correspondente e que registros sem área continuam no Geral.
-- Clicar no ícone de conversa de um membro ativo e confirmar que a DM abre no Chat; testar criação de grupo por membro comum.
-- Enviar mensagem em DM/grupo e conferir os recibos sob a mensagem própria, tanto em desktop quanto em mobile.
-- Enviar DOCX e PDF com texto selecionável, confirmar extração, edição e download original; testar acesso negado a usuário fora do canal.
+- Como Administrador, altere um canal aberto para privado e depois para aberto; confirme que Geral não pode ser tornado privado.
+- Crie um canal privado, adicione participantes e confirme com outra conta que o canal não aparece nem permite leitura dos dados.
+- Abra Membros, inicie uma DM e crie um grupo; confirme que não há guia Chat junto de Comunicados.
+- Publique um comunicado usando tamanhos, negrito, itálico e marca-texto; confira a formatação na leitura.
+- No Manual Administrativo-Financeiro, teste editar, cancelar e restaurar a versão-base antes de salvar.
+- Em Arquivos, alterne blocos/lista, envie DOCX/XLSX/PPTX/PDF e adicione um atalho HTTPS; confira os ícones e o acesso de outra pessoa do canal.
 
-Nenhuma migration ou deploy remoto foi executado nesta sessão. O projeto precisa ser validado com `pnpm install --frozen-lockfile`, `pnpm typecheck` e `pnpm build` em ambiente com dependências instaladas antes do deploy.
+Nenhuma migration foi aplicada remotamente nesta entrega. Faça backup e valide em ambiente de teste antes de aplicar no projeto Supabase de produção.

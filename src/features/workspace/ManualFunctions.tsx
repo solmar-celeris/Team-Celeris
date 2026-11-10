@@ -177,6 +177,13 @@ const roles: ManualRole[] = [
   },
 ];
 
+export function getManualRoleHtml(areaFilter: string): string {
+  const role = roles.find((item) => item.area.toLocaleLowerCase('pt-BR').includes(areaFilter.toLocaleLowerCase('pt-BR')));
+  if (!role) return '';
+  const section = (title: string, items: string[]) => `<p><strong>${title}</strong></p><ul>${items.map((item) => `<li>${item}</li>`).join('')}</ul>`;
+  return `<p><strong>${role.area}</strong></p><p>${role.summary}</p>${section('Responsabilidades', role.responsibilities)}${section('Ferramentas e conhecimentos', role.tools)}${section('Capacitação recomendada', role.training)}${section('Entregas esperadas', role.deliverables)}`;
+}
+
 const transversal = [
   {
     title: 'Ansys — simulação computacional',

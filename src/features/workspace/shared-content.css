@@ -136,3 +136,4 @@
   .shared-content-form-actions { flex-wrap: wrap; }
   .shared-content-form-actions > button { flex: 1 1 130px; min-height: 38px; }
 }
+.shared-folder-grid.is-list{grid-template-columns:1fr}.shared-folder-grid.is-list .shared-folder-card{display:flex;align-items:center;gap:10px;min-height:64px}.shared-folder-grid.is-list .shared-folder-open{display:flex;align-items:center;flex:1;min-width:0;gap:10px;padding:9px}.shared-folder-grid.is-list .shared-folder-icon{width:34px;height:34px;flex:0 0 34px}.shared-folder-grid.is-list .shared-folder-name{flex:1;min-width:0}.shared-folder-grid.is-list .shared-folder-area{white-space:nowrap}.shared-folder-grid.is-list .shared-folder-description{display:none}.shared-announcement-message{margin:10px 0;color:var(--ink);font-size:12px;line-height:1.7;overflow-wrap:anywhere}.shared-announcement-message p{margin:0 0 9px}

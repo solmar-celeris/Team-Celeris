@@ -3,6 +3,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { ArrowUpRight, Check, FileText, FolderOpen, Link2, Megaphone, Pin, PinOff, Plus, RefreshCw, Trash2, X } from 'lucide-react';
 import type { Area, MemberProfile } from './domain';
 import { notifyWorkspacePush } from '../../lib/notifications';
+import RichTextEditor, { RichTextContent } from './RichTextEditor';
+import ChannelFilesPanel from './ChannelFilesPanel';
 import './shared-content.css';
 import './announcement-interactions.css';
 
@@ -17,6 +19,7 @@ type SharedContentWorkspaceProps = {
   targetAnnouncementId?: string;
   areaId: string | null;
   isGeneralChannel: boolean;
+  channelId: string;
 };
 type DriveFolder = {
   id: string;
@@ -114,7 +117,7 @@ function formatDate(value: string): string {
   return new Date(value).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-export default function SharedContentWorkspace({ client, mode, userId, isAdmin, areas, members, targetAnnouncementId, areaId, isGeneralChannel }: SharedContentWorkspaceProps) {
+export default function SharedContentWorkspace({ client, mode, userId, isAdmin, areas, members, targetAnnouncementId, areaId, isGeneralChannel, channelId }: SharedContentWorkspaceProps) {
   const [folders, setFolders] = useState<DriveFolder[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -143,6 +146,7 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
   const [pollSelections, setPollSelections] = useState<Record<string, string[]>>({});
   const [signedAttachmentUrls, setSignedAttachmentUrls] = useState<Record<string, string>>({});
   const [announcementFiles, setAnnouncementFiles] = useState<File[]>([]);
+  const [fileViewMode, setFileViewMode] = useState<'grid' | 'list'>('grid');
 
   useEffect(() => {
     setFolderForm({ ...emptyFolderForm, areaId: areaId ?? '' });
@@ -400,8 +404,9 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
     event.preventDefault();
     const title = announcementForm.title.trim();
     const message = announcementForm.message.trim();
-    if (!title || !message) {
-      setError('Preencha o título e a mensagem.');
+    const messageText = message.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+    if (!title || !messageText || messageText.length > 8000) {
+      setError('Preencha o título e a mensagem (até 8.000 caracteres).');
       return;
     }
     const driveName = announcementForm.driveName.trim();
@@ -652,7 +657,7 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
           <p className="workspace-kicker">{isFiles ? 'ATALHOS COMPARTILHADOS' : 'MURAL DA EQUIPE'}</p>
           <h2 id="shared-content-title">{isFiles ? 'Pastas e arquivos.' : 'Comunicados.'}</h2>
           <p>{isFiles
-            ? 'Pastas visíveis para os integrantes deste canal; o conteúdo continua no Google Drive.'
+            ? 'Arquivos enviados, pastas compartilhadas e atalhos de internet deste canal.'
             : 'Avisos compartilhados com todos os integrantes deste canal.'}</p>
         </div>
         <div className="shared-content-actions">
@@ -686,7 +691,7 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
         </div>
       </div>
 
-      {channelScopeUnavailable && <p className="shared-content-note">Este canal ainda não está vinculado a uma área. Para evitar misturar dados globais com conteúdo privado, arquivos e comunicados ficam indisponíveis até que o canal seja associado a uma área.</p>}
+      {channelScopeUnavailable && <p className="shared-content-note">Este canal ainda não está vinculado a uma área. Pastas legadas e comunicados por área ficam indisponíveis; use a seção Arquivos e atalhos para publicar documentos e links próprios do canal.</p>}
       {error && <div className="workspace-alert workspace-alert-error" role="alert"><strong>Não foi possível concluir.</strong><p>{error}</p></div>}
       {feedback && <p className="workspace-feedback" role="status">{feedback}</p>}
 
@@ -706,7 +711,7 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
         <form className="shared-content-form" onSubmit={(event) => void saveAnnouncement(event)}>
           <div className="shared-content-form-heading"><div><strong>Publicar comunicado</strong><p>Seu nome será registrado automaticamente como autor.</p></div><button type="button" className="shared-close" aria-label="Fechar formulário" onClick={() => setAnnouncementFormOpen(false)}><X size={17} /></button></div>
           <label><span>Título <b>obrigatório</b></span><input required maxLength={180} value={announcementForm.title} onChange={(event) => setAnnouncementForm((current) => ({ ...current, title: event.target.value }))} placeholder="Um título claro para o aviso" /></label>
-          <label><span>Mensagem <b>obrigatória</b></span><textarea required rows={5} maxLength={8000} value={announcementForm.message} onChange={(event) => setAnnouncementForm((current) => ({ ...current, message: event.target.value }))} placeholder="Escreva as informações para a equipe…" /></label>
+          <label><span>Mensagem <b>obrigatória</b></span><RichTextEditor value={announcementForm.message} onChange={(value) => setAnnouncementForm((current) => ({ ...current, message: value }))} placeholder="Escreva as informações para a equipe…" minHeight={180} /></label>
           
           <div className="shared-announcement-create-extra">
             <strong><Link2 size={15} aria-hidden="true" /> Link compartilhável do Google Drive (opcional)</strong>
@@ -737,11 +742,12 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
               <ArrowUpRight size={18} aria-hidden="true" />
             </a>
           )}
+          <ChannelFilesPanel client={client} channelId={channelId} userId={userId} isAdmin={isAdmin} viewMode={fileViewMode} onViewModeChange={setFileViewMode} />
           <label className="shared-content-search"><span>Buscar pasta</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nome, descrição ou área" /></label>
           {loading ? <div className="workspace-loading" role="status"><span />Carregando pastas…</div> : folderCount === 0 ? (
             <div className="workspace-empty"><FolderOpen size={25} aria-hidden="true" /><strong>{folders.length ? 'Nenhuma pasta corresponde à busca.' : 'Ainda não há pastas compartilhadas.'}</strong><p>{folders.length ? 'Tente outra busca.' : 'Adicione um link do Google Drive para deixá-lo visível para a equipe.'}</p></div>
           ) : (
-            <div className="shared-folder-grid">
+            <div className={`shared-folder-grid${fileViewMode === 'list' ? ' is-list' : ''}`}>
               {visibleFolders.map((folder) => (
                 <article className={`shared-folder-card${folder.is_primary ? ' is-primary' : ''}`} key={folder.id}>
                   <a href={folder.drive_url} target="_blank" rel="noreferrer" className="shared-folder-open" aria-label={`Abrir pasta ${folder.name} no Google Drive`}>
@@ -773,7 +779,7 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
                 <article id={`announcement-card-${item.id}`} className={`shared-announcement-card${item.pinned_at ? ' is-pinned' : ''}${targetAnnouncementId === item.id ? ' is-push-target' : ''}`} key={item.id}>
                   <div className="shared-announcement-meta"><span className="shared-audience">{item.audience_area_id ? areasById.get(item.audience_area_id) ?? 'Área' : 'Toda a equipe'}</span><span>{formatDate(item.created_at)}</span>{item.pinned_at && <span className="shared-pinned-label"><Pin size={12} aria-hidden="true" />Fixado</span>}</div>
                   <h3>{item.title}</h3>
-                  <p className="shared-announcement-message">{item.message}</p>
+                  <RichTextContent html={item.message} className="shared-announcement-message rich-text-content" />
                   {(announcementAttachments.some((file) => file.announcement_id === item.id) || announcementDriveLinks.some((link) => link.announcement_id === item.id)) && (
                     <div className="shared-announcement-files" aria-label="Arquivos e links do comunicado">
                       {announcementAttachments.filter((file) => file.announcement_id === item.id).map((file) => {
