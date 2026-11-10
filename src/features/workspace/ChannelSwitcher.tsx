@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ChevronDown, Cpu, Globe2, Laptop, LockKeyhole, Megaphone, Menu, Plus, Ship, Users, Wallet, Zap, Pencil, Check, X } from 'lucide-react';
+import { ChevronDown, Cpu, Globe2, Laptop, LockKeyhole, Megaphone, Menu, Plus, Ship, Users, Wallet, Zap, Pencil, Check, X, Folder, Wrench, FlaskConical, CalendarDays, BookOpen, Settings, MessageCircle, Trash2 } from 'lucide-react';
 import type { Area, MemberProfile } from './domain';
 import './channel-switcher.css';
 
 export type WorkspaceChannel = { id: string; slug: string; name: string; icon: string; is_open: boolean; area_id: string | null };
 type Props = { client: SupabaseClient; userId: string; isAdmin: boolean; areas: Area[]; members: Pick<MemberProfile, 'user_id' | 'full_name' | 'status'>[]; onChange: (channel: WorkspaceChannel) => void };
-const icons = { globe: Globe2, ship: Ship, zap: Zap, cpu: Cpu, users: Users, megaphone: Megaphone, wallet: Wallet, laptop: Laptop } as const;
+const icons = { globe: Globe2, ship: Ship, zap: Zap, cpu: Cpu, users: Users, megaphone: Megaphone, wallet: Wallet, laptop: Laptop, folder: Folder, wrench: Wrench, flask: FlaskConical, calendar: CalendarDays, book: BookOpen, settings: Settings, chat: MessageCircle } as const;
+const iconOptions = Object.entries(icons) as [keyof typeof icons, (typeof icons)[keyof typeof icons]][];
+const protectedChannelSlugs = ['geral', 'mecanica-naval', 'eletrica', 'eletronica', 'gestao-de-pessoas', 'marketing', 'administrativo-financeiro', 'ti'];
 function ChannelIcon({ name }: { name: string }) { const Icon = icons[name as keyof typeof icons] ?? Globe2; return <Icon size={16} aria-hidden="true" />; }
 
 export default function ChannelSwitcher({ client, userId, isAdmin, areas, members, onChange }: Props) {
@@ -15,6 +17,8 @@ export default function ChannelSwitcher({ client, userId, isAdmin, areas, member
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [editingPrivacy, setEditingPrivacy] = useState(false);
+  const [editingIcon, setEditingIcon] = useState(false);
+  const [iconChoice, setIconChoice] = useState('globe');
   const [privacyOpen, setPrivacyOpen] = useState(true);
   const [name, setName] = useState('');
   const [isOpen, setIsOpen] = useState(true);
@@ -76,6 +80,50 @@ export default function ChannelSwitcher({ client, userId, isAdmin, areas, member
     else { setChannels((current) => current.map((channel) => channel.id === selected.id ? { ...channel, is_open: privacyOpen } : channel)); setEditingPrivacy(false); setNotice('Privacidade do canal atualizada.'); }
     setBusy(false);
   }
+  async function saveIcon() {
+    if (!selected || !isAdmin || busy) return;
+    setBusy(true); setNotice('');
+    const { error } = await client.from('workspace_channels').update({ icon: iconChoice, updated_at: new Date().toISOString() }).eq('id', selected.id);
+    if (error) setNotice(`Não foi possível alterar o ícone: ${error.message}`);
+    else {
+      setChannels((current) => current.map((channel) => channel.id === selected.id ? { ...channel, icon: iconChoice } : channel));
+      setEditingIcon(false); setNotice('Ícone do canal atualizado.');
+    }
+    setBusy(false);
+  }
+  async function deleteChannel() {
+    if (!selected || !isAdmin || busy || protectedChannelSlugs.includes(selected.slug)) return;
+    const confirmed = window.confirm(`Excluir o canal “${selected.name}”? Esta ação é permanente e também removerá os vínculos e arquivos associados ao canal.`);
+    if (!confirmed) return;
+    setBusy(true); setNotice('');
+    const deletedId = selected.id;
+    // Remove primeiro os objetos do Storage para não deixar arquivos órfãos.
+    const { data: channelFiles, error: filesError } = await client.from('workspace_channel_files').select('storage_path').eq('channel_id', deletedId);
+    if (filesError) {
+      setNotice(`Não foi possível verificar os arquivos do canal: ${filesError.message}`);
+      setBusy(false);
+      return;
+    }
+    const storagePaths = (channelFiles ?? []).map((file) => file.storage_path).filter((path): path is string => Boolean(path));
+    if (storagePaths.length) {
+      const { error: storageError } = await client.storage.from('workspace-channel-files').remove(storagePaths);
+      if (storageError) {
+        setNotice(`Não foi possível remover os arquivos armazenados: ${storageError.message}`);
+        setBusy(false);
+        return;
+      }
+    }
+    const { error } = await client.from('workspace_channels').delete().eq('id', deletedId);
+    if (error) setNotice(`Não foi possível excluir o canal: ${error.message}`);
+    else {
+      const remaining = channels.filter((channel) => channel.id !== deletedId);
+      setChannels(remaining);
+      setSelectedId(remaining.find((channel) => channel.slug === 'geral')?.id ?? remaining[0]?.id ?? '');
+      setEditingIcon(false); setEditingPrivacy(false);
+      setNotice('Canal excluído.');
+    }
+    setBusy(false);
+  }
   async function removeMember(targetUserId: string) {
     if (!selected || !isAdmin || busy) return; setBusy(true);
     const { error } = await client.from('workspace_channel_members').delete().eq('channel_id', selected.id).eq('user_id', targetUserId);
@@ -84,8 +132,26 @@ export default function ChannelSwitcher({ client, userId, isAdmin, areas, member
   }
   async function addMember() {
     if (!selected || !memberId || !isAdmin || busy) return;
-    setBusy(true); const { error } = await client.from('workspace_channel_members').upsert({ channel_id: selected.id, user_id: memberId, added_by: userId });
-    setNotice(error ? 'Não foi possível adicionar o membro.' : 'Membro adicionado ao canal.'); if (!error) setChannelMemberIds((current) => [...current, memberId]); setMemberId(''); setBusy(false);
+    const targetUserId = memberId;
+    setBusy(true);
+    setNotice('');
+    // A migration concede INSERT, mas não UPDATE nesta tabela. Portanto,
+    // upsert() falha porque exige também a permissão de UPDATE.
+    const { error } = await client.from('workspace_channel_members').insert({
+      channel_id: selected.id,
+      user_id: targetUserId,
+      added_by: userId,
+    });
+    if (error) {
+      setNotice(error.code === '23505'
+        ? 'Este integrante já tem acesso ao canal.'
+        : `Não foi possível adicionar o membro: ${error.message}`);
+    } else {
+      setChannelMemberIds((current) => current.includes(targetUserId) ? current : [...current, targetUserId]);
+      setNotice('Membro adicionado ao canal.');
+      setMemberId('');
+    }
+    setBusy(false);
   }
   return <div className="channel-switcher" ref={root}>
     <button type="button" className="channel-switcher-trigger" aria-label={`Canais. Canal atual: ${selected?.name ?? 'não selecionado'}`} title="Canais" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
@@ -102,6 +168,8 @@ export default function ChannelSwitcher({ client, userId, isAdmin, areas, member
       {selected && selected.slug !== 'geral' && !selected.area_id && <p className="channel-switcher-notice">Canal sem área vinculada: use o Manual para publicar conteúdo próprio. Atividades, comunicados e arquivos são organizados pelos canais de área.</p>}
       {selected && isAdmin && <div className="channel-switcher-admin">
         <div className="channel-switcher-privacy"><strong>Privacidade: {selected.is_open ? 'Aberto' : 'Privado'}</strong>{editingPrivacy ? <><label className="channel-switcher-check"><input type="checkbox" checked={privacyOpen} disabled={selected.slug === 'geral'} onChange={(event) => setPrivacyOpen(event.target.checked)} /> Aberto para todos os membros</label><div className="channel-switcher-privacy-actions"><button type="button" onClick={() => setEditingPrivacy(false)} disabled={busy}><X size={13}/> Cancelar</button><button type="button" onClick={() => void savePrivacy()} disabled={busy}><Check size={13}/> Salvar privacidade</button></div></> : <button type="button" onClick={() => { setPrivacyOpen(selected.is_open); setEditingPrivacy(true); }}><Pencil size={13}/> Alterar privacidade</button>}</div>
+        <div className="channel-switcher-icon-editor"><strong>Ícone do canal</strong>{editingIcon ? <><div className="channel-switcher-icon-options">{iconOptions.map(([key, Icon]) => <button type="button" key={key} className={iconChoice === key ? 'is-selected' : ''} aria-label={`Ícone ${key}`} title={key} onClick={() => setIconChoice(key)}><Icon size={17}/></button>)}</div><div className="channel-switcher-privacy-actions"><button type="button" onClick={() => setEditingIcon(false)} disabled={busy}><X size={13}/> Cancelar</button><button type="button" onClick={() => void saveIcon()} disabled={busy}><Check size={13}/> Salvar ícone</button></div></> : <button type="button" onClick={() => { setIconChoice(selected.icon); setEditingIcon(true); }}><Pencil size={13}/> Alterar ícone</button>}</div>
+        {!protectedChannelSlugs.includes(selected.slug) && <button type="button" className="channel-switcher-delete" onClick={() => void deleteChannel()} disabled={busy}><Trash2 size={14}/> Excluir canal</button>}
         {!selected.is_open && channelMemberIds.length > 0 && <div className="channel-switcher-members"><small>Membros com acesso</small>{channelMemberIds.map((id) => <div key={id}><span>{members.find((member) => member.user_id === id)?.full_name || 'Integrante'}</span><button type="button" onClick={() => void removeMember(id)} disabled={busy}>Remover</button></div>)}</div>}
         {!selected.is_open && <><label>Adicionar membro<select value={memberId} onChange={(event) => setMemberId(event.target.value)}><option value="">Selecione...</option>{members.filter((member) => member.status === 'active' && !channelMemberIds.includes(member.user_id)).map((member) => <option key={member.user_id} value={member.user_id}>{member.full_name || 'Integrante'}</option>)}</select></label>
         <button type="button" onClick={() => void addMember()} disabled={!memberId || busy}>Adicionar</button></>}

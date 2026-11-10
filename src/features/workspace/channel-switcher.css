@@ -26,3 +26,15 @@
   .channel-switcher-mobile-icon { width: 20px; height: 20px; flex: 0 0 20px; }
   .channel-switcher-menu { right: 0; left: auto; width: min(320px, calc(100vw - 14px)); }
 }
+
+/* Desktop: abre o menu alinhado pela borda direita do seletor, deslocando-o para a esquerda para não cortar na viewport. */
+@media (min-width: 761px) {
+  .channel-switcher-menu { left: auto; right: 0; width: min(340px, calc(100vw - 32px)); }
+}
+.channel-switcher-icon-editor { display: grid; gap: 7px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.channel-switcher-icon-editor > strong { color: var(--ink); font-size: 10px; }
+.channel-switcher-icon-editor > button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; width: fit-content; min-height: 29px; padding: 0 8px; border: 1px solid var(--line); border-radius: 7px; color: var(--ocean); background: var(--card); cursor: pointer; font-size: 10px; font-weight: 750; }
+.channel-switcher-icon-options { display: grid; grid-template-columns: repeat(7, minmax(30px, 1fr)); gap: 5px; }
+.channel-switcher-icon-options button { display: grid; min-height: 34px; place-items: center; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); background: var(--card); cursor: pointer; }
+.channel-switcher-icon-options button.is-selected { border-color: var(--ocean); color: var(--ocean); background: color-mix(in srgb, var(--sky) 16%, var(--card)); }
+.channel-switcher-admin .channel-switcher-delete { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 32px; border-color: #c84b4b; color: #b33131; background: var(--card); }
