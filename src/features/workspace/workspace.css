@@ -1594,12 +1594,12 @@
     position: fixed;
     z-index: 90;
     top: 50%;
-    right: 0;
+    left: 0;
+    right: auto;
     bottom: auto;
-    width: 42px;
+    width: 28px;
     transform: translateY(-50%);
     pointer-events: none;
-  }
   .workspace-members-dock .team-members-menu {
     width: 100%;
     justify-content: flex-end;
