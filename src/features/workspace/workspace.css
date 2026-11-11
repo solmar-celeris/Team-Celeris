@@ -2209,3 +2209,66 @@
     transform: none !important;
   }
 }
+
+/* MOBILE: todas as abas em uma única faixa, sem quebra nem rolagem horizontal. */
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-topbar > .workspace-nav,
+  .workspace-topbar > .workspace-nav.is-area-channel {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    grid-template-rows: 1fr !important;
+    gap: 1px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 34px !important;
+    overflow: hidden !important;
+    overflow-x: hidden !important;
+    overflow-y: hidden !important;
+    white-space: nowrap !important;
+  }
+  .workspace-topbar > .workspace-nav.is-area-channel {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+  .workspace-topbar > .workspace-nav > button {
+    display: flex !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 33px !important;
+    min-height: 33px !important;
+    padding: 1px 0 !important;
+    gap: 1px !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    border-radius: 5px !important;
+  }
+  .workspace-topbar > .workspace-nav .workspace-nav-icon {
+    width: 13px !important;
+    height: 13px !important;
+    min-width: 13px !important;
+    flex: 0 0 13px !important;
+  }
+  .workspace-topbar > .workspace-nav .workspace-nav-icon svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+  .workspace-topbar > .workspace-nav .workspace-nav-label {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    overflow-wrap: normal !important;
+    font-size: clamp(5px, 1.55vw, 7px) !important;
+    line-height: 1 !important;
+    letter-spacing: -.2px !important;
+    text-align: center !important;
+  }
+}
