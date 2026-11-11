@@ -1594,8 +1594,8 @@
     position: fixed;
     z-index: 90;
     top: 50%;
-    left: 0;
-    right: auto;
+    right: 0;
+    left: auto;
     bottom: auto;
     width: 28px;
     transform: translateY(-50%);
@@ -1610,8 +1610,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 42px;
-    min-width: 42px;
+    width:28px;
+    min-width: 28px;
     min-height: 126px;
     gap: 9px;
     padding: 12px 5px;
