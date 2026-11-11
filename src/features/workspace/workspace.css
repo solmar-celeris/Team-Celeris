@@ -2064,3 +2064,90 @@
   .workspace-members-dock { left: 6px; width: min(205px, calc(100vw - 12px)); }
   .workspace-members-dock .team-members-panel { width: calc(100vw - 12px); }
 }
+
+
+/* Ajuste final: barra de membros vertical e fixa no lado direito em dispositivos móveis. */
+@media (max-width: 760px) {
+  .workspace-members-dock {
+    position: fixed !important;
+    z-index: 90;
+    top: 50% !important;
+    right: 0 !important;
+    left: auto !important;
+    bottom: auto !important;
+    width: 28px !important;
+    transform: translateY(-50%) !important;
+    pointer-events: none;
+  }
+
+  .workspace-members-dock .team-members-menu {
+    display: flex;
+    width: 100%;
+    justify-content: flex-end;
+    pointer-events: auto;
+  }
+
+  .workspace-members-dock .team-members-trigger {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 28px !important;
+    min-width: 28px !important;
+    min-height: 126px;
+    gap: 9px;
+    padding: 12px 3px;
+    border: 1px solid rgba(255,255,255,.24);
+    border-right: 0;
+    border-radius: 12px 0 0 12px;
+    writing-mode: vertical-rl;
+    color: #fff;
+    background: #014b89;
+    box-shadow: -5px 0 22px rgba(0,32,58,.2);
+    font-size: 10px;
+  }
+
+  .workspace-members-dock .team-members-trigger-label {
+    display: inline;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    letter-spacing: .04em;
+  }
+
+  .workspace-members-dock .team-members-trigger-chevron {
+    display: inline;
+    width: 12px;
+    height: 12px;
+    margin: 0;
+    transform: rotate(90deg);
+  }
+
+  .workspace-members-dock .team-members-trigger svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+  }
+
+  .workspace-members-dock .team-members-panel {
+    top: 50% !important;
+    right: calc(100% + 8px) !important;
+    bottom: auto !important;
+    left: auto !important;
+    width: min(350px, calc(100vw - 52px));
+    max-height: min(78dvh, 650px);
+    transform: translateY(-50%);
+  }
+}
+
+@media (max-width: 380px) {
+  .workspace-members-dock {
+    right: 0 !important;
+    left: auto !important;
+    width: 28px !important;
+  }
+
+  .workspace-members-dock .team-members-trigger {
+    width: 28px !important;
+    min-width: 28px !important;
+  }
+}
