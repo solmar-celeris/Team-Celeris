@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type DragEvent, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Filter, Folder, GripVertical, House, Map, Megaphone, MessageCircle, Newspaper, Trash2, X, Paperclip, ExternalLink, Video, type LucideProps } from 'lucide-react';
+import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Filter, Folder, GripVertical, House, Map as MapIcon, Megaphone, MessageCircle, Newspaper, Trash2, X, Paperclip, ExternalLink, Video, type LucideProps } from 'lucide-react';
 import {
   activityTypeLabels,
   activityFlowLabels,
@@ -123,7 +123,7 @@ const workspaceTabs: { id: WorkspaceTab; label: string; icon: WorkspaceTabIcon }
   { id: 'conversations', label: 'Conversas', icon: MessageCircle },
   { id: 'files', label: 'Arquivos', icon: Folder },
   { id: 'manual', label: 'Manual de funções', icon: BookOpen },
-  { id: 'projectMap', label: 'Mapa do projeto', icon: Map },
+  { id: 'projectMap', label: 'Mapa do projeto', icon: MapIcon },
 ];
 
 const defaultFilters: FilterState = {
