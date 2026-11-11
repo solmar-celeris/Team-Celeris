@@ -1595,13 +1595,11 @@
     z-index: 90;
     top: 50%;
     right: 0;
-    left: auto;
     bottom: auto;
-    width: 28px;
+    width: 42px;
     transform: translateY(-50%);
     pointer-events: none;
   }
-
   .workspace-members-dock .team-members-menu {
     width: 100%;
     justify-content: flex-end;
@@ -1612,8 +1610,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width:28px;
-    min-width: 28px;
+    width: 42px;
+    min-width: 42px;
     min-height: 126px;
     gap: 9px;
     padding: 12px 5px;
@@ -2073,12 +2071,12 @@
   .workspace-members-dock {
     position: fixed !important;
     z-index: 90;
-    top: 50% !important;
+    top: auto !important;
     right: 0 !important;
     left: auto !important;
-    bottom: auto !important;
+    bottom: 16px !important;
     width: 28px !important;
-    transform: translateY(-50%) !important;
+    transform: none !important;
     pointer-events: none;
   }
 
@@ -2131,13 +2129,13 @@
   }
 
   .workspace-members-dock .team-members-panel {
-    top: 50% !important;
+    top: auto !important;
     right: calc(100% + 8px) !important;
-    bottom: auto !important;
+    bottom: 0 !important;
     left: auto !important;
     width: min(350px, calc(100vw - 52px));
     max-height: min(78dvh, 650px);
-    transform: translateY(-50%);
+    transform: none !important;
   }
 }
 
