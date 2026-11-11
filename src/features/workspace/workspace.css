@@ -1983,3 +1983,84 @@
   .workspace-topbar > .workspace-nav > button { min-height: 51px !important; padding-inline: 1px !important; }
   .workspace-topbar > .workspace-nav .workspace-nav-label { font-size: 7.5px !important; }
 }
+
+/* Mobile: barra de membros fixa no canto inferior esquerdo, em formato horizontal. */
+@media (max-width: 760px) {
+  .workspace-members-dock {
+    position: fixed;
+    z-index: 90;
+    top: auto;
+    right: auto;
+    bottom: env(safe-area-inset-bottom, 0px);
+    left: 8px;
+    width: min(220px, calc(100vw - 16px));
+    transform: none;
+    pointer-events: none;
+  }
+
+  .workspace-members-dock .team-members-menu {
+    width: 100%;
+    justify-content: flex-start;
+    pointer-events: auto;
+  }
+
+  .workspace-members-dock .team-members-trigger {
+    display: inline-flex;
+    width: 100%;
+    min-width: 0;
+    min-height: 46px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 0 12px;
+    border: 1px solid rgba(255,255,255,.2);
+    border-bottom: 0;
+    border-radius: 12px 12px 0 0;
+    writing-mode: horizontal-tb;
+    color: #fff;
+    background: #014b89;
+    box-shadow: 0 -5px 22px rgba(0,32,58,.2);
+    font-size: 11px;
+  }
+
+  .workspace-members-dock .team-members-trigger-label {
+    display: inline;
+    writing-mode: horizontal-tb;
+    transform: none;
+    letter-spacing: normal;
+  }
+
+  .workspace-members-dock .team-members-trigger-chevron {
+    display: inline;
+    width: 14px;
+    height: 14px;
+    margin: 0 0 0 auto;
+    transform: none;
+  }
+
+  .workspace-members-dock .team-members-trigger[aria-expanded="true"] .team-members-trigger-chevron {
+    transform: rotate(180deg);
+  }
+
+  .workspace-members-dock .team-members-trigger svg {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+  }
+
+  .workspace-members-dock .team-members-panel {
+    top: auto;
+    right: auto;
+    bottom: calc(100% + 8px);
+    left: 0;
+    width: min(350px, calc(100vw - 16px));
+    max-height: min(calc(100dvh - 90px), 650px);
+    transform: none;
+  }
+}
+
+@media (max-width: 380px) {
+  .workspace-members-dock { left: 6px; width: min(205px, calc(100vw - 12px)); }
+  .workspace-members-dock .team-members-panel { width: calc(100vw - 12px); }
+}
