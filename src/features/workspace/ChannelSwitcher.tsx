@@ -8,7 +8,7 @@ export type WorkspaceChannel = { id: string; slug: string; name: string; icon: s
 type Props = { client: SupabaseClient; userId: string; isAdmin: boolean; areas: Area[]; members: Pick<MemberProfile, 'user_id' | 'full_name' | 'status'>[]; onChange: (channel: WorkspaceChannel) => void };
 const icons = { globe: Globe2, ship: Ship, zap: Zap, cpu: Cpu, users: Users, megaphone: Megaphone, wallet: Wallet, laptop: Laptop, folder: Folder, wrench: Wrench, flask: FlaskConical, calendar: CalendarDays, book: BookOpen, settings: Settings, chat: MessageCircle } as const;
 const iconOptions = Object.entries(icons) as [keyof typeof icons, (typeof icons)[keyof typeof icons]][];
-const protectedChannelSlugs = ['geral', 'mecanica-naval', 'eletrica', 'eletronica', 'gestao-de-pessoas', 'marketing', 'administrativo-financeiro', 'ti'];
+const protectedChannelSlugs = ['geral'];
 function ChannelIcon({ name }: { name: string }) { const Icon = icons[name as keyof typeof icons] ?? Globe2; return <Icon size={16} aria-hidden="true" />; }
 
 export default function ChannelSwitcher({ client, userId, isAdmin, areas, members, onChange }: Props) {

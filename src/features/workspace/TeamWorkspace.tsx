@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type DragEvent, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Filter, Folder, GripVertical, House, Megaphone, MessageCircle, Newspaper, Trash2, X, Paperclip, ExternalLink, Video, type LucideProps } from 'lucide-react';
+import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Filter, Folder, GripVertical, House, Map, Megaphone, MessageCircle, Newspaper, Trash2, X, Paperclip, ExternalLink, Video, type LucideProps } from 'lucide-react';
 import {
   activityTypeLabels,
   activityFlowLabels,
@@ -39,7 +39,6 @@ import TeamCalendar from './TeamCalendar';
 import ManualFunctions from './ManualFunctions';
 import ChannelManualWorkspace from './ChannelManualWorkspace';
 import AvailabilityWorkspace from './AvailabilityWorkspace';
-import PERTCPMWorkspace from './PERTCPMWorkspace';
 import MeetingsWorkspace from './MeetingsWorkspace';
 import WeeklyActivityCard, { type WeeklyReportDraft } from './WeeklyActivityCard';
 import { flushPendingWorkspacePushEvents, notifyActivityChange, notifyWorkspacePush } from '../../lib/notifications';
@@ -100,7 +99,7 @@ type ActivityFormState = {
 };
 type AttachmentSubmission = { files: File[]; driveName: string; driveUrl: string };
 type WeeklyDraft = WeeklyReportDraft;
-type WorkspaceTab = 'home' | 'activities' | 'agenda' | 'conversations' | 'membersChat' | 'files' | 'manual';
+type WorkspaceTab = 'home' | 'activities' | 'agenda' | 'conversations' | 'membersChat' | 'files' | 'manual' | 'projectMap';
 type AgendaSubtab = 'calendar' | 'availability' | 'meetings';
 type ConversationsSubtab = 'announcements';
 type WorkspaceTabIcon = ComponentType<LucideProps>;
@@ -124,6 +123,7 @@ const workspaceTabs: { id: WorkspaceTab; label: string; icon: WorkspaceTabIcon }
   { id: 'conversations', label: 'Conversas', icon: MessageCircle },
   { id: 'files', label: 'Arquivos', icon: Folder },
   { id: 'manual', label: 'Manual de funções', icon: BookOpen },
+  { id: 'projectMap', label: 'Mapa do projeto', icon: Map },
 ];
 
 const defaultFilters: FilterState = {
@@ -373,7 +373,6 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   const [activityAttachments, setActivityAttachments] = useState<ActivityAttachment[]>([]);
   const [attachmentUrls, setAttachmentUrls] = useState<Record<string, string>>({});
   const [wipLimits, setWipLimits] = useState<ActivityWipLimit[]>([]);
-  const [activityView, setActivityView] = useState<'board' | 'pert'>('board');
   const [savingFlowId, setSavingFlowId] = useState<string | null>(null);
   const [draggedActivityId, setDraggedActivityId] = useState<string | null>(null);
   const [dragOverColumnId, setDragOverColumnId] = useState<string | null>(null);
@@ -522,7 +521,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
 
       const [activityResult, areaResult, profileResult, attachmentResult, wipResult] = await Promise.all([
         client.from('activities')
-          .select('id,code,area_id,name,description,activity_type,frequency,execution_condition,responsible_name,responsible_user_id,start_date,due_date,expected_deliverable,notes,flow_status,priority,effort_points,blocked_reason,pert_optimistic_days,pert_most_likely_days,pert_pessimistic_days,created_at,updated_at,archived_at')
+          .select('id,code,area_id,name,description,activity_type,frequency,execution_condition,responsible_name,responsible_user_id,start_date,due_date,expected_deliverable,notes,flow_status,priority,effort_points,blocked_reason,created_at,updated_at,archived_at')
           .is('archived_at', null)
           .order('code', { ascending: true }),
         client.from('areas')
@@ -1138,6 +1137,8 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
       ? { kicker: 'AGENDA DA EQUIPE', title: 'Agenda', subtitle: 'Organize reuniões, treinamentos, eventos e compromissos da equipe.' }
       : tab === 'activities'
       ? { kicker: 'CADASTRO DA EQUIPE', title: 'Atividades da equipe.', subtitle: 'Consulte, filtre e mantenha as atividades do ciclo atualizadas.' }
+      : tab === 'projectMap'
+        ? { kicker: 'DESENVOLVIMENTO TÉCNICO INTEGRADO', title: 'Mapa do projeto', subtitle: 'Fluxograma de desenvolvimento do SolMar Celeris, com etapas, verificações, recursos e ciclo PDCA.' }
       : tab === 'files'
         ? { kicker: 'LINKS COMPARTILHADOS', title: 'Arquivos da equipe.', subtitle: 'Consulte documentos enviados, pastas e atalhos de internet compartilhados.' }
         : tab === 'conversations'
@@ -1159,7 +1160,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
     : activeChannel?.slug === 'geral' && tab === 'home'
       ? { ...pageHeading, kicker: 'FEED GERAL', title: 'Feed', subtitle: 'Atualizações cronológicas das atividades e entregas de todos os canais.' }
       : activeChannel?.slug === 'geral' && tab === 'activities'
-        ? { ...pageHeading, kicker: 'ATIVIDADES CONSOLIDADAS', title: 'Atividades', subtitle: 'Visão consolidada das atividades de todos os canais, com acompanhamento PERT/CPM.' }
+        ? { ...pageHeading, kicker: 'ATIVIDADES CONSOLIDADAS', title: 'Atividades', subtitle: 'Visão consolidada das atividades de todos os canais.' }
         : activeChannel?.slug === 'geral' && tab === 'conversations'
           ? { ...pageHeading, kicker: 'COMUNICADOS GLOBAIS', title: 'Comunicados', subtitle: 'Mural de avisos para todos os membros ativos do workspace.' }
           : activeChannel?.slug === 'geral' && tab === 'manual'
@@ -1245,7 +1246,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           )}
           {feedback && <p className="workspace-feedback" role="status">{feedback}</p>}
 
-          {((tab === 'home' && homeFiltersOpen) || (tab === 'activities' && activityView !== 'pert')) && <div className="workspace-filter-panel" id={tab === 'home' ? 'workspace-filter-panel' : undefined}>
+          {((tab === 'home' && homeFiltersOpen) || tab === 'activities') && <div className="workspace-filter-panel" id={tab === 'home' ? 'workspace-filter-panel' : undefined}>
             <label className="workspace-search">
               <span>Buscar</span>
               <input value={filters.search} onChange={(event) => updateFilter('search', event.target.value)} placeholder="Código, nome, descrição…" />
@@ -1408,12 +1409,10 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           {tab === 'activities' && (
             <section className="workspace-activities-section" aria-labelledby="activity-view-title">
               <div className="workspace-list-heading">
-                <div><p className="workspace-kicker">FLUXO CONTÍNUO · SEM SPRINTS OBRIGATÓRIAS</p><h2 id="activity-view-title">{activityView === 'pert' ? 'Marcos · caminho crítico PERT/CPM' : 'Quadro Kanban de atividades'}</h2></div>
-                <div className="activity-view-tools"><span className="workspace-count">{activityView === 'pert' ? `${activities.filter((item) => item.activity_type === 'marco' && isAreaActive(item.area_id)).length} marcos` : `${visibleActivities.length} de ${activities.length}`}</span><div className="activity-view-switch" role="group" aria-label="Visualização de atividades">
-                  <button type="button" aria-pressed={activityView === 'board'} onClick={() => setActivityView('board')}>Kanban</button><button type="button" aria-pressed={activityView === 'pert'} onClick={() => setActivityView('pert')}>PERT/CPM</button>
-                </div></div>
+                <div><p className="workspace-kicker">FLUXO CONTÍNUO · SEM SPRINTS OBRIGATÓRIAS</p><h2 id="activity-view-title">Quadro Kanban de atividades</h2></div>
+                <div className="activity-view-tools"><span className="workspace-count">{visibleActivities.length} de {activities.length}</span></div>
               </div>
-              {activityView === 'board' && profile.role === 'admin' && (
+              {profile.role === 'admin' && (
                 <section className="activity-wip-editor" aria-label="Configuração de limites WIP">
                   <div><strong>Limites WIP por área</strong><p>Opcional e configurável pela Administração; vazio significa sem limite. Ajuste após observar o fluxo da equipe.</p></div>
                   <label><span>Área do quadro</span><select value={wipAreaEditor} onChange={(event) => {
@@ -1424,9 +1423,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
                   {wipAreaEditor && <div className="activity-wip-fields">{activityFlowStages.map((stage) => <label key={stage}><span>{activityFlowLabels[stage]}</span><input aria-label={`Limite WIP para ${activityFlowLabels[stage]}`} type="number" min="0" step="1" placeholder="Sem limite" value={wipDrafts[stage] ?? ''} onChange={(event) => setWipDrafts((current) => ({ ...current, [stage]: event.target.value }))} /></label>)}<button type="button" onClick={() => void saveWipSettings()} disabled={savingWipKey === wipAreaEditor}>{savingWipKey ? 'Salvando…' : 'Salvar limites'}</button></div>}
                 </section>
               )}
-              {activityView === 'pert' ? (
-                loading ? <WorkspaceLoading /> : <PERTCPMWorkspace client={client} activities={activities.filter((activity) => isAreaActive(activity.area_id))} profile={profile} />
-              ) : loading ? <WorkspaceLoading /> : (
+              {loading ? <WorkspaceLoading /> : (
                 <>
                   {visibleActivities.length === 0 && <EmptyState title={activities.length === 0 ? 'Ainda não há atividades no banco.' : 'Nenhuma atividade corresponde aos filtros.'}>{activities.length === 0 ? 'Confirme que a migration exclusiva de fluxo e anexos foi aplicada no Supabase conectado.' : 'Limpe os filtros ou tente outra busca.'}</EmptyState>}
                   <div className="activity-board" aria-label="Quadro Kanban de atividades">
@@ -1457,6 +1454,16 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
                   </div>
                 </>
               )}
+            </section>
+          )}
+
+          {tab === 'projectMap' && activeChannel?.slug === 'geral' && (
+            <section className="project-map-workspace" aria-label="Mapa do projeto SolMar Celeris">
+              <div className="project-map-toolbar">
+                <p>Fluxograma de desenvolvimento · versão v6</p>
+                <a href="/docs/SolMar_Celeris_Fluxograma_Etapas_Fases.pdf" target="_blank" rel="noreferrer">Abrir PDF em nova aba</a>
+              </div>
+              <iframe title="Mapa do projeto SolMar Celeris — Fluxograma de desenvolvimento" src="/docs/SolMar_Celeris_Fluxograma_Etapas_Fases.pdf#view=FitH" />
             </section>
           )}
 

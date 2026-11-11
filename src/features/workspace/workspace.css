@@ -1376,7 +1376,7 @@
 .workspace-brand { grid-area: brand; min-width: 0; justify-content: flex-start; }
 .workspace-brand img { width: auto; max-width: 128px; height: 42px; object-fit: contain; }
 .workspace-brand > span { display: none !important; }
-.workspace-nav { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+.workspace-nav { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
 .workspace-nav.is-area-channel { grid-template-columns: repeat(4, minmax(72px, 112px)); justify-content: center; }
 .workspace-nav button { min-height: 70px; gap: 5px; padding: 5px 4px 8px; font-size: 12px; }
 .workspace-nav-icon { width: 27px; height: 27px; flex-basis: 27px; border-radius: 7px; }
@@ -2149,5 +2149,63 @@
   .workspace-members-dock .team-members-trigger {
     width: 28px !important;
     min-width: 28px !important;
+  }
+}
+
+
+/* Mapa do projeto: documento oficial incorporado exclusivamente ao Canal Geral. */
+.project-map-workspace { display: grid; grid-template-rows: auto minmax(420px, 1fr); gap: 8px; width: 100%; min-height: min(76dvh, 900px); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--card); }
+.project-map-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+.project-map-toolbar p { margin: 0; color: var(--muted); font-size: 10px; font-weight: 700; }
+.project-map-toolbar a { color: var(--ocean); font-size: 10px; font-weight: 750; text-decoration: none; }
+.project-map-toolbar a:hover { text-decoration: underline; }
+.project-map-workspace iframe { display: block; width: 100%; min-height: 72dvh; border: 0; background: #fff; }
+
+/* Navegação compacta: ícones e área de clique proporcionais, no desktop e mobile. */
+.workspace-nav { gap: 2px !important; }
+.workspace-nav button { min-height: 36px !important; padding: 0 6px !important; gap: 6px !important; font-size: 10px !important; border-radius: 8px !important; }
+.workspace-nav-icon { width: 20px !important; height: 20px !important; flex: 0 0 20px !important; border-radius: 6px !important; }
+.workspace-nav-icon svg { width: 13px !important; height: 13px !important; }
+@media (max-width: 760px) {
+  .workspace-nav button { min-width: 48px !important; min-height: 38px !important; height: 38px !important; padding: 2px 4px !important; gap: 1px !important; }
+  .workspace-nav-icon { width: 15px !important; height: 15px !important; flex-basis: 15px !important; }
+  .workspace-nav-icon svg { width: 12px !important; height: 12px !important; }
+  .workspace-nav-label { font-size: 7px !important; line-height: 1 !important; }
+  .project-map-workspace { min-height: 65dvh; }
+  .project-map-workspace iframe { min-height: 65dvh; }
+}
+@media (max-width: 420px) {
+  .workspace-nav button { min-width: 44px !important; padding-inline: 2px !important; }
+  .workspace-nav-label { font-size: 6.5px !important; }
+}
+
+
+/* Diretório de membros no mobile: mesma ancoragem do navegador desktop (canto inferior direito). */
+@media (max-width: 760px) {
+  .workspace-members-dock {
+    position: fixed !important; z-index: 90 !important;
+    top: auto !important; right: 8px !important; bottom: env(safe-area-inset-bottom, 0px) !important; left: auto !important;
+    width: min(220px, calc(100vw - 16px)) !important;
+    transform: none !important; pointer-events: none !important;
+  }
+  .workspace-members-dock .team-members-menu {
+    display: flex !important; width: 100% !important; justify-content: flex-end !important; pointer-events: auto !important;
+  }
+  .workspace-members-dock .team-members-trigger {
+    display: inline-flex !important; flex-direction: row !important;
+    width: 100% !important; min-width: 0 !important; min-height: 42px !important;
+    align-items: center !important; justify-content: flex-start !important; gap: 8px !important;
+    padding: 0 11px !important; writing-mode: horizontal-tb !important;
+    border: 1px solid rgba(255,255,255,.2) !important; border-bottom: 0 !important;
+    border-radius: 11px 11px 0 0 !important; font-size: 10px !important;
+  }
+  .workspace-members-dock .team-members-trigger-label { display: inline !important; writing-mode: horizontal-tb !important; transform: none !important; }
+  .workspace-members-dock .team-members-trigger-chevron { display: inline !important; width: 13px !important; height: 13px !important; margin: 0 0 0 auto !important; transform: none !important; }
+  .workspace-members-dock .team-members-trigger[aria-expanded="true"] .team-members-trigger-chevron { transform: rotate(180deg) !important; }
+  .workspace-members-dock .team-members-trigger svg { width: 16px !important; height: 16px !important; flex: 0 0 16px !important; }
+  .workspace-members-dock .team-members-panel {
+    top: auto !important; right: 0 !important; bottom: calc(100% + 8px) !important; left: auto !important;
+    width: min(350px, calc(100vw - 16px)) !important; max-height: min(calc(100dvh - 70px), 650px) !important;
+    transform: none !important;
   }
 }
