@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type DragEvent, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Filter, Folder, GripVertical, House, Map as MapIcon, Megaphone, MessageCircle, Newspaper, Trash2, X, Paperclip, ExternalLink, Video, type LucideProps } from 'lucide-react';
+import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Filter, Folder, GripVertical, House, Megaphone, MessageCircle, Newspaper, Trash2, X, Paperclip, ExternalLink, Video, type LucideProps } from 'lucide-react';
 import {
   activityTypeLabels,
   activityFlowLabels,
@@ -99,7 +99,7 @@ type ActivityFormState = {
 };
 type AttachmentSubmission = { files: File[]; driveName: string; driveUrl: string };
 type WeeklyDraft = WeeklyReportDraft;
-type WorkspaceTab = 'home' | 'activities' | 'agenda' | 'conversations' | 'membersChat' | 'files' | 'manual' | 'projectMap';
+type WorkspaceTab = 'home' | 'activities' | 'agenda' | 'conversations' | 'membersChat' | 'files' | 'manual';
 type AgendaSubtab = 'calendar' | 'availability' | 'meetings';
 type ConversationsSubtab = 'announcements';
 type WorkspaceTabIcon = ComponentType<LucideProps>;
@@ -123,7 +123,6 @@ const workspaceTabs: { id: WorkspaceTab; label: string; icon: WorkspaceTabIcon }
   { id: 'conversations', label: 'Conversas', icon: MessageCircle },
   { id: 'files', label: 'Arquivos', icon: Folder },
   { id: 'manual', label: 'Manual de funções', icon: BookOpen },
-  { id: 'projectMap', label: 'Mapa do projeto', icon: MapIcon },
 ];
 
 const defaultFilters: FilterState = {
@@ -1137,8 +1136,6 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
       ? { kicker: 'AGENDA DA EQUIPE', title: 'Agenda', subtitle: 'Organize reuniões, treinamentos, eventos e compromissos da equipe.' }
       : tab === 'activities'
       ? { kicker: 'CADASTRO DA EQUIPE', title: 'Atividades da equipe.', subtitle: 'Consulte, filtre e mantenha as atividades do ciclo atualizadas.' }
-      : tab === 'projectMap'
-        ? { kicker: 'DESENVOLVIMENTO TÉCNICO INTEGRADO', title: 'Mapa do projeto', subtitle: 'Fluxograma de desenvolvimento do SolMar Celeris, com etapas, verificações, recursos e ciclo PDCA.' }
       : tab === 'files'
         ? { kicker: 'LINKS COMPARTILHADOS', title: 'Arquivos da equipe.', subtitle: 'Consulte documentos enviados, pastas e atalhos de internet compartilhados.' }
         : tab === 'conversations'
@@ -1454,16 +1451,6 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
                   </div>
                 </>
               )}
-            </section>
-          )}
-
-          {tab === 'projectMap' && activeChannel?.slug === 'geral' && (
-            <section className="project-map-workspace" aria-label="Mapa do projeto SolMar Celeris">
-              <div className="project-map-toolbar">
-                <p>Fluxograma de desenvolvimento · versão v6</p>
-                <a href="/docs/SolMar_Celeris_Fluxograma_Etapas_Fases.pdf" target="_blank" rel="noreferrer">Abrir PDF em nova aba</a>
-              </div>
-              <iframe title="Mapa do projeto SolMar Celeris — Fluxograma de desenvolvimento" src="/docs/SolMar_Celeris_Fluxograma_Etapas_Fases.pdf#view=FitH" />
             </section>
           )}
 
