@@ -1600,6 +1600,8 @@
     width: 28px;
     transform: translateY(-50%);
     pointer-events: none;
+  }
+
   .workspace-members-dock .team-members-menu {
     width: 100%;
     justify-content: flex-end;
