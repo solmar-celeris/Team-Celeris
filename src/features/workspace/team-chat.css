@@ -554,3 +554,46 @@
   }
   .team-chat-main, .workspace-chat-overlay-body .team-chat-main { grid-row: auto !important; }
 }
+
+.team-chat-member-menu button.is-danger { color: #b42318; }
+.team-chat-member-menu button.is-danger:hover { color: #9b1c13; background: color-mix(in srgb, #e5484d 10%, var(--card)); }
+.team-chat-member-menu button:disabled { cursor: wait; opacity: .55; }
+
+/* Experiência mobile de conversa dedicada, inspirada no padrão de navegação do WhatsApp. */
+.team-chat-mobile-conversation-header { display: none; }
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .team-chat { min-height: 0; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+  .team-chat.has-active-conversation .team-chat-heading { display: none !important; }
+  .team-chat-shell { position: relative; display: flex !important; flex: 1 1 auto; min-height: 0; height: 100%; overflow: hidden; }
+  .team-chat.has-active-conversation .team-chat-channels { display: none !important; }
+  .team-chat:not(.has-active-conversation) .team-chat-main { display: none !important; }
+  .team-chat.has-active-conversation .team-chat-main { display: grid !important; grid-template-rows: auto auto auto auto minmax(0, 1fr) auto; flex: 1 1 auto; width: 100%; min-height: 0; height: 100%; gap: 0; overflow: hidden; }
+  .team-chat-mobile-conversation-header { display: flex; flex: 0 0 auto; align-items: center; gap: 11px; min-height: 66px; padding: 7px 12px; border-bottom: 1px solid var(--line); background: var(--card); }
+  .team-chat-mobile-back, .team-chat-mobile-more { display: inline-flex; flex: 0 0 38px; align-items: center; justify-content: center; width: 38px; height: 42px; padding: 0; border: 0; border-radius: 50%; color: var(--ink); background: transparent; }
+  .team-chat-mobile-back svg { width: 25px; height: 25px; }
+  .team-chat-mobile-more svg { width: 21px; height: 21px; }
+  .team-chat-mobile-header-placeholder { display: grid; flex: 0 0 42px; width: 42px; height: 42px; place-items: center; border-radius: 50%; color: var(--ocean); background: var(--surface); }
+  .team-chat-mobile-conversation-title { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; gap: 3px; }
+  .team-chat-mobile-conversation-title strong { overflow: hidden; color: var(--ink); font-size: 15px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+  .team-chat-mobile-conversation-title small { color: var(--muted); font-size: 11px; }
+  .team-chat.has-active-conversation .team-chat-connection { flex: 0 0 auto; margin: 0; padding: 3px 12px; font-size: 9px; }
+  .team-chat.has-active-conversation .team-chat-alert, .team-chat.has-active-conversation .team-chat-feedback { flex: 0 0 auto; margin: 3px 8px; }
+  .team-chat.has-active-conversation .team-chat-panel { display: grid; grid-template-rows: minmax(0, 1fr) auto; flex: 1 1 auto; min-height: 0; height: 100%; border: 0; border-radius: 0; overflow: hidden; }
+  .team-chat.has-active-conversation .team-chat-history { min-height: 0; max-height: none; height: 100%; overflow-y: auto; overscroll-behavior: contain; padding: 12px 9px; }
+  .team-chat.has-active-conversation .team-chat-composer { flex: 0 0 auto; padding: 8px max(9px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(9px, env(safe-area-inset-left)); border-top: 1px solid var(--line); background: var(--card); }
+  .team-chat.has-active-conversation .team-chat-composer textarea { min-height: 42px; max-height: 110px; resize: none; }
+  .team-chat.has-active-conversation .team-chat-compose-footer { justify-content: flex-end; }
+  .team-chat.has-active-conversation .team-chat-retention-note { display: none; }
+  .team-chat:not(.has-active-conversation) .team-chat-channels { display: flex !important; flex: 1 1 auto; width: 100%; min-height: 0; max-height: none; padding: 12px; overflow: hidden; border: 0; border-radius: 0; }
+  .team-chat:not(.has-active-conversation) .team-chat-channel-list { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; overscroll-behavior: contain; }
+}
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-main.is-chat-page .team-chat.has-active-conversation .team-chat-channels,
+  .workspace-chat-overlay-body .team-chat.has-active-conversation .team-chat-channels { display: none !important; }
+  .workspace-main.is-chat-page .team-chat.has-active-conversation .team-chat-main,
+  .workspace-chat-overlay-body .team-chat.has-active-conversation .team-chat-main { display: grid !important; }
+  .workspace-main.is-chat-page .team-chat:not(.has-active-conversation) .team-chat-main,
+  .workspace-chat-overlay-body .team-chat:not(.has-active-conversation) .team-chat-main { display: none !important; }
+  .workspace-main.is-chat-page .team-chat:not(.has-active-conversation) .team-chat-channels,
+  .workspace-chat-overlay-body .team-chat:not(.has-active-conversation) .team-chat-channels { display: flex !important; }
+}

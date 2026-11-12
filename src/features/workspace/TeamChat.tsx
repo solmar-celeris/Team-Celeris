@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowUp, Camera, Download, MoreVertical, MailPlus, ExternalLink, FileText, Image as ImageIcon, Link2, Mic, MessageCircle, Paperclip, RefreshCw, ShieldCheck, Square, Trash2, UserPlus, UsersRound, Plus, Search, X } from 'lucide-react';
+import { ArrowLeft, ArrowUp, Camera, Download, MoreVertical, MailPlus, ExternalLink, FileText, Image as ImageIcon, Link2, Mic, MessageCircle, Paperclip, RefreshCw, ShieldCheck, ShieldPlus, ShieldMinus, Square, Trash2, UserPlus, UsersRound, Plus, Search, X } from 'lucide-react';
 import { Mp3Encoder } from '@breezystack/lamejs';
 import { notifyChatMessagePush } from '../../lib/notifications';
 import type { MemberProfile } from './domain';
@@ -19,12 +19,12 @@ type TeamChatGroup = { id: string; name: string; created_by: string | null; crea
 type TeamChatGroupMember = { group_id: string; user_id: string };
 type DirectConversation = { id: string; user_a_id: string; user_b_id: string; created_at: string };
 type GroupDialogMode = 'create' | 'add-members';
-type ChatMember = Pick<MemberProfile, 'user_id' | 'full_name' | 'avatar_path' | 'status'>;
+type ChatMember = Pick<MemberProfile, 'user_id' | 'full_name' | 'avatar_path' | 'status' | 'role'>;
 type TeamChatProps = {
   client: SupabaseClient; userId: string; isAdmin: boolean; members: ChatMember[];
   initialMessageId?: string; initialConversationId?: string | null; initialConversationType?: 'team' | 'group' | 'direct';
   initialDirectUserId?: string | null; onInitialDirectHandled?: () => void;
-  openCreateGroup?: boolean; onCreateGroupHandled?: () => void;
+  openCreateGroup?: boolean; onCreateGroupHandled?: () => void; onMembersChanged?: () => void;
 };
 const PAGE_SIZE = 50;
 const MESSAGE_LIMIT = 2000;
@@ -122,7 +122,7 @@ function chatError(error: unknown): string {
   if (details.code === '23505') return 'Essa conversa ou participante já existe. Atualize a lista de conversas.';
   return details.message || 'Não foi possível concluir a operação. Confira a conexão e tente novamente.';
 }
-export default function TeamChat({ client, userId, isAdmin, members, initialMessageId, initialConversationId, initialConversationType, initialDirectUserId, onInitialDirectHandled, openCreateGroup, onCreateGroupHandled }: TeamChatProps) {
+export default function TeamChat({ client, userId, isAdmin, members, initialMessageId, initialConversationId, initialConversationType, initialDirectUserId, onInitialDirectHandled, openCreateGroup, onCreateGroupHandled, onMembersChanged }: TeamChatProps) {
   const [messages, setMessages] = useState<TeamChatMessage[]>([]);
   const [groups, setGroups] = useState<TeamChatGroup[]>([]);
   const [groupMembers, setGroupMembers] = useState<TeamChatGroupMember[]>([]);
@@ -136,6 +136,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   const [conversationDeletionBusy, setConversationDeletionBusy] = useState(false);
   const [conversationSearch, setConversationSearch] = useState('');
   const [memberMenuId, setMemberMenuId] = useState<string | null>(null);
+  const [memberActionBusyId, setMemberActionBusyId] = useState<string | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteName, setInviteName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
@@ -784,6 +785,27 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
     finally { setGroupActionBusy(false); }
   }
 
+  async function updateTeamMember(member: ChatMember, action: 'promote' | 'demote' | 'remove') {
+    if (!isAdmin || member.user_id === userId || memberActionBusyId) return;
+    if (action === 'remove' && !window.confirm(`Excluir ${member.full_name} da equipe? O acesso será revogado; a conta de autenticação e o histórico serão preservados.`)) return;
+    if (action === 'demote' && member.role === 'admin' && !window.confirm(`Retirar o perfil de administrador de ${member.full_name}?`)) return;
+    setMemberActionBusyId(member.user_id);
+    setMemberMenuId(null);
+    setError('');
+    setFeedback('');
+    try {
+      const rpcName = action === 'promote' ? 'admin_promote_team_member' : action === 'demote' ? 'admin_demote_team_member' : 'admin_remove_team_member';
+      const { error: actionError } = await client.rpc(rpcName, { p_user_id: member.user_id });
+      if (actionError) throw actionError;
+      setFeedback(action === 'promote' ? `${member.full_name} agora é administrador.` : action === 'demote' ? `Permissão de administrador removida de ${member.full_name}.` : `${member.full_name} foi excluído da equipe.`);
+      onMembersChanged?.();
+    } catch (actionError) {
+      setError(chatError(actionError));
+    } finally {
+      setMemberActionBusyId(null);
+    }
+  }
+
   async function submitInvite(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!isAdmin || inviteBusy) return;
@@ -811,7 +833,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   };
 
   return (
-    <section className="team-chat" aria-labelledby="team-chat-title">
+    <section className={`team-chat${activeDirectId || activeGroupId ? ' has-active-conversation' : ''}`} aria-labelledby="team-chat-title">
       <div className="team-chat-heading">
         <div><p className="workspace-kicker">{activeDirectId ? 'CONVERSA PRIVADA' : activeGroupId ? 'CHAT · GRUPO' : 'CHAT · EQUIPE'}</p>
           <h2 id="team-chat-title">{activeGroup ? groupAvatar(activeGroup, 'md') : <MessageCircle aria-hidden="true" />} {activeDirectId ? conversationLabel : activeGroup?.name ?? 'Chat'}</h2>
@@ -843,6 +865,9 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
                 <button className="team-chat-channel-visibility team-chat-member-menu-trigger" type="button" title={`Ações para ${member.full_name}`} aria-label={`Ações para ${member.full_name}`} aria-expanded={memberMenuId === member.user_id} onClick={() => setMemberMenuId((current) => current === member.user_id ? null : member.user_id)}><MoreVertical aria-hidden="true" /></button>
                 {memberMenuId === member.user_id && <div className="team-chat-member-menu">
                   <button type="button" onClick={() => { setMemberMenuId(null); void startDirect(member.user_id); }}><MessageCircle aria-hidden="true" /> Abrir conversa</button>
+                  {isAdmin && member.user_id !== userId && member.role !== 'admin' && <button type="button" disabled={memberActionBusyId !== null} onClick={() => void updateTeamMember(member, 'promote')}><ShieldPlus aria-hidden="true" /> Tornar administrador</button>}
+                  {isAdmin && member.user_id !== userId && member.role === 'admin' && <button type="button" disabled={memberActionBusyId !== null} onClick={() => void updateTeamMember(member, 'demote')}><ShieldMinus aria-hidden="true" /> Tirar administrador</button>}
+                  {isAdmin && member.user_id !== userId && <button type="button" className="is-danger" disabled={memberActionBusyId !== null} onClick={() => void updateTeamMember(member, 'remove')}><Trash2 aria-hidden="true" /> Excluir membro da equipe</button>}
                   {direct && <button type="button" disabled={conversationDeletionBusy} onClick={() => { setMemberMenuId(null); confirmDeleteConversation('direct', direct.id, member.full_name); }}><Trash2 aria-hidden="true" /> Apagar conversa</button>}
                 </div>}
               </div>;
@@ -864,6 +889,12 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
           </div>
         </nav>
         <div className="team-chat-main">
+          <header className="team-chat-mobile-conversation-header">
+            <button type="button" className="team-chat-mobile-back" onClick={() => { setActiveDirectId(null); setActiveGroupId(null); setMessages([]); setError(''); setFeedback(''); }} aria-label="Voltar para conversas"><ArrowLeft aria-hidden="true" /></button>
+            {activeGroup ? groupAvatar(activeGroup, 'md') : activeDirectMember ? avatar(activeDirectMember.user_id, activeDirectMember.full_name, 'md') : <span className="team-chat-mobile-header-placeholder"><MessageCircle aria-hidden="true" /></span>}
+            <div className="team-chat-mobile-conversation-title"><strong>{conversationLabel}</strong><small>{activeGroupId ? 'Grupo' : 'online na equipe'}</small></div>
+            {activeGroupId && <button type="button" className="team-chat-mobile-more" aria-label="Opções do grupo" onClick={() => { setGroupDialogError(''); setGroupDialogMode('add-members'); }}><MoreVertical aria-hidden="true" /></button>}
+          </header>
           <div className={`team-chat-connection is-${connection}`} role="status"><i aria-hidden="true" />{connection === 'connected' ? 'Conectado em tempo real' : connection === 'connecting' ? 'Conectando ao chat…' : 'Sem atualização em tempo real; tente atualizar.'}</div>
           {error && <p className="team-chat-alert" role="alert">{error}</p>}{feedback && <p className="team-chat-feedback" role="status">{feedback}</p>}
           <div className="team-chat-panel">

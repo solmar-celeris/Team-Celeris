@@ -1498,7 +1498,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             </div>
           </header>
           <div className="workspace-chat-overlay-body">
-            <TeamChat client={client} userId={userId} isAdmin={profile.role === 'admin'} members={members} initialMessageId={pushTarget?.type === 'chat' ? pushTarget.messageId : undefined} initialConversationId={pushTarget?.type === 'chat' ? pushTarget.conversationId : undefined} initialConversationType={pushTarget?.type === 'chat' ? pushTarget.conversationType : undefined} initialDirectUserId={chatTargetUserId} onInitialDirectHandled={handleInitialDirectHandled} openCreateGroup={chatCreateGroupRequest} onCreateGroupHandled={handleCreateGroupHandled} />
+            <TeamChat client={client} userId={userId} isAdmin={profile.role === 'admin'} members={members} onMembersChanged={() => void loadData(true)} initialMessageId={pushTarget?.type === 'chat' ? pushTarget.messageId : undefined} initialConversationId={pushTarget?.type === 'chat' ? pushTarget.conversationId : undefined} initialConversationType={pushTarget?.type === 'chat' ? pushTarget.conversationType : undefined} initialDirectUserId={chatTargetUserId} onInitialDirectHandled={handleInitialDirectHandled} openCreateGroup={chatCreateGroupRequest} onCreateGroupHandled={handleCreateGroupHandled} />
           </div>
         </section>
       )}
