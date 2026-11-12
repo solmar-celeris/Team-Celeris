@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowUp, Camera, Download, ExternalLink, FileText, Image as ImageIcon, Link2, Mic, MessageCircle, Paperclip, RefreshCw, ShieldCheck, Square, Trash2, UserPlus, UsersRound, Plus, Search, X } from 'lucide-react';
+import { ArrowUp, Camera, Download, MoreVertical, MailPlus, ExternalLink, FileText, Image as ImageIcon, Link2, Mic, MessageCircle, Paperclip, RefreshCw, ShieldCheck, Square, Trash2, UserPlus, UsersRound, Plus, Search, X } from 'lucide-react';
 import { Mp3Encoder } from '@breezystack/lamejs';
 import { notifyChatMessagePush } from '../../lib/notifications';
 import type { MemberProfile } from './domain';
@@ -19,7 +19,7 @@ type TeamChatGroup = { id: string; name: string; created_by: string | null; crea
 type TeamChatGroupMember = { group_id: string; user_id: string };
 type DirectConversation = { id: string; user_a_id: string; user_b_id: string; created_at: string };
 type GroupDialogMode = 'create' | 'add-members';
-type ChatMember = Pick<MemberProfile, 'user_id' | 'full_name' | 'avatar_path'>;
+type ChatMember = Pick<MemberProfile, 'user_id' | 'full_name' | 'avatar_path' | 'status'>;
 type TeamChatProps = {
   client: SupabaseClient; userId: string; isAdmin: boolean; members: ChatMember[];
   initialMessageId?: string; initialConversationId?: string | null; initialConversationType?: 'team' | 'group' | 'direct';
@@ -132,11 +132,15 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   const [groupDialogMode, setGroupDialogMode] = useState<GroupDialogMode | null>(null);
   const [groupDialogError, setGroupDialogError] = useState('');
   const [groupActionBusy, setGroupActionBusy] = useState(false);
-  const [showNewDirect, setShowNewDirect] = useState(false);
   const [showMobileConversations, setShowMobileConversations] = useState(false);
   const [conversationDeletionBusy, setConversationDeletionBusy] = useState(false);
-  const [memberSearch, setMemberSearch] = useState('');
   const [conversationSearch, setConversationSearch] = useState('');
+  const [memberMenuId, setMemberMenuId] = useState<string | null>(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteName, setInviteName] = useState('');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteBusy, setInviteBusy] = useState(false);
+  const [inviteError, setInviteError] = useState('');
   const [sidebarTab, setSidebarTab] = useState<'conversations' | 'groups'>('conversations');
   const [draft, setDraft] = useState('');
   const [driveFormOpen, setDriveFormOpen] = useState(false);
@@ -191,7 +195,8 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   const activeGroup = useMemo(() => groups.find((group) => group.id === activeGroupId) ?? null, [groups, activeGroupId]);
   const activeDirect = useMemo(() => directs.find((conversation) => conversation.id === activeDirectId) ?? null, [directs, activeDirectId]);
   const visibleGroups = groups.filter((group) => group.name.toLocaleLowerCase('pt-BR').includes(conversationSearch.trim().toLocaleLowerCase('pt-BR')));
-  const visibleDirects = directs.filter((conversation) => { const otherId = conversation.user_a_id === userId ? conversation.user_b_id : conversation.user_a_id; return (memberNames.get(otherId) || '').toLocaleLowerCase('pt-BR').includes(conversationSearch.trim().toLocaleLowerCase('pt-BR')); });
+  const activeMembers = members.filter((member) => member.user_id !== userId && member.status === 'active');
+  const visibleMembers = activeMembers.filter((member) => member.full_name.toLocaleLowerCase('pt-BR').includes(conversationSearch.trim().toLocaleLowerCase('pt-BR')));
   const activeDirectUserId = activeDirect ? (activeDirect.user_a_id === userId ? activeDirect.user_b_id : activeDirect.user_a_id) : null;
   const activeDirectMember = activeDirectUserId ? memberById.get(activeDirectUserId) : undefined;
   const activeGroupMemberIds = useMemo(() => new Set(groupMembers.filter((member) => member.group_id === activeGroupId).map((member) => member.user_id)), [groupMembers, activeGroupId]);
@@ -740,7 +745,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
       if (directError) throw directError;
       const directId = typeof data === 'string' ? data : String(data ?? '');
       if (!directId) throw new Error('Não foi possível abrir a conversa privada.');
-      setActiveGroupId(null); setActiveDirectId(directId); setShowNewDirect(false); setShowMobileConversations(false); setMemberSearch('');
+      setActiveGroupId(null); setActiveDirectId(directId); setShowMobileConversations(false);
       void loadLists();
     } catch (actionError) { setError(chatError(actionError)); }
   }
@@ -751,13 +756,13 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   }, [initialDirectUserId, onInitialDirectHandled]);
 
   useEffect(() => {
-    if (!openCreateGroup) return;
+    if (!openCreateGroup || !isAdmin) return;
     setGroupDialogError(''); setGroupDialogMode('create');
     onCreateGroupHandled?.();
-  }, [openCreateGroup, onCreateGroupHandled]);
+  }, [openCreateGroup, onCreateGroupHandled, isAdmin]);
 
   async function handleGroupDialogSubmit(value: { name: string; memberIds: string[] }) {
-    if (!groupDialogMode || groupActionBusy) return;
+    if (!groupDialogMode || groupActionBusy || (groupDialogMode === 'create' && !isAdmin)) return;
     setGroupActionBusy(true); setGroupDialogError(''); setError(''); setFeedback('');
     try {
       if (groupDialogMode === 'create') {
@@ -779,7 +784,21 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
     finally { setGroupActionBusy(false); }
   }
 
-  const filteredMembers = members.filter((member) => member.user_id !== userId && member.full_name.toLocaleLowerCase('pt-BR').includes(memberSearch.trim().toLocaleLowerCase('pt-BR')));
+  async function submitInvite(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!isAdmin || inviteBusy) return;
+    setInviteBusy(true); setInviteError('');
+    try {
+      const { error: inviteFailure } = await client.functions.invoke('manage-team-members', {
+        body: { action: 'invite', email: inviteEmail.trim(), full_name: inviteName.trim() },
+      });
+      if (inviteFailure) throw inviteFailure;
+      setInviteOpen(false); setInviteName(''); setInviteEmail('');
+      setFeedback('Convite enviado por e-mail.');
+    } catch (inviteFailure) { setInviteError(chatError(inviteFailure)); }
+    finally { setInviteBusy(false); }
+  }
+
   const getMember = (id: string | null) => id ? memberById.get(id) : undefined;
   const avatar = (id: string | null, name: string, size: 'sm' | 'md' = 'sm') => {
     const photo = id ? avatarUrls[id] : undefined;
@@ -801,8 +820,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
           <button className="team-chat-mobile-toggle" type="button" onClick={() => setShowMobileConversations(true)} aria-expanded={showMobileConversations}><MessageCircle aria-hidden="true" /> Conversas</button>
           {isAdmin && <span className="team-chat-admin-badge"><ShieldCheck aria-hidden="true" /> Administrador</span>}
           {activeGroupId && (activeGroupMemberIds.has(userId) || isAdmin) && <><input ref={groupPhotoInputRef} className="team-chat-hidden-input" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void uploadGroupPhoto(file); event.currentTarget.value = ''; }} /><button className="team-chat-secondary-action" type="button" onClick={() => groupPhotoInputRef.current?.click()} disabled={savingGroupPhoto} aria-label="Alterar foto do grupo"><Camera aria-hidden="true" /> {savingGroupPhoto ? 'Salvando foto…' : 'Foto do grupo'}</button><button className="workspace-refresh" type="button" onClick={() => { setGroupDialogError(''); setGroupDialogMode('add-members'); }} disabled={availableGroupMembers.length === 0}><UserPlus aria-hidden="true" /> Adicionar pessoas</button></>}
-          <button className="team-chat-secondary-action" type="button" onClick={() => { setShowNewDirect(true); setMemberSearch(''); setShowMobileConversations(true); }}><MessageCircle aria-hidden="true" /> Conversa privada</button>
-          <button className="team-chat-create-group" type="button" onClick={() => { setGroupDialogError(''); setGroupDialogMode('create'); }}><UsersRound aria-hidden="true" /> Conversa em grupo</button>
+          {isAdmin && <button className="team-chat-create-group" type="button" onClick={() => { setGroupDialogError(''); setGroupDialogMode('create'); }}><UsersRound aria-hidden="true" /> Conversa em grupo</button>}
           <button className="workspace-refresh" type="button" onClick={() => { void loadLatest(true); void loadLists(); }} disabled={refreshing || loading}><RefreshCw aria-hidden="true" /> {refreshing ? 'Atualizando…' : 'Atualizar'}</button>
         </div>
       </div>
@@ -817,21 +835,21 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
           <label className="team-chat-sidebar-search"><Search aria-hidden="true" /><input value={conversationSearch} onChange={(event) => setConversationSearch(event.target.value)} placeholder="Buscar membro ou grupo…" /></label>
           <div className="team-chat-channel-list">
             {sidebarTab === 'conversations' && <button type="button" className={`team-chat-channel${!activeGroupId && !activeDirectId ? ' is-active' : ''}`} onClick={() => { setActiveGroupId(null); setActiveDirectId(null); setShowMobileConversations(false); }}><MessageCircle aria-hidden="true" /><span>Equipe</span><small>Todos</small></button>}
-            {sidebarTab === 'conversations' && <div className="team-chat-channel-heading"><span>PRIVADAS</span><button type="button" title="Nova conversa privada" aria-label="Iniciar conversa privada" onClick={() => setShowNewDirect((value) => !value)}><Plus aria-hidden="true" /></button></div>}
-            {sidebarTab === 'conversations' && showNewDirect && <div className="team-chat-member-picker"><label><Search aria-hidden="true" /><input value={memberSearch} onChange={(event) => setMemberSearch(event.target.value)} placeholder="Buscar integrante" /></label><div>{filteredMembers.map((member) => <button type="button" key={member.user_id} onClick={() => void startDirect(member.user_id)}>{avatar(member.user_id, member.full_name)}<span>{member.full_name}</span></button>)}</div></div>}
-            {sidebarTab === 'conversations' && visibleDirects.map((conversation) => {
-              const otherId = conversation.user_a_id === userId ? conversation.user_b_id : conversation.user_a_id;
-              const name = memberNames.get(otherId) || 'Integrante';
-              return <div className="team-chat-channel-row" key={conversation.id}>
-                <button type="button" className={`team-chat-channel${activeDirectId === conversation.id ? ' is-active' : ''}`} onClick={() => { setActiveGroupId(null); setActiveDirectId(conversation.id); setShowMobileConversations(false); }}>
-                  {avatar(otherId, name)}<span>{name}</span><small>Privado</small>
-                </button>
-                <button className="team-chat-channel-visibility" type="button" title="Apagar conversa para todos" aria-label={`Apagar conversa privada com ${name} para todos`} disabled={conversationDeletionBusy} onClick={() => confirmDeleteConversation('direct', conversation.id, name)}>
-                  <Trash2 aria-hidden="true" />
-                </button>
+            {sidebarTab === 'conversations' && visibleMembers.map((member) => {
+              const direct = directs.find((item) => item.user_a_id === member.user_id || item.user_b_id === member.user_id);
+              const selected = Boolean(direct && activeDirectId === direct.id);
+              return <div className={`team-chat-channel-row team-chat-member-row${selected ? ' is-active' : ''}`} key={member.user_id}>
+                <button type="button" className={`team-chat-channel${selected ? ' is-active' : ''}`} onClick={() => void startDirect(member.user_id)}>{avatar(member.user_id, member.full_name)}<span>{member.full_name}</span>{direct && <small>Privado</small>}</button>
+                <button className="team-chat-channel-visibility team-chat-member-menu-trigger" type="button" title={`Ações para ${member.full_name}`} aria-label={`Ações para ${member.full_name}`} aria-expanded={memberMenuId === member.user_id} onClick={() => setMemberMenuId((current) => current === member.user_id ? null : member.user_id)}><MoreVertical aria-hidden="true" /></button>
+                {memberMenuId === member.user_id && <div className="team-chat-member-menu">
+                  <button type="button" onClick={() => { setMemberMenuId(null); void startDirect(member.user_id); }}><MessageCircle aria-hidden="true" /> Abrir conversa</button>
+                  {direct && <button type="button" disabled={conversationDeletionBusy} onClick={() => { setMemberMenuId(null); confirmDeleteConversation('direct', direct.id, member.full_name); }}><Trash2 aria-hidden="true" /> Apagar conversa</button>}
+                </div>}
               </div>;
             })}
-            {sidebarTab === 'groups' && <div className="team-chat-channel-heading"><span>GRUPOS</span><button type="button" title="Criar grupo" aria-label="Criar grupo" onClick={() => { setGroupDialogError(''); setGroupDialogMode('create'); }}><Plus aria-hidden="true" /></button></div>}
+            {sidebarTab === 'conversations' && visibleMembers.length === 0 && <p className="team-chat-no-groups">Nenhum integrante ativo encontrado.</p>}
+            {sidebarTab === 'conversations' && isAdmin && <button className="team-chat-invite-member" type="button" onClick={() => { setInviteError(''); setInviteOpen(true); }}><MailPlus aria-hidden="true" /> Convidar mais membros</button>}
+            {sidebarTab === 'groups' && isAdmin && <div className="team-chat-channel-heading"><span>GRUPOS</span><button type="button" title="Criar grupo" aria-label="Criar grupo" onClick={() => { setGroupDialogError(''); setGroupDialogMode('create'); }}><Plus aria-hidden="true" /></button></div>}
             {sidebarTab === 'groups' && visibleGroups.map((group) => {
               const groupIds = groupMembers.filter((member) => member.group_id === group.id).map((member) => member.user_id);
               const count = groupIds.length;
@@ -839,13 +857,10 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
                 <button type="button" className={`team-chat-channel${activeGroupId === group.id ? ' is-active' : ''}`} onClick={() => { setActiveDirectId(null); setActiveGroupId(group.id); setShowMobileConversations(false); }}>
                   {groupAvatar(group, 'sm')}<span>{group.name}</span><small>{count}</small>
                 </button>
-                {groupIds.includes(userId) && <button className="team-chat-channel-visibility" type="button" title="Apagar conversa para todos" aria-label={`Apagar grupo ${group.name} para todos`} disabled={conversationDeletionBusy} onClick={() => confirmDeleteConversation('group', group.id, group.name)}>
-                  <Trash2 aria-hidden="true" />
-                </button>}
+                {groupIds.includes(userId) && <button className="team-chat-channel-visibility" type="button" title="Apagar conversa para todos" aria-label={`Apagar grupo ${group.name} para todos`} disabled={conversationDeletionBusy} onClick={() => confirmDeleteConversation('group', group.id, group.name)}><Trash2 aria-hidden="true" /></button>}
               </div>;
             })}
-            {sidebarTab === 'conversations' && visibleDirects.length === 0 && <p className="team-chat-no-groups">Nenhuma conversa privada encontrada.</p>}
-            {sidebarTab === 'groups' && visibleGroups.length === 0 && <p className="team-chat-no-groups">Nenhum grupo encontrado. Crie um novo grupo para começar.</p>}
+            {sidebarTab === 'groups' && visibleGroups.length === 0 && <p className="team-chat-no-groups">Nenhum grupo encontrado.</p>}
           </div>
         </nav>
         <div className="team-chat-main">
@@ -913,6 +928,15 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
           <p className="team-chat-retention-note">Qualquer participante ativo pode apagar uma mensagem ou conversa para todos; a exclusão de mensagens e conversas privadas é permanente. Conversas privadas só são visíveis aos dois participantes. Mensagens do Chat não enviam e-mail.</p>
         </div>
       </div>
+      {inviteOpen && <div className="chat-group-dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !inviteBusy) setInviteOpen(false); }}>
+        <form className="chat-group-dialog team-chat-invite-dialog" role="dialog" aria-modal="true" aria-labelledby="team-chat-invite-title" onSubmit={(event) => void submitInvite(event)}>
+          <header className="chat-group-dialog-heading"><div><span className="chat-group-dialog-icon"><MailPlus aria-hidden="true" /></span><h2 id="team-chat-invite-title">Convidar mais membros</h2></div><button type="button" className="chat-group-dialog-close" onClick={() => setInviteOpen(false)} disabled={inviteBusy} aria-label="Fechar"><X aria-hidden="true" /></button></header>
+          <label className="chat-group-dialog-name"><span>Nome completo</span><input value={inviteName} onChange={(event) => setInviteName(event.target.value)} required maxLength={120} /></label>
+          <label className="chat-group-dialog-name"><span>E-mail</span><input type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} required /></label>
+          {inviteError && <p className="chat-group-dialog-error" role="alert">{inviteError}</p>}
+          <footer className="chat-group-dialog-actions"><button type="button" className="chat-group-dialog-cancel" onClick={() => setInviteOpen(false)} disabled={inviteBusy}>Cancelar</button><button type="submit" className="chat-group-dialog-submit" disabled={inviteBusy}>{inviteBusy ? 'Enviando…' : 'Enviar convite'}</button></footer>
+        </form>
+      </div>}
       {groupDialogMode && <ChatGroupDialog mode={groupDialogMode} members={dialogMembers} busy={groupActionBusy} error={groupDialogError} onCancel={() => { if (!groupActionBusy) setGroupDialogMode(null); }} onSubmit={(value) => void handleGroupDialogSubmit(value)} />}
     </section>
   );
