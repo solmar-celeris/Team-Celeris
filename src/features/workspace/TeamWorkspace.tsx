@@ -31,7 +31,6 @@ import {
   weeklyStatusLabels,
 } from './domain';
 import ProfileMenu from '../profile/ProfileMenu';
-import TeamMembersMenu from '../profile/TeamMembersMenu';
 import ChannelSwitcher, { type WorkspaceChannel } from './ChannelSwitcher';
 import SharedContentWorkspace from './SharedContentWorkspace';
 import TeamChat from './TeamChat';
@@ -355,7 +354,7 @@ function safeDriveUrl(value: string): string | null {
   } catch { return null; }
 }
 
-export default function TeamWorkspace({ client, userId, profile, theme, onThemeChange, onRefreshProfile, onLogout }: TeamWorkspaceProps) {
+export default function TeamWorkspace({ client, userId, profile, theme, onThemeChange, onLogout }: TeamWorkspaceProps) {
   const [pushTarget] = useState<PushDeepLink | null>(() => parsePushDeepLink());
   const [tab, setTab] = useState<WorkspaceTab>(() => tabForPush(pushTarget));
   const [chatOpen, setChatOpen] = useState(() => pushTarget?.type === 'chat');
@@ -421,13 +420,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
     setConversationsSubtab('announcements');
     setFilters(defaultFilters);
   }, [pushTarget]);
-  const handleStartConversation = useCallback((targetUserId: string) => {
-    setChatReturnTab(tab === 'membersChat' ? 'home' : tab);
-    setChatTargetUserId(targetUserId);
-    setChatOpen(true);
-  }, [tab]);
   const handleInitialDirectHandled = useCallback(() => setChatTargetUserId(null), []);
-  const handleCreateGroupFromMembers = useCallback(() => { setChatReturnTab(tab === 'membersChat' ? 'home' : tab); setChatCreateGroupRequest(true); setChatOpen(true); }, [tab]);
   const handleCreateGroupHandled = useCallback(() => setChatCreateGroupRequest(false), []);
   const manualAreaName = activeChannel?.slug === 'mecanica-naval' ? 'Mecânica Naval'
     : activeChannel?.slug === 'eletrica' ? 'Elétrica'
@@ -1493,7 +1486,6 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           <header className="workspace-chat-overlay-header">
             <div className="workspace-chat-overlay-title"><MessageCircle aria-hidden="true" /><strong>Chat</strong></div>
             <div className="workspace-chat-overlay-actions">
-              <TeamMembersMenu client={client} userId={userId} isAdmin={profile.role === 'admin'} onSelfProfileChanged={onRefreshProfile} onStartConversation={handleStartConversation} onCreateGroup={handleCreateGroupFromMembers} />
               <button type="button" className="workspace-chat-close" aria-label="Fechar Chat" title="Fechar Chat" onClick={() => setChatOpen(false)}><X aria-hidden="true" /></button>
             </div>
           </header>

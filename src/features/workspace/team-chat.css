@@ -843,3 +843,66 @@
     padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
   }
 }
+
+
+/* Correção definitiva do composer mobile: histórico ocupa o espaço livre
+   e a barra de envio permanece no rodapé da conversa. */
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .team-chat.has-active-conversation {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100vh !important;
+    min-height: 0 !important;
+    max-height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+  @supports (height: 100dvh) {
+    .team-chat.has-active-conversation {
+      height: 100dvh !important;
+      max-height: 100dvh !important;
+    }
+  }
+  .team-chat.has-active-conversation > .team-chat-shell,
+  .team-chat.has-active-conversation .team-chat-main {
+    display: flex !important;
+    flex: 1 1 0 !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: hidden !important;
+  }
+  .team-chat.has-active-conversation .team-chat-panel {
+    display: flex !important;
+    flex: 1 1 0 !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: hidden !important;
+  }
+  .team-chat.has-active-conversation .team-chat-history {
+    order: 1 !important;
+    display: flex !important;
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .team-chat.has-active-conversation .team-chat-composer {
+    order: 2 !important;
+    position: relative !important;
+    inset: auto !important;
+    display: grid !important;
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    margin: auto 0 0 !important;
+    padding: 8px max(10px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)) !important;
+    border-top: 1px solid var(--line) !important;
+    background: var(--card) !important;
+  }
+}
