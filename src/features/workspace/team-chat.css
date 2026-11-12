@@ -765,3 +765,81 @@
     height: 48px !important;
   }
 }
+
+
+/* Ajustes finais da lista de integrantes e conversa privada mobile. */
+.team-chat-member-row .team-chat-channel {
+  display: grid !important;
+  grid-template-columns: 36px minmax(0, 1fr) !important;
+  align-items: center !important;
+  column-gap: 11px !important;
+  min-width: 0 !important;
+}
+.team-chat-member-row .team-chat-channel > .team-chat-avatar {
+  grid-column: 1;
+  justify-self: center;
+}
+.team-chat-member-row .team-chat-channel > span:not(.team-chat-avatar) {
+  grid-column: 2;
+  min-width: 0;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+  text-align: left;
+}
+.team-chat-member-row .team-chat-member-menu-trigger {
+  align-self: center;
+  justify-self: center;
+}
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .team-chat-member-row {
+    grid-template-columns: minmax(0, 1fr) 36px !important;
+    column-gap: 5px !important;
+  }
+  .team-chat-member-row .team-chat-channel {
+    grid-template-columns: 38px minmax(0, 1fr) !important;
+    column-gap: 12px !important;
+    padding-inline: 10px !important;
+  }
+  .team-chat-member-row .team-chat-channel > .team-chat-avatar {
+    width: 32px;
+    height: 32px;
+  }
+  .team-chat-member-menu-trigger {
+    width: 36px !important;
+    min-width: 36px !important;
+  }
+}
+@media (max-width: 760px) {
+  .team-chat.has-active-conversation {
+    height: 100vh !important;
+    min-height: 100vh !important;
+    max-height: 100vh !important;
+  }
+  @supports (height: 100dvh) {
+    .team-chat.has-active-conversation {
+      height: 100dvh !important;
+      min-height: 100dvh !important;
+      max-height: 100dvh !important;
+    }
+  }
+  .team-chat.has-active-conversation .team-chat-mobile-conversation-header {
+    gap: 9px !important;
+  }
+  .team-chat.has-active-conversation .team-chat-mobile-conversation-title {
+    flex: 1 1 0;
+  }
+  .team-chat.has-active-conversation .team-chat-panel {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+  }
+  .team-chat.has-active-conversation .team-chat-history {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .team-chat.has-active-conversation .team-chat-composer {
+    flex-shrink: 0 !important;
+    padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
+  }
+}
