@@ -845,45 +845,140 @@
 }
 
 
-/* Correção definitiva do composer mobile: histórico ocupa o espaço livre
-   e a barra de envio permanece no rodapé da conversa. */
+/* Layout estrutural do chat: o painel acompanha a altura disponível,
+   e não uma altura baseada em vh que deixa espaço vazio no rodapé. */
+.workspace-main.is-chat-page {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  padding: 8px 12px 0 !important;
+}
+.workspace-main.is-chat-page > .team-chat {
+  display: flex !important;
+  flex: 1 1 0 !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  margin: 0 !important;
+  gap: 6px !important;
+}
+.workspace-main.is-chat-page .team-chat-shell {
+  display: grid !important;
+  flex: 1 1 0 !important;
+  grid-template-columns: minmax(245px, 29%) minmax(0, 1fr) !important;
+  align-items: stretch !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+.workspace-main.is-chat-page .team-chat-main {
+  display: grid !important;
+  grid-template-rows: auto auto minmax(0, 1fr) !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  gap: 4px !important;
+  overflow: hidden !important;
+}
+.workspace-main.is-chat-page .team-chat-panel {
+  display: flex !important;
+  flex: 1 1 0 !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-height: none !important;
+  overflow: hidden !important;
+}
+.workspace-main.is-chat-page .team-chat-history {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+}
+.workspace-main.is-chat-page .team-chat-composer {
+  flex: 0 0 auto !important;
+}
+.workspace-main.is-chat-page .team-chat-retention-note {
+  display: none !important;
+}
+
 @media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  /* No celular, a conversa é uma tela própria e usa a viewport visível. */
+  .workspace-main.is-chat-page {
+    position: relative !important;
+    display: flex !important;
+    flex: 1 1 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+  .workspace-main.is-chat-page > .team-chat,
+  .workspace-chat-overlay-body > .team-chat,
   .team-chat.has-active-conversation {
     position: fixed !important;
     inset: 0 !important;
-    width: 100% !important;
-    height: 100vh !important;
-    min-height: 0 !important;
-    max-height: 100vh !important;
+    z-index: 10000 !important;
     display: flex !important;
     flex-direction: column !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: env(safe-area-inset-top) 0 0 !important;
     overflow: hidden !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: var(--card) !important;
   }
   @supports (height: 100dvh) {
+    .workspace-main.is-chat-page > .team-chat,
+    .workspace-chat-overlay-body > .team-chat,
     .team-chat.has-active-conversation {
       height: 100dvh !important;
-      max-height: 100dvh !important;
     }
   }
-  .team-chat.has-active-conversation > .team-chat-shell,
+  .team-chat.has-active-conversation > .team-chat-shell {
+    display: flex !important;
+    flex: 1 1 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
   .team-chat.has-active-conversation .team-chat-main {
     display: flex !important;
     flex: 1 1 0 !important;
     flex-direction: column !important;
-    min-height: 0 !important;
+    width: 100% !important;
     height: auto !important;
+    min-height: 0 !important;
+    gap: 0 !important;
     overflow: hidden !important;
+  }
+  .team-chat.has-active-conversation .team-chat-mobile-conversation-header {
+    flex: 0 0 auto !important;
+    min-height: 62px !important;
   }
   .team-chat.has-active-conversation .team-chat-panel {
     display: flex !important;
     flex: 1 1 0 !important;
     flex-direction: column !important;
-    min-height: 0 !important;
+    width: 100% !important;
     height: auto !important;
+    min-height: 0 !important;
     overflow: hidden !important;
   }
   .team-chat.has-active-conversation .team-chat-history {
-    order: 1 !important;
     display: flex !important;
     flex: 1 1 0 !important;
     min-height: 0 !important;
@@ -891,18 +986,21 @@
     max-height: none !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
+    overscroll-behavior: contain !important;
     -webkit-overflow-scrolling: touch !important;
   }
   .team-chat.has-active-conversation .team-chat-composer {
-    order: 2 !important;
     position: relative !important;
     inset: auto !important;
     display: grid !important;
     flex: 0 0 auto !important;
     width: 100% !important;
-    margin: auto 0 0 !important;
+    margin: 0 !important;
     padding: 8px max(10px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)) !important;
     border-top: 1px solid var(--line) !important;
     background: var(--card) !important;
+  }
+  .team-chat.has-active-conversation .team-chat-retention-note {
+    display: none !important;
   }
 }
