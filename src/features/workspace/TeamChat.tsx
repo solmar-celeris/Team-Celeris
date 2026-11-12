@@ -136,6 +136,8 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   const [showMobileConversations, setShowMobileConversations] = useState(false);
   const [conversationDeletionBusy, setConversationDeletionBusy] = useState(false);
   const [memberSearch, setMemberSearch] = useState('');
+  const [conversationSearch, setConversationSearch] = useState('');
+  const [sidebarTab, setSidebarTab] = useState<'conversations' | 'groups'>('conversations');
   const [draft, setDraft] = useState('');
   const [driveFormOpen, setDriveFormOpen] = useState(false);
   const [driveName, setDriveName] = useState('');
@@ -188,8 +190,8 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   const memberNames = useMemo(() => new Map(members.map((member) => [member.user_id, member.full_name.trim()])), [members]);
   const activeGroup = useMemo(() => groups.find((group) => group.id === activeGroupId) ?? null, [groups, activeGroupId]);
   const activeDirect = useMemo(() => directs.find((conversation) => conversation.id === activeDirectId) ?? null, [directs, activeDirectId]);
-  const visibleGroups = groups;
-  const visibleDirects = directs;
+  const visibleGroups = groups.filter((group) => group.name.toLocaleLowerCase('pt-BR').includes(conversationSearch.trim().toLocaleLowerCase('pt-BR')));
+  const visibleDirects = directs.filter((conversation) => { const otherId = conversation.user_a_id === userId ? conversation.user_b_id : conversation.user_a_id; return (memberNames.get(otherId) || '').toLocaleLowerCase('pt-BR').includes(conversationSearch.trim().toLocaleLowerCase('pt-BR')); });
   const activeDirectUserId = activeDirect ? (activeDirect.user_a_id === userId ? activeDirect.user_b_id : activeDirect.user_a_id) : null;
   const activeDirectMember = activeDirectUserId ? memberById.get(activeDirectUserId) : undefined;
   const activeGroupMemberIds = useMemo(() => new Set(groupMembers.filter((member) => member.group_id === activeGroupId).map((member) => member.user_id)), [groupMembers, activeGroupId]);
@@ -808,11 +810,16 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
         {showMobileConversations && <button className="team-chat-drawer-backdrop" type="button" aria-label="Fechar lista de conversas" onClick={() => setShowMobileConversations(false)} />}
         <nav className={`team-chat-channels${showMobileConversations ? ' is-mobile-open' : ''}`} aria-label="Conversas do Chat">
           <p className="team-chat-channels-title">CHAT · CONVERSAS</p>
+          <div className="team-chat-sidebar-tabs" role="tablist" aria-label="Tipo de conversa">
+            <button type="button" role="tab" aria-selected={sidebarTab === 'conversations'} className={sidebarTab === 'conversations' ? 'is-active' : ''} onClick={() => setSidebarTab('conversations')}>Conversas</button>
+            <button type="button" role="tab" aria-selected={sidebarTab === 'groups'} className={sidebarTab === 'groups' ? 'is-active' : ''} onClick={() => setSidebarTab('groups')}>Grupos</button>
+          </div>
+          <label className="team-chat-sidebar-search"><Search aria-hidden="true" /><input value={conversationSearch} onChange={(event) => setConversationSearch(event.target.value)} placeholder="Buscar membro ou grupo…" /></label>
           <div className="team-chat-channel-list">
-            <button type="button" className={`team-chat-channel${!activeGroupId && !activeDirectId ? ' is-active' : ''}`} onClick={() => { setActiveGroupId(null); setActiveDirectId(null); setShowMobileConversations(false); }}><MessageCircle aria-hidden="true" /><span>Equipe</span><small>Todos</small></button>
-            <div className="team-chat-channel-heading"><span>PRIVADAS</span><button type="button" title="Nova conversa privada" aria-label="Iniciar conversa privada" onClick={() => setShowNewDirect((value) => !value)}><Plus aria-hidden="true" /></button></div>
-            {showNewDirect && <div className="team-chat-member-picker"><label><Search aria-hidden="true" /><input value={memberSearch} onChange={(event) => setMemberSearch(event.target.value)} placeholder="Buscar integrante" /></label><div>{filteredMembers.map((member) => <button type="button" key={member.user_id} onClick={() => void startDirect(member.user_id)}>{avatar(member.user_id, member.full_name)}<span>{member.full_name}</span></button>)}</div></div>}
-            {visibleDirects.map((conversation) => {
+            {sidebarTab === 'conversations' && <button type="button" className={`team-chat-channel${!activeGroupId && !activeDirectId ? ' is-active' : ''}`} onClick={() => { setActiveGroupId(null); setActiveDirectId(null); setShowMobileConversations(false); }}><MessageCircle aria-hidden="true" /><span>Equipe</span><small>Todos</small></button>}
+            {sidebarTab === 'conversations' && <div className="team-chat-channel-heading"><span>PRIVADAS</span><button type="button" title="Nova conversa privada" aria-label="Iniciar conversa privada" onClick={() => setShowNewDirect((value) => !value)}><Plus aria-hidden="true" /></button></div>}
+            {sidebarTab === 'conversations' && showNewDirect && <div className="team-chat-member-picker"><label><Search aria-hidden="true" /><input value={memberSearch} onChange={(event) => setMemberSearch(event.target.value)} placeholder="Buscar integrante" /></label><div>{filteredMembers.map((member) => <button type="button" key={member.user_id} onClick={() => void startDirect(member.user_id)}>{avatar(member.user_id, member.full_name)}<span>{member.full_name}</span></button>)}</div></div>}
+            {sidebarTab === 'conversations' && visibleDirects.map((conversation) => {
               const otherId = conversation.user_a_id === userId ? conversation.user_b_id : conversation.user_a_id;
               const name = memberNames.get(otherId) || 'Integrante';
               return <div className="team-chat-channel-row" key={conversation.id}>
@@ -824,8 +831,8 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
                 </button>
               </div>;
             })}
-            {visibleGroups.length > 0 && <div className="team-chat-channel-heading"><span>GRUPOS</span></div>}
-            {visibleGroups.map((group) => {
+            {sidebarTab === 'groups' && <div className="team-chat-channel-heading"><span>GRUPOS</span><button type="button" title="Criar grupo" aria-label="Criar grupo" onClick={() => { setGroupDialogError(''); setGroupDialogMode('create'); }}><Plus aria-hidden="true" /></button></div>}
+            {sidebarTab === 'groups' && visibleGroups.map((group) => {
               const groupIds = groupMembers.filter((member) => member.group_id === group.id).map((member) => member.user_id);
               const count = groupIds.length;
               return <div className="team-chat-channel-row" key={group.id}>
@@ -837,7 +844,8 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
                 </button>}
               </div>;
             })}
-            {visibleDirects.length === 0 && visibleGroups.length === 0 && <p className="team-chat-no-groups">Inicie uma conversa privada ou crie um grupo.</p>}
+            {sidebarTab === 'conversations' && visibleDirects.length === 0 && <p className="team-chat-no-groups">Nenhuma conversa privada encontrada.</p>}
+            {sidebarTab === 'groups' && visibleGroups.length === 0 && <p className="team-chat-no-groups">Nenhum grupo encontrado. Crie um novo grupo para começar.</p>}
           </div>
         </nav>
         <div className="team-chat-main">

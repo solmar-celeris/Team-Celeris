@@ -157,7 +157,7 @@ function parsePushDeepLink(): PushDeepLink | null {
 
 function tabForPush(target: PushDeepLink | null): WorkspaceTab {
   if (!target) return 'home';
-  if (target.type === 'chat') return 'membersChat';
+  if (target.type === 'chat') return 'home';
   if (target.type === 'announcement') return 'conversations';
   if (target.type === 'activity') return 'activities';
   return 'agenda';
@@ -358,6 +358,7 @@ function safeDriveUrl(value: string): string | null {
 export default function TeamWorkspace({ client, userId, profile, theme, onThemeChange, onRefreshProfile, onLogout }: TeamWorkspaceProps) {
   const [pushTarget] = useState<PushDeepLink | null>(() => parsePushDeepLink());
   const [tab, setTab] = useState<WorkspaceTab>(() => tabForPush(pushTarget));
+  const [chatOpen, setChatOpen] = useState(() => pushTarget?.type === 'chat');
   const [activeChannel, setActiveChannel] = useState<WorkspaceChannel | null>(null);
   const initialChannelSelection = useRef(true);
   const [chatTargetUserId, setChatTargetUserId] = useState<string | null>(null);
@@ -415,17 +416,18 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
     const initialChannelLoad = initialChannelSelection.current;
     initialChannelSelection.current = false;
     setActiveChannel(channel);
-    setTab(initialChannelLoad && pushTarget?.type === 'chat' ? 'membersChat' : initialChannelLoad && pushTarget?.type === 'announcement' ? 'conversations' : channel.slug === 'geral' ? 'home' : 'activities');
+    setTab(initialChannelLoad && pushTarget?.type === 'announcement' ? 'conversations' : channel.slug === 'geral' ? 'home' : 'activities');
+    if (initialChannelLoad && pushTarget?.type === 'chat') setChatOpen(true);
     setConversationsSubtab('announcements');
     setFilters(defaultFilters);
   }, [pushTarget]);
   const handleStartConversation = useCallback((targetUserId: string) => {
     setChatReturnTab(tab === 'membersChat' ? 'home' : tab);
     setChatTargetUserId(targetUserId);
-    setTab('membersChat');
+    setChatOpen(true);
   }, [tab]);
   const handleInitialDirectHandled = useCallback(() => setChatTargetUserId(null), []);
-  const handleCreateGroupFromMembers = useCallback(() => { setChatReturnTab(tab === 'membersChat' ? 'home' : tab); setChatCreateGroupRequest(true); setTab('membersChat'); }, [tab]);
+  const handleCreateGroupFromMembers = useCallback(() => { setChatReturnTab(tab === 'membersChat' ? 'home' : tab); setChatCreateGroupRequest(true); setChatOpen(true); }, [tab]);
   const handleCreateGroupHandled = useCallback(() => setChatCreateGroupRequest(false), []);
   const manualAreaName = activeChannel?.slug === 'mecanica-naval' ? 'Mecânica Naval'
     : activeChannel?.slug === 'eletrica' ? 'Elétrica'
@@ -1197,6 +1199,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             onUpdated={handleProfileUpdated}
             onLogout={handleProfileLogout}
           />
+          <button className="workspace-chat-launcher workspace-chat-launcher-mobile" type="button" aria-label="Abrir Chat" title="Chat" onClick={() => setChatOpen(true)}><MessageCircle aria-hidden="true" /></button>
         </div>
       </header>
 
@@ -1459,9 +1462,6 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           {tab === 'conversations' && conversationsSubtab === 'announcements' && (
             <SharedContentWorkspace client={client} mode="announcements" userId={userId} isAdmin={profile.role === 'admin'} areas={activeAreas} members={members} areaId={activeChannel?.slug === 'geral' ? null : activeChannel?.area_id ?? null} isGeneralChannel={activeChannel?.slug === 'geral'} channelId={activeChannel?.id ?? ''} targetAnnouncementId={pushTarget?.type === 'announcement' ? pushTarget.itemId : undefined} />
           )}
-          {tab === 'membersChat' && (
-            <TeamChat client={client} userId={userId} isAdmin={profile.role === 'admin'} members={members} initialMessageId={pushTarget?.type === 'chat' ? pushTarget.messageId : undefined} initialConversationId={pushTarget?.type === 'chat' ? pushTarget.conversationId : undefined} initialConversationType={pushTarget?.type === 'chat' ? pushTarget.conversationType : undefined} initialDirectUserId={chatTargetUserId} onInitialDirectHandled={handleInitialDirectHandled} openCreateGroup={chatCreateGroupRequest} onCreateGroupHandled={handleCreateGroupHandled} />
-          )}
           {tab === 'agenda' && agendaSubtab === 'meetings' && <MeetingsWorkspace displayName={displayName} onRoomActiveChange={setJitsiRoomActive} />}
           {tab === 'agenda' && agendaSubtab === 'availability' && <AvailabilityWorkspace client={client} userId={userId} profile={profile} />}
           {tab === 'agenda' && agendaSubtab === 'calendar' && <TeamCalendar client={client} userId={userId} isAdmin={profile.role === 'admin'} initialDate={calendarFocusDate} initialEventId={pushTarget?.type === 'calendar' ? pushTarget.itemId : undefined} />}
@@ -1484,9 +1484,24 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
         </main>
       </div>
 
-      <div className="workspace-members-dock">
-        <TeamMembersMenu client={client} userId={userId} isAdmin={profile.role === 'admin'} onSelfProfileChanged={onRefreshProfile} onStartConversation={handleStartConversation} onCreateGroup={handleCreateGroupFromMembers} />
-      </div>
+      <button className="workspace-chat-launcher workspace-chat-launcher-desktop" type="button" aria-label="Abrir Chat" title="Chat" onClick={() => setChatOpen(true)}>
+        <MessageCircle aria-hidden="true" />
+      </button>
+
+      {chatOpen && (
+        <section className="workspace-chat-overlay" role="dialog" aria-modal="true" aria-label="Chat SolMar Celeris">
+          <header className="workspace-chat-overlay-header">
+            <div className="workspace-chat-overlay-title"><MessageCircle aria-hidden="true" /><strong>Chat</strong></div>
+            <div className="workspace-chat-overlay-actions">
+              <TeamMembersMenu client={client} userId={userId} isAdmin={profile.role === 'admin'} onSelfProfileChanged={onRefreshProfile} onStartConversation={handleStartConversation} onCreateGroup={handleCreateGroupFromMembers} />
+              <button type="button" className="workspace-chat-close" aria-label="Fechar Chat" title="Fechar Chat" onClick={() => setChatOpen(false)}><X aria-hidden="true" /></button>
+            </div>
+          </header>
+          <div className="workspace-chat-overlay-body">
+            <TeamChat client={client} userId={userId} isAdmin={profile.role === 'admin'} members={members} initialMessageId={pushTarget?.type === 'chat' ? pushTarget.messageId : undefined} initialConversationId={pushTarget?.type === 'chat' ? pushTarget.conversationId : undefined} initialConversationType={pushTarget?.type === 'chat' ? pushTarget.conversationType : undefined} initialDirectUserId={chatTargetUserId} onInitialDirectHandled={handleInitialDirectHandled} openCreateGroup={chatCreateGroupRequest} onCreateGroupHandled={handleCreateGroupHandled} />
+          </div>
+        </section>
+      )}
 
       {dialogActivity !== false && (
         <ActivityDialog

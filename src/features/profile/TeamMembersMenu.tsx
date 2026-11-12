@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ChevronDown, LoaderCircle, MailPlus, MessageCircle, RefreshCw, ShieldMinus, ShieldPlus, Trash2, UserRound, Users, X } from 'lucide-react';
+import { ChevronDown, LoaderCircle, MailPlus, MessageCircle, MoreVertical, RefreshCw, ShieldMinus, ShieldPlus, Trash2, UserRound, Users, X } from 'lucide-react';
 import './team-members-menu.css';
 
 type TeamMembersMenuProps = {
@@ -276,11 +276,11 @@ export default function TeamMembersMenu({ client, userId, isAdmin, onSelfProfile
         aria-expanded={open}
         aria-haspopup="dialog"
         aria-controls="team-members-panel"
-        aria-label={`${open ? 'Fechar' : 'Abrir'} menu de membros`}
+        aria-label={`${open ? 'Fechar' : 'Abrir'} membros e convites`}
         onClick={() => setOpen((value) => !value)}
       >
         <Users size={17} aria-hidden="true" />
-        <span className="team-members-trigger-label">Membros</span>
+        <span className="team-members-trigger-label">Convidar mais membros</span>
         <ChevronDown className="team-members-trigger-chevron" size={14} aria-hidden="true" />
       </button>
 
@@ -334,35 +334,14 @@ export default function TeamMembersMenu({ client, userId, isAdmin, onSelfProfile
                     </div>
                     {member.status === 'active' && member.user_id !== userId && <button className="team-member-action" type="button" title={`Conversar com ${name}`} aria-label={`Conversar com ${name}`} onClick={() => { setOpen(false); onStartConversation(member.user_id); }}><MessageCircle size={15} aria-hidden="true" /></button>}
                     {canActOnMember && (
-                      <div className="team-member-actions" aria-label={`Ações para ${name}`}>
-                        {member.status === 'active' && member.role !== 'admin' && (
-                          <button
-                            className="team-member-action"
-                            type="button"
-                            title="Tornar administrador"
-                            aria-label="Tornar administrador"
-                            onClick={() => void updateMember(member, 'promote')}
-                            disabled={busyUserId !== null}
-                          >
-                            {busyUserId === member.user_id ? <LoaderCircle size={15} className="team-members-spinner" aria-hidden="true" /> : <ShieldPlus size={15} aria-hidden="true" />}
-                          </button>
-                        )}
-                        {member.status === 'active' && member.role === 'admin' && (
-                          <button className="team-member-action" type="button" title="Tirar administrador" aria-label="Tirar administrador" onClick={() => void updateMember(member, 'demote')} disabled={busyUserId !== null}>
-                            {busyUserId === member.user_id ? <LoaderCircle size={15} className="team-members-spinner" aria-hidden="true" /> : <ShieldMinus size={15} aria-hidden="true" />}
-                          </button>
-                        )}
-                        <button
-                          className="team-member-action is-danger"
-                          type="button"
-                          title="Excluir membro"
-                          aria-label="Excluir membro"
-                          onClick={() => void updateMember(member, 'remove')}
-                          disabled={busyUserId !== null}
-                        >
-                          {busyUserId === member.user_id ? <LoaderCircle size={15} className="team-members-spinner" aria-hidden="true" /> : <Trash2 size={15} aria-hidden="true" />}
-                        </button>
-                      </div>
+                      <details className="team-member-options">
+                        <summary aria-label={`Opções de ${name}`} title="Opções"><MoreVertical size={18} aria-hidden="true" /></summary>
+                        <div className="team-member-options-menu">
+                          {member.status === 'active' && member.role !== 'admin' && <button type="button" onClick={() => void updateMember(member, 'promote')} disabled={busyUserId !== null}><ShieldPlus size={15} /> Tornar administrador</button>}
+                          {member.status === 'active' && member.role === 'admin' && <button type="button" onClick={() => void updateMember(member, 'demote')} disabled={busyUserId !== null}><ShieldMinus size={15} /> Remover administrador</button>}
+                          <button className="is-danger" type="button" onClick={() => void updateMember(member, 'remove')} disabled={busyUserId !== null}><Trash2 size={15} /> Remover membro</button>
+                        </div>
+                      </details>
                     )}
                   </li>
                 );

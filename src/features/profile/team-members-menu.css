@@ -77,3 +77,11 @@
   .team-members-trigger { min-width: 37px; min-height: 44px; }
 }
 
+
+.team-member-options { position: relative; flex: 0 0 auto; }
+.team-member-options > summary { display: grid; width: 36px; height: 36px; place-items: center; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: var(--card); cursor: pointer; list-style: none; }
+.team-member-options > summary::-webkit-details-marker { display: none; }
+.team-member-options-menu { position: absolute; z-index: 45; top: calc(100% + 5px); right: 0; display: grid; min-width: 190px; gap: 3px; padding: 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); box-shadow: 0 12px 30px rgba(0,25,50,.18); }
+.team-member-options-menu button { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 9px; border: 0; border-radius: 7px; color: var(--ink); background: transparent; cursor: pointer; text-align: left; font-size: 11px; }
+.team-member-options-menu button:hover { background: var(--surface); }
+.team-member-options-menu button.is-danger { color: #a9322b; }
