@@ -810,3 +810,33 @@
   .team-chat-admin-badge,
   .team-chat-heading .workspace-kicker { display: none !important; }
 }
+
+/* Barra unificada de composição: texto e controles permanecem na mesma cápsula em Web e mobile. */
+.team-chat-composer { grid-template-columns: minmax(0, 1fr); min-width: 0; gap: 8px; }
+.team-chat-composer-bar { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; padding: 5px 7px 5px 17px; border: 1px solid color-mix(in srgb, var(--ocean) 18%, var(--line)); border-radius: 36px; background: color-mix(in srgb, var(--surface) 55%, var(--card)); box-shadow: inset 0 1px 2px rgba(0, 36, 68, .035); }
+.team-chat-composer-bar textarea,
+.team-chat-composer-bar textarea:focus-visible { display: block; flex: 1 1 auto; width: 100%; min-width: 0; min-height: 58px; max-height: 144px; margin: 0; padding: 12px 3px; resize: none; border: 0; border-radius: 0; outline: 0; color: var(--ink); background: transparent; box-shadow: none; font-size: 14px; line-height: 1.4; }
+.team-chat-composer-bar textarea:focus-visible { outline: none; }
+.team-chat-composer-bar textarea::placeholder { color: var(--muted); opacity: .82; }
+.team-chat-composer-bar .team-chat-compose-actions { display: flex; flex: 0 0 auto; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: 6px; }
+.team-chat-composer-bar .team-chat-compose-actions button { display: grid; flex: 0 0 42px; width: 42px; min-width: 42px; height: 42px; min-height: 42px; place-items: center; padding: 0; border: 1px solid var(--line); border-radius: 13px; color: var(--ocean); background: var(--card); box-shadow: 0 1px 3px rgba(0, 33, 62, .05); }
+.team-chat-composer-bar .team-chat-compose-actions button svg { width: 20px; height: 20px; }
+.team-chat-composer-bar .team-chat-compose-actions button:hover:not(:disabled) { border-color: var(--sky); background: color-mix(in srgb, var(--sky) 9%, var(--card)); }
+.team-chat-composer-bar .team-chat-compose-actions button.team-chat-send-button { flex-basis: 50px; width: 50px; min-width: 50px; height: 50px; min-height: 50px; border: 0; border-radius: 50%; color: #fff; background: #79b4d4; box-shadow: 0 4px 12px rgba(1, 75, 137, .16); }
+.team-chat-composer-bar .team-chat-compose-actions button.team-chat-send-button:hover:not(:disabled) { color: #fff; background: var(--ocean); }
+.team-chat-composer-bar .team-chat-compose-actions button.team-chat-send-button svg { width: 23px; height: 23px; }
+.team-chat-composer-bar .team-chat-compose-actions button.team-chat-record-button { border-radius: 50%; color: var(--ocean); background: var(--card); }
+.team-chat-composer-bar .team-chat-compose-actions button.team-chat-stop-recording-button { border-color: color-mix(in srgb, #c83d32 35%, var(--line)); border-radius: 50%; color: #a22f26; background: color-mix(in srgb, #ef5548 8%, var(--card)); }
+.team-chat-audio-state { min-width: 0; }
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .team-chat.has-active-conversation .team-chat-composer { grid-template-columns: minmax(0, 1fr) !important; align-items: stretch !important; gap: 7px !important; padding: 9px max(10px, env(safe-area-inset-right, 0px)) max(9px, env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px)) !important; }
+  .team-chat.has-active-conversation .team-chat-composer-bar { gap: 5px; padding: 4px 5px 4px 14px; border-radius: 34px; }
+  .team-chat.has-active-conversation .team-chat-composer-bar textarea,
+  .team-chat.has-active-conversation .team-chat-composer-bar textarea:focus-visible { flex-basis: 0; min-height: 60px !important; max-height: 25dvh !important; padding: 11px 2px !important; font-size: 15px !important; }
+  .team-chat.has-active-conversation .team-chat-composer-bar .team-chat-compose-actions { display: flex !important; flex: 0 0 auto !important; width: auto !important; gap: 4px; }
+  .team-chat.has-active-conversation .team-chat-composer-bar .team-chat-compose-actions button { flex-basis: 36px; width: 36px; min-width: 36px; height: 38px; min-height: 38px; border-radius: 11px; }
+  .team-chat.has-active-conversation .team-chat-composer-bar .team-chat-compose-actions button svg { width: 18px; height: 18px; }
+  .team-chat.has-active-conversation .team-chat-composer-bar .team-chat-compose-actions button.team-chat-send-button { flex-basis: 44px; width: 44px; min-width: 44px; height: 44px; min-height: 44px; border-radius: 50%; }
+  .team-chat.has-active-conversation .team-chat-composer-bar .team-chat-compose-actions button.team-chat-send-button svg { width: 21px; height: 21px; }
+  .team-chat.has-active-conversation .team-chat-audio-state { grid-column: auto; }
+}
