@@ -361,7 +361,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   const [activeChannel, setActiveChannel] = useState<WorkspaceChannel | null>(null);
   const initialChannelSelection = useRef(true);
   const [chatTargetUserId, setChatTargetUserId] = useState<string | null>(null);
-  const [chatReturnTab, setChatReturnTab] = useState<WorkspaceTab>('home');
+  const [chatReturnTab] = useState<WorkspaceTab>('home');
   const [chatCreateGroupRequest, setChatCreateGroupRequest] = useState(false);
   const [agendaSubtab, setAgendaSubtab] = useState<AgendaSubtab>('calendar');
   const [conversationsSubtab, setConversationsSubtab] = useState<ConversationsSubtab>('announcements');
