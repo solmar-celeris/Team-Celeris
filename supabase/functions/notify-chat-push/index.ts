@@ -8,7 +8,17 @@ const corsHeaders = {
 };
 const MAX_MESSAGE_AGE_MS = 10 * 60 * 1000;
 const ONESIGNAL_MAX_ALIASES = 20_000;
-const APP_URL = 'https://teamceleris.netlify.app/';
+
+function publicAppOrigin(): string {
+  const value = Deno.env.get('APP_URL')?.trim();
+  if (!value) throw new Error('app_url_not_configured');
+  let parsed: URL;
+  try { parsed = new URL(value); } catch { throw new Error('app_url_invalid'); }
+  if (parsed.protocol !== 'https:' || parsed.username || parsed.password || parsed.pathname !== '/' || parsed.search || parsed.hash) {
+    throw new Error('app_url_invalid');
+  }
+  return parsed.origin;
+}
 
 type Profile = { user_id: string; full_name: string; status: 'active' | 'pending' | 'suspended' };
 type ChatMessage = {
@@ -166,7 +176,7 @@ async function sendOneSignalPush(
   message: ChatMessage,
 ): Promise<boolean> {
   const notificationText = messageText.slice(0, 2_000);
-  const targetUrl = new URL(APP_URL);
+  const targetUrl = new URL('/', publicAppOrigin());
   targetUrl.searchParams.set('push', 'chat');
   targetUrl.searchParams.set('message_id', message.id);
   const conversationType = message.dm_conversation_id ? 'direct' : message.group_id ? 'group' : 'team';

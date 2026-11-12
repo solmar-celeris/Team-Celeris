@@ -8,7 +8,17 @@ const corsHeaders = {
 };
 const MAX_EVENT_AGE_MS = 15 * 60 * 1000;
 const ONESIGNAL_MAX_ALIASES = 20_000;
-const APP_URL = 'https://teamceleris.netlify.app/';
+
+function publicAppOrigin(): string {
+  const value = Deno.env.get('APP_URL')?.trim();
+  if (!value) throw new Error('app_url_not_configured');
+  let parsed: URL;
+  try { parsed = new URL(value); } catch { throw new Error('app_url_invalid'); }
+  if (parsed.protocol !== 'https:' || parsed.username || parsed.password || parsed.pathname !== '/' || parsed.search || parsed.hash) {
+    throw new Error('app_url_invalid');
+  }
+  return parsed.origin;
+}
 
 type PushEvent = {
   id: string;
@@ -139,7 +149,7 @@ async function sendOneSignalPush(
 ): Promise<boolean> {
   const isAnnouncement = eventType === 'announcement_created';
   const pushType = isAnnouncement ? 'announcement' : 'activity';
-  const targetUrl = new URL(APP_URL);
+  const targetUrl = new URL('/', publicAppOrigin());
   targetUrl.searchParams.set('push', pushType);
   targetUrl.searchParams.set('item_id', entityId);
   const activityDetails = `Atividade: ${(activityName || 'Atividade da equipe').trim().slice(0, 110)}. Prazo: ${displayDueDate(dueDate)}. Entrega esperada: ${(expectedDeliverable || 'não especificada').trim().slice(0, 140)}${expectedDeliverable && expectedDeliverable.length > 140 ? '…' : ''}.`;

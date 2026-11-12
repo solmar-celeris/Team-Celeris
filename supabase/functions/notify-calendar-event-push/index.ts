@@ -8,7 +8,17 @@ const corsHeaders = {
 };
 const MAX_EVENT_AGE_MS = 15 * 60 * 1000;
 const MAX_RECIPIENTS = 20_000;
-const APP_URL = 'https://teamceleris.netlify.app/';
+
+function publicAppOrigin(): string {
+  const value = Deno.env.get('APP_URL')?.trim();
+  if (!value) throw new Error('app_url_not_configured');
+  let parsed: URL;
+  try { parsed = new URL(value); } catch { throw new Error('app_url_invalid'); }
+  if (parsed.protocol !== 'https:' || parsed.username || parsed.password || parsed.pathname !== '/' || parsed.search || parsed.hash) {
+    throw new Error('app_url_invalid');
+  }
+  return parsed.origin;
+}
 
 type Profile = { user_id: string; status: 'active' | 'pending' | 'suspended' };
 type CalendarEvent = { id: string; title: string; event_date: string; created_by: string; created_at: string };
@@ -51,7 +61,7 @@ async function updateEvent(admin: SupabaseClient, eventId: string, status: 'sent
   if (error) throw new Error('calendar_push_update_failed');
 }
 async function sendPush(appId: string, apiKey: string, recipients: string[], event: CalendarEvent): Promise<boolean> {
-  const targetUrl = new URL(APP_URL);
+  const targetUrl = new URL('/', publicAppOrigin());
   targetUrl.searchParams.set('push', 'calendar');
   targetUrl.searchParams.set('item_id', event.id);
   targetUrl.searchParams.set('date', event.event_date);
