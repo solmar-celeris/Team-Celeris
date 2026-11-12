@@ -5,15 +5,17 @@ import type { Area, MemberProfile } from './domain';
 import './channel-switcher.css';
 
 export type WorkspaceChannel = { id: string; slug: string; name: string; icon: string; is_open: boolean; area_id: string | null };
-type Props = { client: SupabaseClient; userId: string; isAdmin: boolean; areas: Area[]; members: Pick<MemberProfile, 'user_id' | 'full_name' | 'status'>[]; onChange: (channel: WorkspaceChannel) => void };
+type InitialChannelTarget = { areaId: string | null };
+type Props = { client: SupabaseClient; userId: string; isAdmin: boolean; areas: Area[]; members: Pick<MemberProfile, 'user_id' | 'full_name' | 'status'>[]; onChange: (channel: WorkspaceChannel) => void; initialChannelTarget?: InitialChannelTarget | null; onInitialTargetUnavailable?: () => void };
 const icons = { globe: Globe2, ship: Ship, zap: Zap, cpu: Cpu, users: Users, megaphone: Megaphone, wallet: Wallet, laptop: Laptop, folder: Folder, wrench: Wrench, flask: FlaskConical, calendar: CalendarDays, book: BookOpen, settings: Settings, chat: MessageCircle } as const;
 const iconOptions = Object.entries(icons) as [keyof typeof icons, (typeof icons)[keyof typeof icons]][];
 const protectedChannelSlugs = ['geral'];
 function ChannelIcon({ name }: { name: string }) { const Icon = icons[name as keyof typeof icons] ?? Globe2; return <Icon size={16} aria-hidden="true" />; }
 
-export default function ChannelSwitcher({ client, userId, isAdmin, areas, members, onChange }: Props) {
+export default function ChannelSwitcher({ client, userId, isAdmin, areas, members, onChange, initialChannelTarget, onInitialTargetUnavailable }: Props) {
   const [channels, setChannels] = useState<WorkspaceChannel[]>([]);
   const [selectedId, setSelectedId] = useState('');
+  const [initialSelectionReady, setInitialSelectionReady] = useState(false);
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [editingPrivacy, setEditingPrivacy] = useState(false);
@@ -38,8 +40,21 @@ export default function ChannelSwitcher({ client, userId, isAdmin, areas, member
   }, [client]);
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
-    if (selected) onChange(selected);
-  }, [selected?.id, selected?.is_open, selected?.name, selected?.area_id, selected?.slug, selected?.icon, onChange]);
+    if (initialSelectionReady || !channels.length || initialChannelTarget === null) return;
+    const requested = initialChannelTarget
+      ? channels.find((channel) => initialChannelTarget.areaId === null
+        ? channel.slug === 'geral'
+        : channel.area_id === initialChannelTarget.areaId)
+      : undefined;
+    if (initialChannelTarget && !requested) onInitialTargetUnavailable?.();
+    const initial = requested ?? channels.find((channel) => channel.slug === 'geral') ?? channels[0];
+    if (!initial) return;
+    setSelectedId(initial.id);
+    setInitialSelectionReady(true);
+  }, [channels, initialChannelTarget, initialSelectionReady, onInitialTargetUnavailable]);
+  useEffect(() => {
+    if (initialSelectionReady && selected) onChange(selected);
+  }, [initialSelectionReady, selected?.id, selected?.is_open, selected?.name, selected?.area_id, selected?.slug, selected?.icon, onChange]);
   useEffect(() => {
     const channel = client.channel(`workspace-channels-${userId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'workspace_channels' }, () => { void load(); })

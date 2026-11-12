@@ -356,6 +356,9 @@ function safeDriveUrl(value: string): string | null {
 
 export default function TeamWorkspace({ client, userId, profile, theme, onThemeChange, onLogout }: TeamWorkspaceProps) {
   const [pushTarget] = useState<PushDeepLink | null>(() => parsePushDeepLink());
+  const [pushChannelTarget, setPushChannelTarget] = useState<{ areaId: string | null } | null | undefined>(() => (
+    pushTarget?.type === 'announcement' || pushTarget?.type === 'activity' ? null : undefined
+  ));
   const [tab, setTab] = useState<WorkspaceTab>(() => tabForPush(pushTarget));
   const [chatOpen, setChatOpen] = useState(() => pushTarget?.type === 'chat');
   const [activeChannel, setActiveChannel] = useState<WorkspaceChannel | null>(null);
@@ -409,17 +412,25 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   const [draftWeekStart, setDraftWeekStart] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [feedback, setFeedback] = useState('');
+  const [pushTargetNotice, setPushTargetNotice] = useState('');
   const [dialogError, setDialogError] = useState('');
 
   const handleChannelChange = useCallback((channel: WorkspaceChannel) => {
     const initialChannelLoad = initialChannelSelection.current;
     initialChannelSelection.current = false;
     setActiveChannel(channel);
-    setTab(initialChannelLoad && pushTarget?.type === 'announcement' ? 'conversations' : channel.slug === 'geral' ? 'home' : 'activities');
-    if (initialChannelLoad && pushTarget?.type === 'chat') setChatOpen(true);
+    if (initialChannelLoad && pushTarget) {
+      setTab(tabForPush(pushTarget));
+      if (pushTarget.type === 'chat') setChatOpen(true);
+    } else {
+      setTab(channel.slug === 'geral' ? 'home' : 'activities');
+    }
     setConversationsSubtab('announcements');
     setFilters(defaultFilters);
   }, [pushTarget]);
+  const handlePushChannelUnavailable = useCallback(() => {
+    setPushTargetNotice('O canal correspondente a esta notificação não está disponível para sua conta.');
+  }, []);
   const handleInitialDirectHandled = useCallback(() => setChatTargetUserId(null), []);
   const handleCreateGroupHandled = useCallback(() => setChatCreateGroupRequest(false), []);
   const manualAreaName = activeChannel?.slug === 'mecanica-naval' ? 'Mecânica Naval'
@@ -463,6 +474,37 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
+
+  useEffect(() => {
+    const target = pushTarget;
+    if (!target || (target.type !== 'activity' && target.type !== 'announcement')) return;
+    const targetType = target.type;
+    const itemId = target.itemId;
+    let cancelled = false;
+    async function resolveTargetArea() {
+      if (targetType === 'activity') {
+        const { data, error } = await client.from('activities').select('area_id').eq('id', itemId).maybeSingle();
+        if (cancelled) return;
+        if (error || !data) {
+          setPushTargetNotice('Não foi possível localizar a atividade desta notificação ou sua conta não tem acesso a ela.');
+          setPushChannelTarget({ areaId: null });
+          return;
+        }
+        setPushChannelTarget({ areaId: (data as { area_id: string | null }).area_id });
+        return;
+      }
+      const { data, error } = await client.from('announcements').select('audience_area_id').eq('id', itemId).maybeSingle();
+      if (cancelled) return;
+      if (error || !data) {
+        setPushTargetNotice('Não foi possível localizar o comunicado desta notificação ou sua conta não tem acesso a ele.');
+        setPushChannelTarget({ areaId: null });
+        return;
+      }
+      setPushChannelTarget({ areaId: (data as { audience_area_id: string | null }).audience_area_id });
+    }
+    void resolveTargetArea();
+    return () => { cancelled = true; };
+  }, [client, pushTarget]);
 
   useEffect(() => {
     if (!pushTarget) return;
@@ -1181,7 +1223,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           );})}
         </nav>
         <div className="workspace-top-actions">
-          <ChannelSwitcher client={client} userId={userId} isAdmin={profile.role === 'admin'} areas={activeAreas} members={members} onChange={handleChannelChange} />
+          <ChannelSwitcher client={client} userId={userId} isAdmin={profile.role === 'admin'} areas={activeAreas} members={members} onChange={handleChannelChange} initialChannelTarget={pushChannelTarget} onInitialTargetUnavailable={handlePushChannelUnavailable} />
           <ProfileMenu
             client={client}
             userId={userId}
@@ -1237,6 +1279,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             </div>
           )}
           {feedback && <p className="workspace-feedback" role="status">{feedback}</p>}
+          {pushTargetNotice && <p className="workspace-feedback" role="status">{pushTargetNotice}</p>}
 
           {((tab === 'home' && homeFiltersOpen) || tab === 'activities') && <div className="workspace-filter-panel" id={tab === 'home' ? 'workspace-filter-panel' : undefined}>
             <label className="workspace-search">
@@ -1388,10 +1431,10 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
                 <p className="workspace-week-indicator-note">Atrasadas usa a situação geral; bloqueadas, o fluxo Kanban. Os filtros ajustam os totais.</p>
               </section>
               <section className="workspace-feed-card workspace-feed-shortcuts">
-                <p className="workspace-kicker">ATALHOS DA EQUIPE</p>
-                <button type="button" onClick={() => navigateToAgendaSubtab('calendar')}><CalendarDays aria-hidden="true" /> Abrir Agenda</button>
-                <button type="button" onClick={() => navigateToTab('activities')}><ClipboardList aria-hidden="true" /> Ver atividades</button>
-                <button type="button" onClick={() => navigateToAgendaSubtab('meetings')}><Video aria-hidden="true" /> Reuniões ao vivo</button>
+                <p className="workspace-kicker">ATALHOS DE AGENDA</p>
+                <button type="button" onClick={() => navigateToAgendaSubtab('calendar')}><CalendarDays aria-hidden="true" /> Calendário</button>
+                <button type="button" onClick={() => navigateToAgendaSubtab('availability')}><ClockWithArrowsIcon size={16} /> Disponibilidades</button>
+                <button type="button" onClick={() => navigateToAgendaSubtab('meetings')}><Video aria-hidden="true" /> Reunião</button>
                 {weekCalendarEvents.length > 0 && <p className="workspace-feed-events-count">{weekCalendarEvents.length} evento(s) na semana selecionada</p>}
               </section>
             </aside>

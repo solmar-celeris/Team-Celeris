@@ -14,15 +14,14 @@ O HTML, manifesto e workers são revalidados; assets versionados de `/assets/` p
 
 ## Destinos dos pushes e convites
 
-As três funções OneSignal que abrem o Chat, atividades/comunicados e calendário não apontam mais ao domínio Netlify. Antes de republicá-las, em Supabase → **Edge Functions → Secrets**, configure `APP_URL` com a origem Cloudflare exata, por exemplo `https://seu-projeto.pages.dev` ou o domínio próprio do projeto. Informe somente esquema e domínio — sem caminho, query ou fragmento. Atualize `APP_LOGIN_URL` para a mesma origem se a função de convites estiver habilitada. Depois publique novamente `notify-chat-push`, `notify-workspace-push` e `notify-calendar-event-push` para que as funções recebam a variável.
+As três funções OneSignal que abrem o Chat, atividades/comunicados e calendário não apontam mais ao domínio Netlify. Elas reutilizam o secret `APP_LOGIN_URL`, que já é usado pela função de convites. Em Supabase → **Edge Functions → Secrets**, configure apenas `APP_LOGIN_URL` com a origem Cloudflare exata, por exemplo `https://seu-projeto.pages.dev` ou o domínio próprio do projeto. Informe somente esquema e domínio — sem caminho, query ou fragmento. Depois publique novamente `notify-chat-push`, `notify-workspace-push` e `notify-calendar-event-push`; as funções usarão esse mesmo secret para os links dos pushes.
 
-O código agora falha de forma segura se `APP_URL` estiver ausente/inválida, em vez de enviar novas notificações com links antigos.
-
+O código falha de forma segura se `APP_LOGIN_URL` estiver ausente/inválida, em vez de enviar novas notificações com links antigos. Não é necessário criar `APP_URL`.
 ## OneSignal Web Push e origem antiga
 
 No painel OneSignal, a configuração da plataforma **Web Push** precisa usar a mesma origem Cloudflare HTTPS, e o service worker precisa ser servido nessa origem. Browser Web Push associa inscrições à origem; uma inscrição criada para o domínio Netlify não pode ser transferida para um domínio Cloudflare diferente. Abra o endereço Cloudflare no navegador de cada pessoa e ative novamente a notificação. [3]
 
-Se a notificação chega, mas tocar nela ainda abre Netlify, publique novamente as três Edge Functions acima e confirme `APP_URL`. Se o ícone/origem da notificação continua sendo o endereço antigo, atualize o Site URL da plataforma Web Push no OneSignal e faça nova inscrição no Cloudflare. Para iPhone/iPad, o usuário pode precisar remover e adicionar o atalho à Tela de Início da origem nova.
+Se a notificação chega, mas tocar nela ainda abre Netlify, publique novamente as três Edge Functions acima e confirme `APP_LOGIN_URL`. Se o ícone/origem da notificação continua sendo o endereço antigo, atualize o Site URL da plataforma Web Push no OneSignal e faça nova inscrição no Cloudflare. Para iPhone/iPad, o usuário pode precisar remover e adicionar o atalho à Tela de Início da origem nova.
 
 ## Se o mobile continuar com o layout anterior
 

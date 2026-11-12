@@ -10,12 +10,12 @@ const MAX_EVENT_AGE_MS = 15 * 60 * 1000;
 const MAX_RECIPIENTS = 20_000;
 
 function publicAppOrigin(): string {
-  const value = Deno.env.get('APP_URL')?.trim();
-  if (!value) throw new Error('app_url_not_configured');
+  const value = Deno.env.get('APP_LOGIN_URL')?.trim();
+  if (!value) throw new Error('app_login_url_not_configured');
   let parsed: URL;
-  try { parsed = new URL(value); } catch { throw new Error('app_url_invalid'); }
+  try { parsed = new URL(value); } catch { throw new Error('app_login_url_invalid'); }
   if (parsed.protocol !== 'https:' || parsed.username || parsed.password || parsed.pathname !== '/' || parsed.search || parsed.hash) {
-    throw new Error('app_url_invalid');
+    throw new Error('app_login_url_invalid');
   }
   return parsed.origin;
 }
@@ -74,7 +74,7 @@ async function sendPush(appId: string, apiKey: string, recipients: string[], eve
       include_aliases: { external_id: recipients },
       headings: { en: 'New calendar event', pt: 'Novo evento no calendário' },
       contents: { en: `${event.title.trim().slice(0, 140)} · ${formatDate(event.event_date)}`, pt: `${event.title.trim().slice(0, 140)} · ${formatDate(event.event_date)}` },
-      url: targetUrl.toString(),
+      web_url: targetUrl.toString(),
       data: { targetUrl: targetUrl.toString(), push_type: 'calendar', item_id: event.id, event_date: event.event_date },
     }),
   });

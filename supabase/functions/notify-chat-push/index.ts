@@ -10,12 +10,12 @@ const MAX_MESSAGE_AGE_MS = 10 * 60 * 1000;
 const ONESIGNAL_MAX_ALIASES = 20_000;
 
 function publicAppOrigin(): string {
-  const value = Deno.env.get('APP_URL')?.trim();
-  if (!value) throw new Error('app_url_not_configured');
+  const value = Deno.env.get('APP_LOGIN_URL')?.trim();
+  if (!value) throw new Error('app_login_url_not_configured');
   let parsed: URL;
-  try { parsed = new URL(value); } catch { throw new Error('app_url_invalid'); }
+  try { parsed = new URL(value); } catch { throw new Error('app_login_url_invalid'); }
   if (parsed.protocol !== 'https:' || parsed.username || parsed.password || parsed.pathname !== '/' || parsed.search || parsed.hash) {
-    throw new Error('app_url_invalid');
+    throw new Error('app_login_url_invalid');
   }
   return parsed.origin;
 }
@@ -201,7 +201,7 @@ async function sendOneSignalPush(
         en: notificationText,
         pt: notificationText,
       },
-      url: targetUrl.toString(),
+      web_url: targetUrl.toString(),
       data: {
         targetUrl: targetUrl.toString(),
         push_type: 'chat',
