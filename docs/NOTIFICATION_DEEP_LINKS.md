@@ -11,6 +11,8 @@ As notificações direcionam a pessoa para o registro que as originou. O app rec
 
 A URL Web é enviada pelo campo `web_url`. Para o Median, o payload usa `data.targetUrl`, campo reservado que abre a URL dentro do app; não use o campo Launch URL para navegação interna. [1] [2]
 
+O app também registra `median_onesignal_push_opened(data)` no início da carga. Se o WebView abrir na raiz em vez de aplicar `targetUrl`, o callback reconstrói a rota usando os campos Additional Data. A navegação é idempotente para impedir um ciclo de recargas quando o Median também aplica o destino nativamente.
+
 ## Publicação e teste
 
 O código-fonte altera a navegação do site e o payload das Edge Functions. Publique o site e as funções `notify-chat-push`, `notify-workspace-push` e `notify-calendar-event-push` para que os novos deep links entrem em produção. Depois, teste um push real de cada categoria, tocando nele com o site e com o app Median. O teste local de build não substitui esse teste em dispositivos e contas ativos.

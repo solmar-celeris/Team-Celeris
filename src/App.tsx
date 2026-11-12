@@ -1,5 +1,8 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import AuthPanel from './features/auth/AuthPanel';
+import { installMedianPushNavigation } from './lib/medianPushNavigation';
+
+installMedianPushNavigation();
 
 const DashboardPreview = import.meta.env.DEV
   ? lazy(() => import('./features/dashboard/DashboardPreview'))
