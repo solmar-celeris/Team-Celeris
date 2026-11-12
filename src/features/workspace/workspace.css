@@ -2231,17 +2231,13 @@
 .workspace-chat-close svg { width: 27px; height: 27px; }
 .workspace-chat-overlay-body { flex: 1 1 auto; min-height: 0; overflow: hidden; padding: 0; }
 .workspace-chat-overlay-body > .team-chat { display: flex; flex-direction: column; gap: 0; width: 100%; max-width: none; height: 100%; margin: 0; }
-.workspace-chat-overlay-body .team-chat-heading { flex: 0 0 auto; align-items: center; min-height: 72px; margin: 0; padding: 10px 22px; border-bottom: 1px solid var(--line); background: var(--card); }
-.workspace-chat-overlay-body .team-chat-heading h2 { font-size: 18px; }
-.workspace-chat-overlay-body .team-chat-heading > div:first-child > p:not(.workspace-kicker) { display: none; }
-.workspace-chat-overlay-body .team-chat-heading .workspace-kicker { margin: 0 0 4px; font-size: 8px; }
 .workspace-chat-overlay-body .team-chat-shell { flex: 1 1 auto; min-height: 0; grid-template-columns: minmax(260px, 29%) minmax(0,1fr); gap: 0; align-items: stretch; }
 .workspace-chat-overlay-body .team-chat-channels { display: flex; flex-direction: column; min-height: 0; padding: 17px 13px; border: 0; border-right: 1px solid var(--line); border-radius: 0; }
 .workspace-chat-overlay-body .team-chat-channel-list { flex: 1 1 auto; min-height: 0; max-height: none; overflow: auto; }
-.workspace-chat-overlay-body .team-chat-main { min-height: 0; grid-template-rows: auto auto minmax(0,1fr); gap: 0; }
+.workspace-chat-overlay-body .team-chat-main { display: flex; flex: 1 1 0; flex-direction: column; min-height: 0; gap: 4px; overflow: hidden; }
 .workspace-chat-overlay-body .team-chat-connection { min-height: 27px; padding: 4px 18px; background: var(--card); }
 .workspace-chat-overlay-body .team-chat-alert, .workspace-chat-overlay-body .team-chat-feedback { margin: 4px 14px; }
-.workspace-chat-overlay-body .team-chat-panel { display: flex; flex-direction: column; min-height: 0; height: 100%; border: 0; border-radius: 0; box-shadow: none; }
+.workspace-chat-overlay-body .team-chat-panel { display: flex; flex: 1 1 0; flex-direction: column; min-height: 0; height: auto; border: 0; border-radius: 0; box-shadow: none; overflow: hidden; }
 .workspace-chat-overlay-body .team-chat-history { flex: 1 1 auto; min-height: 0; max-height: none; padding: 22px clamp(16px, 3vw, 44px); }
 .workspace-chat-overlay-body .team-chat-composer { flex: 0 0 auto; padding: 12px 18px max(12px, env(safe-area-inset-bottom)); }
 .workspace-chat-overlay-body .team-chat-composer textarea { min-height: 46px; max-height: 120px; resize: vertical; }
@@ -2255,26 +2251,4 @@
   .workspace-chat-overlay-title { gap: 8px; font-size: 18px; }
   .workspace-chat-overlay-title svg { width: 24px; height: 24px; }
   .workspace-chat-close { width: 40px; height: 40px; }
-  .workspace-chat-overlay-body .team-chat { height: 100%; }
-  .workspace-chat-overlay-body .team-chat-heading { min-height: 56px; padding: 7px 11px; }
-  .workspace-chat-overlay-body .team-chat-heading h2 { font-size: 15px; }
-  .workspace-chat-overlay-body .team-chat-heading-actions { display: flex; width: auto; flex-wrap: nowrap; gap: 5px; }
-  .workspace-chat-overlay-body .team-chat-heading-actions > * { min-width: 0; }
-  .workspace-chat-overlay-body .team-chat-heading-actions .workspace-refresh,
-  .workspace-chat-overlay-body .team-chat-heading-actions .team-chat-secondary-action,
-  .workspace-chat-overlay-body .team-chat-heading-actions .team-chat-create-group { min-height: 34px; padding: 0 7px; font-size: 9px; }
-  .workspace-chat-overlay-body .team-chat-shell { display: grid; grid-template-columns: minmax(0,1fr); }
-  .workspace-chat-overlay-body .team-chat-channels { min-height: 0; padding: 8px 10px; border-right: 0; border-bottom: 1px solid var(--line); }
-  .workspace-chat-overlay-body .team-chat-channel-list { display: flex; flex: 0 0 auto; max-height: 112px; overflow-x: auto; overflow-y: hidden; }
-  .workspace-chat-overlay-body .team-chat-channel { flex: 0 0 auto; grid-template-columns: 18px auto auto; min-height: 42px; }
-  .workspace-chat-overlay-body .team-chat-main { min-height: 0; }
-  .workspace-chat-overlay-body .team-chat-history { min-height: 0; max-height: none; padding: 12px; }
-  .workspace-chat-overlay-body .team-chat-composer { padding: 8px 10px max(8px, env(safe-area-inset-bottom)); }
-  .workspace-chat-overlay-body .team-chat-composer textarea { min-height: 42px; }
-}
-@media (max-width: 420px) {
-  .workspace-chat-overlay-body .team-chat-heading-actions .workspace-refresh { font-size: 0; }
-  .workspace-chat-overlay-body .team-chat-heading-actions .workspace-refresh svg { width: 16px; height: 16px; }
-  .workspace-chat-overlay-body .team-chat-heading-actions .team-chat-secondary-action,
-  .workspace-chat-overlay-body .team-chat-heading-actions .team-chat-create-group { font-size: 8px; }
 }

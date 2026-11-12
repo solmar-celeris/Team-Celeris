@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowLeft, ArrowUp, Camera, Download, MoreVertical, MailPlus, ExternalLink, FileText, Image as ImageIcon, Link2, Mic, MessageCircle, Paperclip, RefreshCw, ShieldPlus, ShieldMinus, Square, Trash2, UserPlus, Plus, Search, X } from 'lucide-react';
+import { ArrowLeft, ArrowUp, Camera, Download, MoreVertical, MailPlus, ExternalLink, FileText, Image as ImageIcon, Link2, Mic, MessageCircle, Paperclip, ShieldPlus, ShieldMinus, Square, Trash2, UserPlus, Plus, Search, X } from 'lucide-react';
 import { Mp3Encoder } from '@breezystack/lamejs';
 import { notifyChatMessagePush } from '../../lib/notifications';
 import type { MemberProfile } from './domain';
@@ -123,6 +123,7 @@ function chatError(error: unknown): string {
   return details.message || 'Não foi possível concluir a operação. Confira a conexão e tente novamente.';
 }
 export default function TeamChat({ client, userId, isAdmin, members, initialMessageId, initialConversationId, initialConversationType, initialDirectUserId, onInitialDirectHandled, openCreateGroup, onCreateGroupHandled, onMembersChanged }: TeamChatProps) {
+  const chatSectionRef = useRef<HTMLElement | null>(null);
   const [messages, setMessages] = useState<TeamChatMessage[]>([]);
   const [groups, setGroups] = useState<TeamChatGroup[]>([]);
   const [groupMembers, setGroupMembers] = useState<TeamChatGroupMember[]>([]);
@@ -145,10 +146,43 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
       return parsed?.type === 'direct' && typeof parsed.id === 'string' ? parsed.id : null;
     } catch { return null; }
   });
+  useEffect(() => {
+    if (!activeDirectId && !activeGroupId) return;
+    if (!window.matchMedia('(max-width: 760px)').matches) return;
+    const section = chatSectionRef.current;
+    if (!section) return;
+    const viewport = window.visualViewport;
+    const heightProperty = '--team-chat-visual-height';
+    const topProperty = '--team-chat-visual-top';
+    const previousHeight = section.style.getPropertyValue(heightProperty);
+    const previousTop = section.style.getPropertyValue(topProperty);
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
+    const updateVisibleViewport = () => {
+      section.style.setProperty(heightProperty, `${Math.round(viewport?.height ?? window.innerHeight)}px`);
+      section.style.setProperty(topProperty, `${Math.round(viewport?.offsetTop ?? 0)}px`);
+    };
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    updateVisibleViewport();
+    window.addEventListener('resize', updateVisibleViewport);
+    viewport?.addEventListener('resize', updateVisibleViewport);
+    viewport?.addEventListener('scroll', updateVisibleViewport);
+    return () => {
+      window.removeEventListener('resize', updateVisibleViewport);
+      viewport?.removeEventListener('resize', updateVisibleViewport);
+      viewport?.removeEventListener('scroll', updateVisibleViewport);
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      document.body.style.overflow = previousBodyOverflow;
+      if (previousHeight) section.style.setProperty(heightProperty, previousHeight);
+      else section.style.removeProperty(heightProperty);
+      if (previousTop) section.style.setProperty(topProperty, previousTop);
+      else section.style.removeProperty(topProperty);
+    };
+  }, [activeDirectId, activeGroupId]);
   const [groupDialogMode, setGroupDialogMode] = useState<GroupDialogMode | null>(null);
   const [groupDialogError, setGroupDialogError] = useState('');
   const [groupActionBusy, setGroupActionBusy] = useState(false);
-  const [showMobileConversations, setShowMobileConversations] = useState(false);
   const [conversationDeletionBusy, setConversationDeletionBusy] = useState(false);
   const [conversationSearch, setConversationSearch] = useState('');
   const [memberMenuId, setMemberMenuId] = useState<string | null>(null);
@@ -164,7 +198,6 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   const [driveName, setDriveName] = useState('');
   const [driveUrl, setDriveUrl] = useState('');
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [sending, setSending] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
@@ -299,7 +332,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
 
   const loadLatest = useCallback(async (quiet = false) => {
     const groupId = activeGroupId; const directId = activeDirectId;
-    if (quiet) setRefreshing(true); else setLoading(true);
+    if (!quiet) setLoading(true);
     setError(''); const revisionAtStart = eventRevisionRef.current;
     try {
       let query = client.from('team_chat_messages').select(MESSAGE_COLUMNS).is('removed_at', null);
@@ -330,7 +363,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
     } catch (loadError) {
       if (activeGroupRef.current === groupId && activeDirectRef.current === directId) setError(chatError(loadError));
     } finally {
-      if (activeGroupRef.current === groupId && activeDirectRef.current === directId) { setLoading(false); setRefreshing(false); }
+      if (activeGroupRef.current === groupId && activeDirectRef.current === directId) setLoading(false);
     }
   }, [activeDirectId, activeGroupId, client, initialMessageId]);
 
@@ -774,7 +807,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
       if (directError) throw directError;
       const directId = typeof data === 'string' ? data : String(data ?? '');
       if (!directId) throw new Error('Não foi possível abrir a conversa privada.');
-      setActiveGroupId(null); setActiveDirectId(directId); setShowMobileConversations(false);
+      setActiveGroupId(null); setActiveDirectId(directId);
       void loadLists();
     } catch (actionError) { setError(chatError(actionError)); }
   }
@@ -797,7 +830,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
       if (groupDialogMode === 'create') {
         const { data, error: createError } = await client.from('team_chat_groups').insert({ name: value.name }).select('id,name,created_by,created_at').single();
         if (createError) throw createError;
-        const created = data as unknown as TeamChatGroup; setActiveDirectId(null); setActiveGroupId(created.id); setShowMobileConversations(false); setGroupDialogMode(null);
+        const created = data as unknown as TeamChatGroup; setActiveDirectId(null); setActiveGroupId(created.id); setGroupDialogMode(null);
         if (value.memberIds.length) {
           const { error: addError } = await client.from('team_chat_group_members').insert(value.memberIds.map((memberId) => ({ group_id: created.id, user_id: memberId })));
           if (addError) setFeedback(`Grupo criado, mas não foi possível adicionar todas as pessoas: ${chatError(addError)}`);
@@ -861,20 +894,14 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   };
 
   return (
-    <section className={`team-chat${activeDirectId || activeGroupId ? ' has-active-conversation' : ''}`} aria-labelledby="team-chat-title">
+    <section ref={chatSectionRef} className={`team-chat${activeDirectId || activeGroupId ? ' has-active-conversation' : ''}`} aria-labelledby="team-chat-title">
       <div className="team-chat-heading">
         <div><p className="workspace-kicker">{activeDirectId ? 'CONVERSA PRIVADA' : activeGroupId ? 'CHAT · GRUPO' : 'CHAT · EQUIPE'}</p>
           <h2 id="team-chat-title">{activeGroup ? groupAvatar(activeGroup, 'md') : <MessageCircle aria-hidden="true" />} {activeDirectId ? conversationLabel : activeGroup?.name ?? 'Chat'}</h2>
           <p>{activeDirectId ? 'Conversa privada, visível somente para as duas contas participantes.' : activeGroupId ? 'Mensagens e informações de leitura restritas aos integrantes do grupo.' : 'Converse com a equipe em tempo real no Chat.'}</p></div>
-        <div className="team-chat-heading-actions">
-          <button className="team-chat-mobile-toggle" type="button" onClick={() => setShowMobileConversations(true)} aria-expanded={showMobileConversations}><MessageCircle aria-hidden="true" /> Conversas</button>
-          {activeGroupId && (activeGroupMemberIds.has(userId) || isAdmin) && <><input ref={groupPhotoInputRef} className="team-chat-hidden-input" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void uploadGroupPhoto(file); event.currentTarget.value = ''; }} /><button className="team-chat-secondary-action" type="button" onClick={() => groupPhotoInputRef.current?.click()} disabled={savingGroupPhoto} aria-label="Alterar foto do grupo"><Camera aria-hidden="true" /> {savingGroupPhoto ? 'Salvando foto…' : 'Foto do grupo'}</button><button className="workspace-refresh" type="button" onClick={() => { setGroupDialogError(''); setGroupDialogMode('add-members'); }} disabled={availableGroupMembers.length === 0}><UserPlus aria-hidden="true" /> Adicionar pessoas</button></>}
-          <button className="workspace-refresh" type="button" onClick={() => { void loadLatest(true); void loadLists(); }} disabled={refreshing || loading}><RefreshCw aria-hidden="true" /> {refreshing ? 'Atualizando…' : 'Atualizar'}</button>
-        </div>
       </div>
       <div className="team-chat-shell">
-        {showMobileConversations && <button className="team-chat-drawer-backdrop" type="button" aria-label="Fechar lista de conversas" onClick={() => setShowMobileConversations(false)} />}
-        <nav className={`team-chat-channels${showMobileConversations ? ' is-mobile-open' : ''}`} aria-label="Conversas do Chat">
+        <nav className="team-chat-channels" aria-label="Conversas do Chat">
           <p className="team-chat-channels-title">CHAT · CONVERSAS</p>
           <div className="team-chat-sidebar-tabs" role="tablist" aria-label="Tipo de conversa">
             <button type="button" role="tab" aria-selected={sidebarTab === 'conversations'} className={sidebarTab === 'conversations' ? 'is-active' : ''} onClick={() => setSidebarTab('conversations')}>Conversas</button>
@@ -882,7 +909,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
           </div>
           <label className="team-chat-sidebar-search"><Search aria-hidden="true" /><input value={conversationSearch} onChange={(event) => setConversationSearch(event.target.value)} placeholder="Buscar membro ou grupo…" /></label>
           <div className="team-chat-channel-list">
-            {sidebarTab === 'conversations' && <button type="button" className={`team-chat-channel${!activeGroupId && !activeDirectId ? ' is-active' : ''}`} onClick={() => { setActiveGroupId(null); setActiveDirectId(null); setShowMobileConversations(false); }}><MessageCircle aria-hidden="true" /><span>Equipe</span><small>Todos</small></button>}
+            {sidebarTab === 'conversations' && <button type="button" className={`team-chat-channel${!activeGroupId && !activeDirectId ? ' is-active' : ''}`} onClick={() => { setActiveGroupId(null); setActiveDirectId(null); }}><MessageCircle aria-hidden="true" /><span>Equipe</span><small>Todos</small></button>}
             {sidebarTab === 'conversations' && visibleMembers.map((member) => {
               const direct = directs.find((item) => item.user_a_id === member.user_id || item.user_b_id === member.user_id);
               const selected = Boolean(direct && activeDirectId === direct.id);
@@ -905,7 +932,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
               const groupIds = groupMembers.filter((member) => member.group_id === group.id).map((member) => member.user_id);
               const count = groupIds.length;
               return <div className="team-chat-channel-row" key={group.id}>
-                <button type="button" className={`team-chat-channel${activeGroupId === group.id ? ' is-active' : ''}`} onClick={() => { setActiveDirectId(null); setActiveGroupId(group.id); setShowMobileConversations(false); }}>
+                <button type="button" className={`team-chat-channel${activeGroupId === group.id ? ' is-active' : ''}`} onClick={() => { setActiveDirectId(null); setActiveGroupId(group.id); }}>
                   {groupAvatar(group, 'sm')}<span>{group.name}</span><small>{count}</small>
                 </button>
                 {groupIds.includes(userId) && <button className="team-chat-channel-visibility" type="button" title="Apagar conversa para todos" aria-label={`Apagar grupo ${group.name} para todos`} disabled={conversationDeletionBusy} onClick={() => confirmDeleteConversation('group', group.id, group.name)}><Trash2 aria-hidden="true" /></button>}
@@ -913,6 +940,11 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
             })}
             {sidebarTab === 'groups' && visibleGroups.length === 0 && <p className="team-chat-no-groups">Nenhum grupo encontrado.</p>}
           </div>
+          {activeGroupId && (activeGroupMemberIds.has(userId) || isAdmin) && <div className="team-chat-group-actions">
+            <input ref={groupPhotoInputRef} className="team-chat-hidden-input" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void uploadGroupPhoto(file); event.currentTarget.value = ''; }} />
+            <button className="team-chat-secondary-action" type="button" onClick={() => groupPhotoInputRef.current?.click()} disabled={savingGroupPhoto} aria-label="Alterar foto do grupo"><Camera aria-hidden="true" /> {savingGroupPhoto ? 'Salvando foto…' : 'Foto do grupo'}</button>
+            <button className="workspace-refresh" type="button" onClick={() => { setGroupDialogError(''); setGroupDialogMode('add-members'); }} disabled={availableGroupMembers.length === 0}><UserPlus aria-hidden="true" /> Adicionar pessoas</button>
+          </div>}
         </nav>
         <div className="team-chat-main">
           <header className="team-chat-mobile-conversation-header">
@@ -921,7 +953,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
             <div className="team-chat-mobile-conversation-title"><strong>{conversationLabel}</strong><small>{activeGroupId ? 'Grupo' : 'Conversa privada'}</small></div>
             {activeGroupId && <button type="button" className="team-chat-mobile-more" aria-label="Opções do grupo" onClick={() => { setGroupDialogError(''); setGroupDialogMode('add-members'); }}><MoreVertical aria-hidden="true" /></button>}
           </header>
-          <div className={`team-chat-connection is-${connection}`} role="status"><i aria-hidden="true" />{connection === 'connected' ? 'Conectado em tempo real' : connection === 'connecting' ? 'Conectando ao chat…' : 'Sem atualização em tempo real; tente atualizar.'}</div>
+          <div className={`team-chat-connection is-${connection}`} role="status"><i aria-hidden="true" />{connection === 'connected' ? 'Conectado em tempo real' : connection === 'connecting' ? 'Conectando ao chat…' : 'Sem conexão em tempo real. Confira a conexão com a internet.'}</div>
           {error && <p className="team-chat-alert" role="alert">{error}</p>}{feedback && <p className="team-chat-feedback" role="status">{feedback}</p>}
           <div className="team-chat-panel">
             <div className="team-chat-history" role="log" aria-label={`Mensagens de ${conversationLabel}`} aria-live="polite" aria-relevant="additions text">
