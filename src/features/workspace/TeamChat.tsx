@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowLeft, ArrowUp, Camera, Download, MoreVertical, MailPlus, ExternalLink, FileText, Image as ImageIcon, Link2, Mic, MessageCircle, Paperclip, RefreshCw, ShieldPlus, ShieldMinus, Square, Trash2, UserPlus, UsersRound, Plus, Search, X } from 'lucide-react';
+import { ArrowLeft, ArrowUp, Camera, Download, MoreVertical, MailPlus, ExternalLink, FileText, Image as ImageIcon, Link2, Mic, MessageCircle, Paperclip, RefreshCw, ShieldPlus, ShieldMinus, Square, Trash2, UserPlus, Plus, Search, X } from 'lucide-react';
 import { Mp3Encoder } from '@breezystack/lamejs';
 import { notifyChatMessagePush } from '../../lib/notifications';
 import type { MemberProfile } from './domain';
