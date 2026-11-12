@@ -1,8 +1,12 @@
+import { navigateToPushDestination } from './medianPushNavigation';
+
 type OneSignalWebSdk = {
   init: (options: {
     appId: string;
     serviceWorkerPath: string;
     serviceWorkerParam: { scope: string };
+    notificationClickHandlerMatch: 'exact' | 'origin';
+    notificationClickHandlerAction: 'navigate' | 'focus';
   }) => Promise<void>;
   login: (externalId: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -10,6 +14,7 @@ type OneSignalWebSdk = {
     isPushSupported: () => boolean;
     permission: boolean;
     requestPermission: () => Promise<void>;
+    addEventListener: (event: 'click', listener: (event: unknown) => void) => void;
   };
   User: {
     PushSubscription: {
@@ -61,6 +66,35 @@ function browserCanUseWebPush(): boolean {
     && 'Notification' in window;
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function stringValue(...values: unknown[]): string | null {
+  return values.find((value): value is string => typeof value === 'string' && Boolean(value.trim()))?.trim() ?? null;
+}
+
+function handleWebNotificationClick(rawEvent: unknown): void {
+  const event = asRecord(rawEvent);
+  const notification = asRecord(event?.notification);
+  const result = asRecord(event?.result);
+  const additionalData = notification?.additionalData
+    ?? notification?.additional_data
+    ?? notification?.data
+    ?? event?.additionalData
+    ?? event?.data
+    ?? rawEvent;
+  const launchUrl = stringValue(
+    notification?.launchURL,
+    notification?.launchUrl,
+    notification?.url,
+    result?.url,
+  );
+  navigateToPushDestination({ additionalData, targetUrl: launchUrl }, launchUrl);
+}
+
 async function initializeOneSignal(): Promise<OneSignalWebSdk> {
   if (sdkPromise) return sdkPromise;
   const configuredAppId = appId();
@@ -77,7 +111,10 @@ async function initializeOneSignal(): Promise<OneSignalWebSdk> {
           appId: configuredAppId,
           serviceWorkerPath: SERVICE_WORKER_PATH,
           serviceWorkerParam: { scope: SERVICE_WORKER_SCOPE },
+          notificationClickHandlerMatch: 'origin',
+          notificationClickHandlerAction: 'navigate',
         });
+        sdk.Notifications.addEventListener('click', handleWebNotificationClick);
         resolve(sdk);
       } catch (error) {
         sdkPromise = null;

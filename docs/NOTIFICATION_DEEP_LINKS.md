@@ -9,13 +9,13 @@ As notificações direcionam a pessoa para o registro que as originou. O app rec
 - **Comunicado:** resolve a área de público do comunicado no Supabase, abre o canal correspondente e rola até o comunicado `item_id`.
 - **Calendário:** abre o Calendário na data do evento, localiza `item_id`, rola até o evento e o destaca.
 
-A URL Web é enviada pelo campo `web_url`. Para o Median, o payload usa `data.targetUrl`, campo reservado que abre a URL dentro do app; não use o campo Launch URL para navegação interna. [1] [2]
+A URL Web é enviada pelo campo `web_url`. O cliente web configura o OneSignal para navegar em vez de apenas focar uma aba existente e também trata o evento `click` usando a URL e os Additional Data. Isso cobre configurações de foco que poderiam deixar uma aba aberta no início do app. [3] [4]
 
-O app também registra `median_onesignal_push_opened(data)` no início da carga. Se o WebView abrir na raiz em vez de aplicar `targetUrl`, o callback reconstrói a rota usando os campos Additional Data. A navegação é idempotente para impedir um ciclo de recargas quando o Median também aplica o destino nativamente.
+Para o Median, o payload usa `data.targetUrl`, campo reservado que abre a URL dentro do app; não use o campo Launch URL para navegação interna. O app também registra `median_onesignal_push_opened(data)` no início da carga. Se o WebView abrir na raiz em vez de aplicar `targetUrl`, o callback reconstrói a rota usando os campos Additional Data. A navegação é idempotente para impedir um ciclo de recargas quando o Median também aplica o destino nativamente. [1] [2]
 
 ## Publicação e teste
 
-O código-fonte altera a navegação do site e o payload das Edge Functions. Publique o site e as funções `notify-chat-push`, `notify-workspace-push` e `notify-calendar-event-push` para que os novos deep links entrem em produção. Depois, teste um push real de cada categoria, tocando nele com o site e com o app Median. O teste local de build não substitui esse teste em dispositivos e contas ativos.
+Publique o front-end para ativar os listeners de clique Web e Median. As funções Edge desta versão já enviam `web_url` e `data.targetUrl`; só é necessário atualizá-las se a implantação atual ainda não enviar esses campos. Esta correção não exige migration. Depois, teste um push novo de cada categoria no navegador e no app Median. O build local não substitui o teste com notificações reais.
 
 As alterações deste pacote não publicam nada no Cloudflare ou no Supabase e não mudam configurações remotas do OneSignal ou do Median.
 
@@ -23,3 +23,5 @@ As alterações deste pacote não publicam nada no Cloudflare ou no Supabase e n
 
 [1]: https://docs.median.co/docs/onesignal-notifications "Median — Sending push notifications"
 [2]: https://docs.median.co/docs/handling-notifications-taps.md "Median — Handling notification taps"
+[3]: https://documentation.onesignal.com/docs/en/web-sdk-reference "OneSignal — Web SDK reference"
+[4]: https://documentation.onesignal.com/docs/en/web-sdk-setup "OneSignal — Web SDK setup and click behavior"

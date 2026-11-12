@@ -2,7 +2,7 @@ type PushPayload = Record<string, unknown>;
 
 type PushRoute = 'chat' | 'announcement' | 'activity' | 'calendar';
 
-const handledPushKey = 'team-celeris:median-push-open';
+const handledPushKey = 'team-celeris:push-open';
 const handledPushTtlMs = 30_000;
 
 function asPayload(value: unknown): PushPayload | null {
@@ -102,6 +102,32 @@ function destinationFromPayload(payload: PushPayload, currentHref: string): URL 
   return destination;
 }
 
+/** Navigates to a validated push destination and suppresses duplicate click callbacks. */
+export function navigateToPushDestination(rawData: unknown, launchUrl?: string | null): void {
+  if (typeof window === 'undefined') return;
+  const payload = asPayload(rawData);
+  if (!payload) return;
+  if (launchUrl && !readString(payload, 'targetUrl', 'target_url')) payload.targetUrl = launchUrl;
+
+  const destination = destinationFromPayload(payload, window.location.href);
+  if (!destination) return;
+
+  const destinationHref = destination.toString();
+  const current = new URL(window.location.href);
+  try {
+    const previous = JSON.parse(window.sessionStorage.getItem(handledPushKey) ?? 'null') as { href?: unknown; at?: unknown } | null;
+    if (previous?.href === destinationHref && typeof previous.at === 'number' && Date.now() - previous.at < handledPushTtlMs) return;
+    window.sessionStorage.setItem(handledPushKey, JSON.stringify({ href: destinationHref, at: Date.now() }));
+  } catch {
+    // Navigation still proceeds if sessionStorage is unavailable in the browser or WebView.
+  }
+
+  if (current.origin === destination.origin
+    && current.pathname === destination.pathname
+    && current.search === destination.search) return;
+  window.location.replace(destinationHref);
+}
+
 /**
  * Median calls this global function when a OneSignal notification is tapped.
  * targetUrl normally navigates natively; this handler is an idempotent fallback
@@ -113,26 +139,5 @@ export function installMedianPushNavigation(): void {
   const globalWindow = window as Window & {
     median_onesignal_push_opened?: (data: unknown) => void;
   };
-  globalWindow.median_onesignal_push_opened = (rawData: unknown) => {
-    const payload = asPayload(rawData);
-    if (!payload) return;
-
-    const destination = destinationFromPayload(payload, window.location.href);
-    if (!destination) return;
-
-    const destinationHref = destination.toString();
-    const current = new URL(window.location.href);
-    try {
-      const previous = JSON.parse(window.sessionStorage.getItem(handledPushKey) ?? 'null') as { href?: unknown; at?: unknown } | null;
-      if (previous?.href === destinationHref && typeof previous.at === 'number' && Date.now() - previous.at < handledPushTtlMs) return;
-      window.sessionStorage.setItem(handledPushKey, JSON.stringify({ href: destinationHref, at: Date.now() }));
-    } catch {
-      // Navigation still proceeds if sessionStorage is unavailable in the WebView.
-    }
-
-    if (current.origin === destination.origin
-      && current.pathname === destination.pathname
-      && current.search === destination.search) return;
-    window.location.replace(destinationHref);
-  };
+  globalWindow.median_onesignal_push_opened = (rawData: unknown) => navigateToPushDestination(rawData);
 }
