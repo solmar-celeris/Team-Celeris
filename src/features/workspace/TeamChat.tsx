@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowLeft, ArrowUp, Camera, Download, MoreVertical, MailPlus, ExternalLink, FileText, Image as ImageIcon, Link2, Mic, MessageCircle, Paperclip, RefreshCw, ShieldCheck, ShieldPlus, ShieldMinus, Square, Trash2, UserPlus, UsersRound, Plus, Search, X } from 'lucide-react';
+import { ArrowLeft, ArrowUp, Camera, Download, MoreVertical, MailPlus, ExternalLink, FileText, Image as ImageIcon, Link2, Mic, MessageCircle, Paperclip, RefreshCw, ShieldPlus, ShieldMinus, Square, Trash2, UserPlus, UsersRound, Plus, Search, X } from 'lucide-react';
 import { Mp3Encoder } from '@breezystack/lamejs';
 import { notifyChatMessagePush } from '../../lib/notifications';
 import type { MemberProfile } from './domain';
@@ -840,7 +840,6 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
           <p>{activeDirectId ? 'Conversa privada, visível somente para as duas contas participantes.' : activeGroupId ? 'Mensagens e informações de leitura restritas aos integrantes do grupo.' : 'Converse com a equipe em tempo real no Chat.'}</p></div>
         <div className="team-chat-heading-actions">
           <button className="team-chat-mobile-toggle" type="button" onClick={() => setShowMobileConversations(true)} aria-expanded={showMobileConversations}><MessageCircle aria-hidden="true" /> Conversas</button>
-          {isAdmin && <span className="team-chat-admin-badge"><ShieldCheck aria-hidden="true" /> Administrador</span>}
           {activeGroupId && (activeGroupMemberIds.has(userId) || isAdmin) && <><input ref={groupPhotoInputRef} className="team-chat-hidden-input" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void uploadGroupPhoto(file); event.currentTarget.value = ''; }} /><button className="team-chat-secondary-action" type="button" onClick={() => groupPhotoInputRef.current?.click()} disabled={savingGroupPhoto} aria-label="Alterar foto do grupo"><Camera aria-hidden="true" /> {savingGroupPhoto ? 'Salvando foto…' : 'Foto do grupo'}</button><button className="workspace-refresh" type="button" onClick={() => { setGroupDialogError(''); setGroupDialogMode('add-members'); }} disabled={availableGroupMembers.length === 0}><UserPlus aria-hidden="true" /> Adicionar pessoas</button></>}
           {isAdmin && <button className="team-chat-create-group" type="button" onClick={() => { setGroupDialogError(''); setGroupDialogMode('create'); }}><UsersRound aria-hidden="true" /> Conversa em grupo</button>}
           <button className="workspace-refresh" type="button" onClick={() => { void loadLatest(true); void loadLists(); }} disabled={refreshing || loading}><RefreshCw aria-hidden="true" /> {refreshing ? 'Atualizando…' : 'Atualizar'}</button>
@@ -892,7 +891,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
           <header className="team-chat-mobile-conversation-header">
             <button type="button" className="team-chat-mobile-back" onClick={() => { setActiveDirectId(null); setActiveGroupId(null); setMessages([]); setError(''); setFeedback(''); }} aria-label="Voltar para conversas"><ArrowLeft aria-hidden="true" /></button>
             {activeGroup ? groupAvatar(activeGroup, 'md') : activeDirectMember ? avatar(activeDirectMember.user_id, activeDirectMember.full_name, 'md') : <span className="team-chat-mobile-header-placeholder"><MessageCircle aria-hidden="true" /></span>}
-            <div className="team-chat-mobile-conversation-title"><strong>{conversationLabel}</strong><small>{activeGroupId ? 'Grupo' : 'online na equipe'}</small></div>
+            <div className="team-chat-mobile-conversation-title"><strong>{conversationLabel}</strong><small>{activeGroupId ? 'Grupo' : 'Conversa privada'}</small></div>
             {activeGroupId && <button type="button" className="team-chat-mobile-more" aria-label="Opções do grupo" onClick={() => { setGroupDialogError(''); setGroupDialogMode('add-members'); }}><MoreVertical aria-hidden="true" /></button>}
           </header>
           <div className={`team-chat-connection is-${connection}`} role="status"><i aria-hidden="true" />{connection === 'connected' ? 'Conectado em tempo real' : connection === 'connecting' ? 'Conectando ao chat…' : 'Sem atualização em tempo real; tente atualizar.'}</div>

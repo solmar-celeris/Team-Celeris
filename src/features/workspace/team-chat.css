@@ -597,3 +597,104 @@
   .workspace-main.is-chat-page .team-chat:not(.has-active-conversation) .team-chat-channels,
   .workspace-chat-overlay-body .team-chat:not(.has-active-conversation) .team-chat-channels { display: flex !important; }
 }
+
+
+/* Mobile: conversa dedicada em tela cheia, com navegação no padrão WhatsApp. */
+@media (max-width: 760px) {
+  .team-chat.has-active-conversation {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 10000 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) !important;
+    overflow: hidden !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: var(--card) !important;
+  }
+  .team-chat.has-active-conversation > .team-chat-heading { display: none !important; }
+  .team-chat.has-active-conversation > .team-chat-shell {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+  .team-chat.has-active-conversation .team-chat-channels { display: none !important; }
+  .team-chat.has-active-conversation .team-chat-main {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    gap: 0 !important;
+    overflow: hidden !important;
+    background: var(--card) !important;
+  }
+  .team-chat.has-active-conversation .team-chat-mobile-conversation-header {
+    display: flex !important;
+    flex: 0 0 62px !important;
+    min-height: 62px !important;
+    padding: 6px 12px !important;
+    padding-left: max(12px, env(safe-area-inset-left)) !important;
+    padding-right: max(12px, env(safe-area-inset-right)) !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--line) !important;
+    background: var(--card) !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05) !important;
+  }
+  .team-chat.has-active-conversation .team-chat-connection { display: none !important; }
+  .team-chat.has-active-conversation .team-chat-alert,
+  .team-chat.has-active-conversation .team-chat-feedback { flex: 0 0 auto !important; margin: 5px 9px !important; }
+  .team-chat.has-active-conversation .team-chat-panel {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+  }
+  .team-chat.has-active-conversation .team-chat-history {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    height: auto !important;
+    padding: 12px 10px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain !important;
+  }
+  .team-chat.has-active-conversation .team-chat-composer {
+    position: relative !important;
+    flex: 0 0 auto !important;
+    padding: 8px max(10px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)) !important;
+    border-top: 1px solid var(--line) !important;
+    background: var(--card) !important;
+  }
+  .team-chat.has-active-conversation .team-chat-composer textarea { min-height: 42px !important; max-height: 104px !important; resize: none !important; }
+  .team-chat.has-active-conversation .team-chat-compose-footer > span,
+  .team-chat.has-active-conversation .team-chat-retention-note { display: none !important; }
+  .team-chat.has-active-conversation .team-chat-compose-footer { justify-content: flex-end !important; }
+  .team-chat.has-active-conversation .team-chat-message { max-width: 88% !important; }
+}
+
+/* Remover selos administrativos/categorias do topo: o cabeçalho mobile é o da conversa. */
+@media (max-width: 760px) {
+  .team-chat-admin-badge,
+  .team-chat-heading .workspace-kicker { display: none !important; }
+}
