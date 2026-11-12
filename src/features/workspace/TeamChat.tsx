@@ -127,8 +127,24 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   const [groups, setGroups] = useState<TeamChatGroup[]>([]);
   const [groupMembers, setGroupMembers] = useState<TeamChatGroupMember[]>([]);
   const [directs, setDirects] = useState<DirectConversation[]>([]);
-  const [activeGroupId, setActiveGroupId] = useState<string | null>(() => initialConversationType === 'group' ? initialConversationId ?? null : null);
-  const [activeDirectId, setActiveDirectId] = useState<string | null>(() => initialConversationType === 'direct' ? initialConversationId ?? null : null);
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(() => {
+    if (initialConversationType === 'group') return initialConversationId ?? null;
+    if (initialConversationType === 'direct' || initialDirectUserId) return null;
+    try {
+      const saved = window.sessionStorage.getItem(`solmar-chat-selection:${userId}`);
+      const parsed = saved ? JSON.parse(saved) as { type?: string; id?: string } : null;
+      return parsed?.type === 'group' && typeof parsed.id === 'string' ? parsed.id : null;
+    } catch { return null; }
+  });
+  const [activeDirectId, setActiveDirectId] = useState<string | null>(() => {
+    if (initialConversationType === 'direct') return initialConversationId ?? null;
+    if (initialConversationType === 'group' || initialDirectUserId) return null;
+    try {
+      const saved = window.sessionStorage.getItem(`solmar-chat-selection:${userId}`);
+      const parsed = saved ? JSON.parse(saved) as { type?: string; id?: string } : null;
+      return parsed?.type === 'direct' && typeof parsed.id === 'string' ? parsed.id : null;
+    } catch { return null; }
+  });
   const [groupDialogMode, setGroupDialogMode] = useState<GroupDialogMode | null>(null);
   const [groupDialogError, setGroupDialogError] = useState('');
   const [groupActionBusy, setGroupActionBusy] = useState(false);
@@ -211,6 +227,18 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
   const activeKey = activeDirectId ?? activeGroupId ?? 'team';
   const activeConversationRef = useRef(activeKey);
   activeConversationRef.current = activeKey;
+
+  // Preserve the selected conversation when the chat overlay is closed/reopened.
+  useEffect(() => {
+    try {
+      const key = `solmar-chat-selection:${userId}`;
+      const selection = activeDirectId
+        ? { type: 'direct', id: activeDirectId }
+        : activeGroupId ? { type: 'group', id: activeGroupId } : null;
+      if (selection) window.sessionStorage.setItem(key, JSON.stringify(selection));
+      else window.sessionStorage.removeItem(key);
+    } catch { /* Storage can be unavailable in private browsing; chat remains usable. */ }
+  }, [activeDirectId, activeGroupId, userId]);
 
   useEffect(() => {
     void client.functions.invoke('delete-chat-content', { body: { action: 'cleanup_pending' } }).catch(() => undefined);

@@ -698,3 +698,70 @@
   .team-chat-admin-badge,
   .team-chat-heading .workspace-kicker { display: none !important; }
 }
+
+/* Correção de layout: linhas de integrantes compactas, sem ocupar a altura da lista. */
+.team-chat-channel-list {
+  align-content: flex-start !important;
+  justify-content: flex-start !important;
+  gap: 3px !important;
+}
+.team-chat-channel-list > .team-chat-member-row,
+.team-chat-channel-list > .team-chat-channel-row {
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+  height: auto !important;
+  align-self: stretch;
+}
+.team-chat-member-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 34px !important;
+  align-items: center !important;
+  gap: 3px !important;
+}
+.team-chat-member-row .team-chat-channel {
+  min-height: 48px !important;
+  height: 48px !important;
+  padding: 6px 9px !important;
+  flex: 0 0 auto !important;
+}
+.team-chat-member-menu-trigger {
+  width: 34px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+}
+.team-chat-member-row .team-chat-channel > span:not(.team-chat-avatar) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px !important;
+}
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .team-chat:not(.has-active-conversation) .team-chat-channel-list,
+  .workspace-main.is-chat-page .team-chat:not(.has-active-conversation) .team-chat-channel-list,
+  .workspace-chat-overlay-body .team-chat:not(.has-active-conversation) .team-chat-channel-list {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    align-content: flex-start !important;
+    gap: 3px !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+  .team-chat:not(.has-active-conversation) .team-chat-channel-row,
+  .workspace-main.is-chat-page .team-chat:not(.has-active-conversation) .team-chat-channel-row,
+  .workspace-chat-overlay-body .team-chat:not(.has-active-conversation) .team-chat-channel-row {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    grid-template-columns: minmax(0, 1fr) 34px !important;
+  }
+  .team-chat:not(.has-active-conversation) .team-chat-member-row .team-chat-channel {
+    min-height: 48px !important;
+    height: 48px !important;
+  }
+}
