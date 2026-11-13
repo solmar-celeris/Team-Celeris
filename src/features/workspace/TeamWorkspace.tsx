@@ -1515,7 +1515,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           onSave={(start, end) => void saveProjectPeriod(start, end)}
         />
       )}
-      <LiveVisualEditor client={client} userId={userId} isDeveloper={isDeveloper} open={visualEditorOpen} onClose={() => setVisualEditorOpen(false)} />
+      <LiveVisualEditor client={client} userId={userId} isDeveloper={isDeveloper} open={visualEditorOpen} onClose={() => setVisualEditorOpen(false)} page={tab} />
     </section>
   );
 }
