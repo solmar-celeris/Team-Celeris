@@ -317,8 +317,9 @@ function buildMutation(form: ActivityFormState, members: ActivityMember[]): Acti
 function validateActivity(form: ActivityFormState): string | null {
   if (!form.area_id) return 'Selecione uma área.';
   if (!form.name.trim()) return 'Informe o nome da atividade.';
-  if (form.activity_type === 'marco' && (!form.start_date || !form.due_date)) {
-    return 'Para um Marco, preencha a data inicial e o prazo.';
+  // Marcos podem ser registrados sem datas; o planejamento será preenchido depois.
+  if (form.activity_type === 'pontual' && !form.due_date) {
+    return 'Para uma atividade Pontual, preencha o prazo.';
   }
   if (form.activity_type === 'pontual' && !form.due_date) {
     return 'Para uma atividade Pontual, preencha o prazo.';
@@ -1684,11 +1685,11 @@ function ActivityDialog({
               <textarea required rows={2} value={form.execution_condition} onChange={(event) => change('execution_condition', event.target.value)} placeholder="Quando esta atividade deve ser realizada?" />
             </label>
           )}
-          <label><span>Data inicial{form.activity_type === 'marco' && <b> obrigatória</b>}</span>
-            <input type="date" required={form.activity_type === 'marco'} value={form.start_date} onChange={(event) => change('start_date', event.target.value)} />
+          <label><span>Data inicial</span>
+            <input type="date" value={form.start_date} onChange={(event) => change('start_date', event.target.value)} />
           </label>
-          <label><span>Prazo{(form.activity_type === 'marco' || form.activity_type === 'pontual') && <b> obrigatório</b>}</span>
-            <input type="date" required={form.activity_type === 'marco' || form.activity_type === 'pontual'} value={form.due_date} onChange={(event) => change('due_date', event.target.value)} />
+          <label><span>Prazo{form.activity_type === 'pontual' && <b> obrigatório</b>}</span>
+            <input type="date" required={form.activity_type === 'pontual'} value={form.due_date} onChange={(event) => change('due_date', event.target.value)} />
           </label>
           <label><span>Responsável</span>
             <input maxLength={120} value={form.responsible_name} onChange={(event) => change('responsible_name', event.target.value)} placeholder="Nome ou A definir" />
