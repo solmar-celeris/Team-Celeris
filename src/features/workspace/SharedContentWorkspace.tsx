@@ -131,7 +131,6 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
   const [announcementForm, setAnnouncementForm] = useState<AnnouncementForm>(() => ({ ...emptyAnnouncementForm, areaId: areaId ?? '' }));
   const [confirmFolderId, setConfirmFolderId] = useState<string | null>(null);
   const [confirmAnnouncementId, setConfirmAnnouncementId] = useState<string | null>(null);
-  const [pendingPrimaryId, setPendingPrimaryId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [announcementReplies, setAnnouncementReplies] = useState<AnnouncementReply[]>([]);
   const [announcementReactions, setAnnouncementReactions] = useState<AnnouncementReaction[]>([]);
@@ -145,7 +144,7 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
   const [pollSelections, setPollSelections] = useState<Record<string, string[]>>({});
   const [signedAttachmentUrls, setSignedAttachmentUrls] = useState<Record<string, string>>({});
   const [announcementFiles, setAnnouncementFiles] = useState<File[]>([]);
-  const [fileViewMode] = useState<'grid' | 'list'>('grid');
+  const [fileViewMode] = useState<'grid' | 'list'>('list');
 
   useEffect(() => {
     setFolderForm({ ...emptyFolderForm, areaId: areaId ?? '' });
@@ -339,12 +338,10 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
         });
         if (updateError) throw updateError;
       } else {
-        const needsPrimary = !folders.some((folder) => folder.is_primary);
         const { error: insertError } = await client.from('drive_folders').insert({
           name,
           drive_url: parsedUrl.toString(),
           area_id: areaId ?? (folderForm.areaId || null),
-          is_primary: needsPrimary,
         });
         if (insertError) throw insertError;
       }
@@ -368,20 +365,6 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
     setConfirmFolderId(null);
     setError('');
     setFeedback('');
-  }
-
-  async function setPrimary(folder: DriveFolder) {
-    setPendingPrimaryId(folder.id);
-    setError('');
-    setFeedback('');
-    const { error: rpcError } = await client.rpc('set_primary_drive_folder', { p_folder_id: folder.id });
-    setPendingPrimaryId(null);
-    if (rpcError) {
-      setError(errorMessage(rpcError));
-      return;
-    }
-    setFeedback(`“${folder.name}” agora é a pasta principal.`);
-    await loadContent(false);
   }
 
   async function removeFolder(folder: DriveFolder) {
@@ -645,7 +628,6 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
 
   const isFiles = mode === 'files';
   const channelScopeUnavailable = !isGeneralChannel && !areaId;
-  const primaryFolder = folders.find((folder) => folder.is_primary);
   const folderCount = visibleFolders.length;
   const announcementCount = visibleAnnouncements.length;
 
@@ -734,30 +716,20 @@ export default function SharedContentWorkspace({ client, mode, userId, isAdmin, 
 
       {isFiles ? (
         <>
-          {primaryFolder && !normalizedQuery && (
-            <a className="shared-primary-folder" href={primaryFolder.drive_url} target="_blank" rel="noreferrer" aria-label={`Abrir pasta principal ${primaryFolder.name} no Google Drive`}>
-              <span className="shared-primary-icon"><FolderOpen size={29} aria-hidden="true" /></span>
-              <span className="shared-primary-copy"><small>PASTA PRINCIPAL</small><strong>{primaryFolder.name}</strong><span>{areasById.get(primaryFolder.area_id ?? '') ?? 'Geral'} · abrir no Google Drive</span></span>
-              <ArrowUpRight size={18} aria-hidden="true" />
-            </a>
-          )}
           <label className="shared-content-search"><span>Buscar pasta</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nome, descrição ou área" /></label>
           {loading ? <div className="workspace-loading" role="status"><span />Carregando pastas…</div> : folderCount === 0 ? (
             <div className="workspace-empty"><FolderOpen size={25} aria-hidden="true" /><strong>{folders.length ? 'Nenhuma pasta corresponde à busca.' : 'Ainda não há pastas compartilhadas.'}</strong><p>{folders.length ? 'Tente outra busca.' : 'Adicione um link do Google Drive para deixá-lo visível para a equipe.'}</p></div>
           ) : (
             <div className={`shared-folder-grid${fileViewMode === 'list' ? ' is-list' : ''}`}>
               {visibleFolders.map((folder) => (
-                <article className={`shared-folder-card${folder.is_primary ? ' is-primary' : ''}`} key={folder.id}>
+                <article className="shared-folder-card" key={folder.id}>
                   <a href={folder.drive_url} target="_blank" rel="noreferrer" className="shared-folder-open" aria-label={`Abrir pasta ${folder.name} no Google Drive`}>
-                    <span className="shared-folder-icon"><FolderOpen size={25} aria-hidden="true" /></span>
-                    <span className="shared-folder-name">{folder.name}</span>
-                    <span className="shared-folder-area">{areasById.get(folder.area_id ?? '') ?? 'Geral'}{folder.is_primary ? ' · Principal' : ''}</span>
-                    {folder.description && <span className="shared-folder-description">{folder.description}</span>}
-                    <ArrowUpRight className="shared-folder-external" size={16} aria-hidden="true" />
+                    <span className="shared-folder-icon"><FolderOpen size={27} aria-hidden="true" /></span>
+                    <span className="shared-folder-copy"><small>PASTA COMPARTILHADA</small><strong className="shared-folder-name">{folder.name}</strong><span className="shared-folder-area">{areasById.get(folder.area_id ?? '') ?? 'Geral'} · abrir no Google Drive</span>{folder.description && <span className="shared-folder-description">{folder.description}</span>}</span>
+                    <ArrowUpRight className="shared-folder-external" size={17} aria-hidden="true" />
                   </a>
                   <div className="shared-card-actions">
                     <button type="button" onClick={() => editFolder(folder)} aria-label={`Editar pasta ${folder.name}`}><FileText size={13} aria-hidden="true" />Editar</button>
-                    {!folder.is_primary && <button type="button" onClick={() => void setPrimary(folder)} disabled={saving || pendingPrimaryId !== null}><Pin size={13} aria-hidden="true" />{pendingPrimaryId === folder.id ? 'Atualizando…' : 'Tornar principal'}</button>}
                     {confirmFolderId === folder.id ? <div className="shared-confirm-actions"><span>Remover da lista?</span><button type="button" className="is-danger" onClick={() => void removeFolder(folder)} disabled={saving}><Check size={13} aria-hidden="true" />Confirmar</button><button type="button" onClick={() => setConfirmFolderId(null)} disabled={saving}><X size={13} aria-hidden="true" />Cancelar</button></div> : <button type="button" className="is-danger" onClick={() => setConfirmFolderId(folder.id)}><Trash2 size={13} aria-hidden="true" />Remover</button>}
                   </div>
                 </article>
