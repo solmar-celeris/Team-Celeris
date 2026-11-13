@@ -2621,3 +2621,38 @@
     white-space: nowrap !important;
   }
 }
+
+
+/* Correção da guia ativa no cabeçalho desktop: ícone e rótulo na mesma linha,
+   sem cortar o texto junto ao indicador laranja. */
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav {
+    align-items: center !important;
+    overflow: visible !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav > button {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: auto !important;
+    min-height: 52px !important;
+    padding-block: 7px !important;
+    line-height: 1.25 !important;
+    overflow: visible !important;
+    position: relative !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav .workspace-nav-label {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    line-height: 1.25 !important;
+    overflow: visible !important;
+    white-space: nowrap !important;
+    text-overflow: clip !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav > button.is-active::after {
+    bottom: 0 !important;
+    height: 3px !important;
+  }
+}
