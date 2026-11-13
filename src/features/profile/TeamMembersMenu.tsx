@@ -33,6 +33,7 @@ function initialFrom(name: string): string {
 
 function roleLabel(role: string | null): string {
   if (role === 'admin') return 'Administrador';
+  if (role === 'developer') return 'Desenvolvedor';
   if (role === 'area_lead') return 'Líder de área';
   if (role === 'member') return 'Membro';
   return role || 'Função não definida';

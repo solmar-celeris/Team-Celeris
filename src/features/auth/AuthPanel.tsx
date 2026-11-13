@@ -4,10 +4,12 @@ import { syncMedianOneSignalIdentity } from '../../lib/medianOneSignal';
 import { syncDesktopOneSignalIdentity } from '../../lib/desktopNotifications';
 import { supabase, supabaseConfigured } from '../../lib/supabase';
 import TeamWorkspace from '../workspace/TeamWorkspace';
+import DeveloperStudio from '../developer/DeveloperStudio';
+import PublishedPageView from '../developer/PublishedPageView';
 
 type AuthMode = 'login' | 'signup' | 'reset' | 'update-password';
 type AppTheme = 'light' | 'dark';
-type MemberRole = 'admin' | 'area_lead' | 'member' | 'reader';
+type MemberRole = 'admin' | 'developer' | 'area_lead' | 'member' | 'reader';
 type MemberStatus = 'pending' | 'active' | 'suspended';
 type MemberProfile = {
   full_name: string;
@@ -391,6 +393,26 @@ export default function AuthPanel({ theme, onThemeChange }: AuthPanelProps) {
   const displayName = profile?.full_name.trim() || session?.user.email || 'Integrante';
 
   if (session && accessState === 'active' && profile && supabase && mode !== 'update-password') {
+    if (profile.role === 'developer') {
+      return (
+        <DeveloperStudio
+          client={supabase}
+          userId={session.user.id}
+          onLogout={() => void handleLogout()}
+        />
+      );
+    }
+    const publishedPageSlug = new URLSearchParams(window.location.search).get('page');
+    if (publishedPageSlug && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(publishedPageSlug)) {
+      return (
+        <PublishedPageView
+          client={supabase}
+          slug={publishedPageSlug}
+          profile={{ ...profile, user_id: session.user.id, status: 'active' }}
+          onBack={() => { window.history.replaceState({}, '', window.location.pathname); window.location.reload(); }}
+        />
+      );
+    }
     return (
       <TeamWorkspace
         client={supabase}

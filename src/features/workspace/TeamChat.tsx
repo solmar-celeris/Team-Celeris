@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowLeft, ArrowUp, Camera, Download, MoreVertical, MailPlus, ExternalLink, FileText, Image as ImageIcon, Link2, Mic, MessageCircle, Paperclip, ShieldPlus, ShieldMinus, Square, Trash2, UserPlus, Plus, Search, X } from 'lucide-react';
+import { ArrowLeft, ArrowUp, Camera, Download, MoreVertical, MailPlus, ExternalLink, FileText, Image as ImageIcon, Link2, Mic, MessageCircle, Paperclip, ShieldPlus, ShieldMinus, Square, Trash2, UserPlus, Plus, Search, X, Code2 } from 'lucide-react';
 import { Mp3Encoder } from '@breezystack/lamejs';
 import { notifyChatMessagePush } from '../../lib/notifications';
 import type { MemberProfile } from './domain';
@@ -846,19 +846,25 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
     finally { setGroupActionBusy(false); }
   }
 
-  async function updateTeamMember(member: ChatMember, action: 'promote' | 'demote' | 'remove') {
+  async function updateTeamMember(member: ChatMember, action: 'promote' | 'demote' | 'remove' | 'developer_on' | 'developer_off') {
     if (!isAdmin || member.user_id === userId || memberActionBusyId) return;
     if (action === 'remove' && !window.confirm(`Excluir ${member.full_name} da equipe? O acesso será revogado; a conta de autenticação e o histórico serão preservados.`)) return;
     if (action === 'demote' && member.role === 'admin' && !window.confirm(`Retirar o perfil de administrador de ${member.full_name}?`)) return;
+    if (action === 'developer_off' && !window.confirm(`Remover a função Desenvolvedor de ${member.full_name}?`)) return;
     setMemberActionBusyId(member.user_id);
     setMemberMenuId(null);
     setError('');
     setFeedback('');
     try {
-      const rpcName = action === 'promote' ? 'admin_promote_team_member' : action === 'demote' ? 'admin_demote_team_member' : 'admin_remove_team_member';
-      const { error: actionError } = await client.rpc(rpcName, { p_user_id: member.user_id });
-      if (actionError) throw actionError;
-      setFeedback(action === 'promote' ? `${member.full_name} agora é administrador.` : action === 'demote' ? `Permissão de administrador removida de ${member.full_name}.` : `${member.full_name} foi excluído da equipe.`);
+      if (action === 'developer_on' || action === 'developer_off') {
+        const { error: actionError } = await client.rpc('admin_set_developer_role', { p_user_id: member.user_id, p_enabled: action === 'developer_on' });
+        if (actionError) throw actionError;
+      } else {
+        const rpcName = action === 'promote' ? 'admin_promote_team_member' : action === 'demote' ? 'admin_demote_team_member' : 'admin_remove_team_member';
+        const { error: actionError } = await client.rpc(rpcName, { p_user_id: member.user_id });
+        if (actionError) throw actionError;
+      }
+      setFeedback(action === 'promote' ? `${member.full_name} agora é administrador.` : action === 'demote' ? `Permissão de administrador removida de ${member.full_name}.` : action === 'developer_on' ? `${member.full_name} agora é Desenvolvedor.` : action === 'developer_off' ? `Função Desenvolvedor removida de ${member.full_name}.` : `${member.full_name} foi excluído da equipe.`);
       onMembersChanged?.();
     } catch (actionError) {
       setError(chatError(actionError));
@@ -920,8 +926,10 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
                 <button className="team-chat-channel-visibility team-chat-member-menu-trigger" type="button" title={`Ações para ${member.full_name}`} aria-label={`Ações para ${member.full_name}`} aria-expanded={memberMenuId === member.user_id} onClick={() => setMemberMenuId((current) => current === member.user_id ? null : member.user_id)}><MoreVertical aria-hidden="true" /></button>
                 {memberMenuId === member.user_id && <div className="team-chat-member-menu">
                   <button type="button" onClick={() => { setMemberMenuId(null); void startDirect(member.user_id); }}><MessageCircle aria-hidden="true" /> Abrir conversa</button>
-                  {isAdmin && member.user_id !== userId && member.role !== 'admin' && <button type="button" disabled={memberActionBusyId !== null} onClick={() => void updateTeamMember(member, 'promote')}><ShieldPlus aria-hidden="true" /> Tornar administrador</button>}
+                  {isAdmin && member.user_id !== userId && member.role !== 'admin' && member.role !== 'developer' && <button type="button" disabled={memberActionBusyId !== null} onClick={() => void updateTeamMember(member, 'promote')}><ShieldPlus aria-hidden="true" /> Tornar administrador</button>}
                   {isAdmin && member.user_id !== userId && member.role === 'admin' && <button type="button" disabled={memberActionBusyId !== null} onClick={() => void updateTeamMember(member, 'demote')}><ShieldMinus aria-hidden="true" /> Tirar administrador</button>}
+                  {isAdmin && member.user_id !== userId && member.role !== 'admin' && member.role !== 'developer' && <button type="button" disabled={memberActionBusyId !== null} onClick={() => void updateTeamMember(member, 'developer_on')}><Code2 aria-hidden="true" /> Tornar Desenvolvedor</button>}
+                  {isAdmin && member.user_id !== userId && member.role === 'developer' && <button type="button" disabled={memberActionBusyId !== null} onClick={() => void updateTeamMember(member, 'developer_off')}><Code2 aria-hidden="true" /> Remover Desenvolvedor</button>}
                   {isAdmin && member.user_id !== userId && <button type="button" className="is-danger" disabled={memberActionBusyId !== null} onClick={() => void updateTeamMember(member, 'remove')}><Trash2 aria-hidden="true" /> Excluir membro da equipe</button>}
                   {direct && <button type="button" disabled={conversationDeletionBusy} onClick={() => { setMemberMenuId(null); confirmDeleteConversation('direct', direct.id, member.full_name); }}><Trash2 aria-hidden="true" /> Apagar conversa</button>}
                 </div>}

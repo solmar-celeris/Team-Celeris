@@ -57,7 +57,7 @@ export type MemberProfile = {
   full_name: string;
   avatar_path?: string | null;
   area_id: string | null;
-  role: 'admin' | 'area_lead' | 'member' | 'reader';
+  role: 'admin' | 'developer' | 'area_lead' | 'member' | 'reader';
   status: 'pending' | 'active' | 'suspended';
 };
 

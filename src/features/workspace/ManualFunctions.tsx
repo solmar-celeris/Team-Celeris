@@ -309,7 +309,7 @@ export default function ManualFunctions({ areaFilter }: { areaFilter?: string } 
   const directRoles = roles.filter((role) => role.group === 'direct' && (!areaFilter || role.area.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(areaFilter.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, ''))));
 
   return (
-    <section className="workspace-manual" aria-label="Manual de funções e capacitação">
+    <section className="workspace-manual" aria-label="Manuais de Funções e Capacitação">
       {!areaFilter && <section className="manual-org-intro" aria-labelledby="manual-org-title">
         <p className="workspace-kicker">ESTRUTURA ORGANIZACIONAL · MANUAL REVISADO</p>
         <h2 id="manual-org-title">Coordenação Geral e seis áreas diretas, com TI transversal.</h2>

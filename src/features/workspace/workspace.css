@@ -311,7 +311,7 @@
 }
 
 
-/* Ampliação de tipografia para leitura dos cards e do Manual de funções. */
+/* Ampliação de tipografia para leitura dos cards e dos Manuais de Funções. */
 .workspace-activity-card .workspace-activity-meta { font-size: 11px; }
 .workspace-activity-card .workspace-code,
 .workspace-activity-card .workspace-status { font-size: 11px; }
@@ -1467,34 +1467,12 @@
   .workspace-members-dock .team-members-trigger-chevron { width: 14px; height: 14px; }
   .workspace-members-dock .team-members-panel { width: min(350px, calc(100vw - 16px)); max-height: calc(100dvh - 68px); }
 }
-
-.workspace-channel-context {
-  display: inline-flex;
-  align-items: center;
-  margin: 0 0 8px;
-  padding: 5px 9px;
-  border: 1px solid color-mix(in srgb, var(--sky) 30%, var(--line));
-  border-radius: 999px;
-  color: var(--ocean);
-  background: color-mix(in srgb, var(--sky) 9%, var(--card));
-  font-size: 9px;
-  font-weight: 850;
-  letter-spacing: .07em;
-  text-transform: uppercase;
-}
-:root[data-theme="dark"] .workspace-channel-context { color: #b9ddff; }
-.workspace-top-actions .channel-switcher { flex: 0 1 auto; }
 @media (max-width: 760px) {
   .workspace-top-actions { gap: 5px; }
-  .workspace-top-actions .channel-switcher { flex: 0 0 34px; }
-  .workspace-top-actions .channel-switcher-trigger { width: 34px; height: 34px; }
 }
-
-/* O seletor de canais fica imediatamente antes do perfil, inclusive no mobile. */
-.workspace-top-actions .channel-switcher { flex: 0 1 190px; min-width: 0; }
 .workspace-top-actions .profile-menu { flex: 0 0 auto; }
-@media (max-width: 1040px) { .workspace-top-actions { width: auto; justify-content: flex-end; gap: 6px; } .workspace-top-actions .channel-switcher { flex: 0 0 38px; } .workspace-top-actions .channel-switcher-trigger { width: 38px; min-height: 38px; } }
-@media (min-width: 1041px) { .workspace-top-actions { width: auto; } .workspace-top-actions .channel-switcher-trigger { min-width: 0; } }
+@media (max-width: 1040px) { .workspace-top-actions { width: auto; justify-content: flex-end; gap: 6px; } }
+@media (min-width: 1041px) { .workspace-top-actions { width: auto; } }
 
 /* Navegação mobile em uma única linha: logo, abas roláveis, seletor e perfil. */
 @media (max-width: 760px) {
@@ -1541,9 +1519,6 @@
   .workspace-nav-icon svg { width: 19px; height: 19px; }
   .workspace-nav-label { display: none !important; }
   .workspace-top-actions { grid-area: profile; display: flex; width: auto; height: 46px; min-width: 0; align-items: center; justify-content: flex-end; gap: 4px; }
-  .workspace-top-actions .channel-switcher { flex: 0 0 36px; width: 36px; }
-  .workspace-top-actions .channel-switcher-trigger { width: 36px; min-height: 36px; height: 36px; padding: 0; justify-content: center; }
-  .workspace-top-actions .channel-switcher-icon { width: 28px; height: 28px; flex-basis: 28px; }
   .workspace-top-actions .profile-menu-trigger { width: 36px; min-width: 36px; max-width: 36px; height: 36px; min-height: 36px; padding: 2px; }
   .workspace-top-actions .profile-menu-trigger-avatar { width: 30px; height: 30px; flex-basis: 30px; }
   .profile-menu-popover { top: 58px !important; right: 7px !important; max-height: calc(100dvh - 66px) !important; }
@@ -1554,7 +1529,6 @@
   .workspace-nav { gap: 1px; }
   .workspace-nav button { flex-basis: 38px; width: 38px; min-width: 38px; }
   .workspace-top-actions { gap: 2px; }
-  .workspace-top-actions .channel-switcher, .workspace-top-actions .channel-switcher-trigger { width: 34px; flex-basis: 34px; }
   .workspace-top-actions .profile-menu-trigger { width: 34px; min-width: 34px; max-width: 34px; }
 }
 
@@ -1578,7 +1552,6 @@
     white-space: nowrap; font-size: 8px !important; line-height: 1 !important; letter-spacing: 0 !important;
   }
   .workspace-top-actions { gap: 3px !important; }
-  .workspace-top-actions .channel-switcher { flex: 0 0 62px !important; width: 62px !important; }
 }
 @media (max-width: 420px) {
   .workspace-topbar { grid-template-columns: 42px minmax(0, 1fr) auto !important; gap: 3px !important; padding-inline: 4px !important; }
@@ -1659,8 +1632,7 @@
 }
 
 
-/* Correção definitiva do cabeçalho mobile: cada controle tem sua própria coluna.
-   A navegação pode rolar, mas nunca pode invadir o seletor de canais ou o perfil. */
+/* Cabeçalho mobile: marca, navegação e perfil permanecem em áreas independentes. */
 @media (max-width: 760px) {
   .workspace-topbar {
     display: grid !important;
@@ -1699,21 +1671,6 @@
     grid-area: channel !important;
     display: contents !important;
   }
-  .workspace-top-actions .channel-switcher {
-    grid-area: channel !important; display: block !important; flex: 0 0 66px !important;
-    width: 66px !important; min-width: 66px !important; max-width: 66px !important;
-  }
-  .workspace-top-actions .channel-switcher-trigger {
-    display: flex !important; width: 66px !important; min-width: 66px !important;
-    height: 40px !important; min-height: 40px !important; justify-content: center !important;
-    gap: 4px !important; padding: 3px 4px !important;
-  }
-  .workspace-top-actions .channel-switcher-label { display: grid !important; min-width: 0 !important; flex: 1 1 auto !important; }
-  .workspace-top-actions .channel-switcher-mobile-title { display: block !important; font-size: 8px !important; line-height: 1 !important; white-space: nowrap !important; }
-  .workspace-top-actions .channel-switcher-desktop-title,
-  .workspace-top-actions .channel-switcher-label strong,
-  .workspace-top-actions .channel-switcher-trigger > svg { display: none !important; }
-  .workspace-top-actions .channel-switcher-icon { width: 23px !important; height: 23px !important; flex: 0 0 23px !important; }
   .workspace-top-actions .profile-menu { grid-area: profile !important; display: block !important; width: 36px !important; min-width: 36px !important; }
   .workspace-top-actions .profile-menu-trigger { width: 36px !important; min-width: 36px !important; max-width: 36px !important; height: 36px !important; min-height: 36px !important; padding: 2px !important; }
   .workspace-top-actions .profile-menu-trigger-avatar { width: 30px !important; height: 30px !important; flex: 0 0 30px !important; }
@@ -1721,7 +1678,6 @@
 @media (max-width: 420px) {
   .workspace-topbar { grid-template-columns: 42px minmax(0, 1fr) 62px 34px !important; gap: 3px !important; padding-inline: 4px !important; }
   .workspace-brand, .workspace-brand img { width: 40px !important; max-width: 40px !important; }
-  .workspace-top-actions .channel-switcher, .workspace-top-actions .channel-switcher-trigger { width: 62px !important; min-width: 62px !important; }
   .workspace-top-actions .profile-menu, .workspace-top-actions .profile-menu-trigger { width: 34px !important; min-width: 34px !important; max-width: 34px !important; }
   .workspace-nav button { flex-basis: 54px !important; width: 54px !important; min-width: 54px !important; max-width: 54px !important; }
 }
@@ -2252,3 +2208,11 @@
   .workspace-chat-overlay-title svg { width: 24px; height: 24px; }
   .workspace-chat-close { width: 40px; height: 40px; }
 }
+
+
+/* Documentação centralizada: Normas de Conduta e todos os Manuais de Funções. */
+.workspace-documentation { display: grid; gap: 18px; min-width: 0; }
+.workspace-documentation-tabs { display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--border, #d9dee8); padding-bottom: 10px; }
+.workspace-documentation-tabs button { appearance: none; border: 1px solid var(--border, #d9dee8); border-radius: 999px; background: transparent; color: var(--text, inherit); padding: 9px 15px; font: inherit; font-size: .88rem; font-weight: 650; cursor: pointer; }
+.workspace-documentation-tabs button.is-active { background: var(--accent-soft, rgba(59,130,246,.12)); border-color: var(--accent, #3985e8); color: var(--accent-strong, #2563eb); }
+.workspace-documentation-tabs button:focus-visible { outline: 2px solid var(--accent, #3985e8); outline-offset: 3px; }

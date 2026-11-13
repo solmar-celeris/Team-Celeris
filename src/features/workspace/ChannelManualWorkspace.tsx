@@ -25,7 +25,7 @@ export default function ChannelManualWorkspace({ client, userId, channelId, kind
     const { data, error: queryError } = await client.from('workspace_manuals')
       .select('id,channel_id,manual_kind,title,content,original_file_path,original_file_name,updated_at,updated_by')
       .eq('channel_id', channelId).eq('manual_kind', kind).maybeSingle();
-    if (queryError) setError('Não foi possível carregar o manual. Confira se a migration de canais foi aplicada.');
+    if (queryError) setError('Não foi possível carregar o manual. Confira se as migrations de documentação foram aplicadas.');
     const record = (data ?? null) as ManualRecord | null;
     setManual(record); setDraft(record?.content ?? ''); setLoading(false);
     if (record?.original_file_path) {
@@ -82,7 +82,7 @@ export default function ChannelManualWorkspace({ client, userId, channelId, kind
 
   if (loading) return <section className="channel-manual"><p>Carregando manual…</p></section>;
   return <section className="channel-manual" aria-labelledby="channel-manual-title">
-    <header className="channel-manual-header"><div><p className="workspace-kicker">DOCUMENTAÇÃO INSTITUCIONAL</p><h2 id="channel-manual-title">{title}</h2><p>Conteúdo compartilhado do canal. Somente Administradores podem substituir documentos ou editar o texto. {kind === 'function' ? 'Envie somente o trecho da área, sem prompts ou instruções internas.' : 'O documento será disponibilizado aos integrantes do workspace.'}</p></div>
+    <header className="channel-manual-header"><div><p className="workspace-kicker">DOCUMENTAÇÃO INSTITUCIONAL</p><h2 id="channel-manual-title">{title}</h2><p>Documento institucional da equipe. Somente Administradores podem substituir documentos ou editar o texto. {kind === 'function' ? 'Envie somente o trecho da área, sem prompts ou instruções internas.' : 'O documento será disponibilizado aos integrantes do workspace.'}</p></div>
       {isAdmin && <label className="channel-manual-upload"><Upload size={15} /> {uploading ? 'Processando…' : 'Adicionar documento'}<input type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" disabled={uploading} onChange={(event) => { void handleFile(event.currentTarget.files?.[0]); event.currentTarget.value = ''; }} /></label>}
     </header>
     {error && <p className="channel-manual-error" role="alert">{error}</p>}{notice && <p className="channel-manual-notice" role="status">{notice}</p>}
