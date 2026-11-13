@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ComponentType, type DragEvent, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Filter, Folder, GripVertical, House, Megaphone, MessageCircle, Moon, Sun, Trash2, X, Paperclip, ExternalLink, Video, type LucideProps } from 'lucide-react';
+import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Filter, Folder, GripVertical, Newspaper, Megaphone, MessageCircle, Moon, Sun, Trash2, X, Paperclip, ExternalLink, Video, type LucideProps } from 'lucide-react';
 import {
   activityTypeLabels,
   activityFlowLabels,
@@ -116,7 +116,7 @@ type WeekCalendarEvent = {
   location: string;
 };
 const workspaceTabs: { id: WorkspaceTab; label: string; icon: WorkspaceTabIcon }[] = [
-  { id: 'home', label: 'Início', icon: House },
+  { id: 'home', label: 'Feed', icon: Newspaper },
   { id: 'activities', label: 'Atividades', icon: ClipboardList },
   { id: 'agenda', label: 'Agenda', icon: CalendarDays },
   { id: 'conversations', label: 'Comunicados', icon: Megaphone },
