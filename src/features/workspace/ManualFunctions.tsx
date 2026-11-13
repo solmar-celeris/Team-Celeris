@@ -287,7 +287,7 @@ const platforms = [
 
 export default function ManualFunctions({ areaFilter }: { areaFilter?: string } = {}) {
   const [query, setQuery] = useState('');
-  const [manualFilter, setManualFilter] = useState<'Todas' | 'Coordenação' | 'Áreas diretas' | 'TI transversal'>('Todas');
+  const [manualFilter, setManualFilter] = useState<'Todas' | 'Coordenação' | 'Setores' | 'TI transversal'>('Todas');
 
   const filteredRoles = useMemo(() => {
     const term = query.trim().toLocaleLowerCase('pt-BR');
@@ -296,7 +296,7 @@ export default function ManualFunctions({ areaFilter }: { areaFilter?: string } 
       if (!areaMatches) return false;
       const matchesGroup = manualFilter === 'Todas'
         || (manualFilter === 'Coordenação' && role.group === 'coordination')
-        || (manualFilter === 'Áreas diretas' && role.group === 'direct')
+        || (manualFilter === 'Setores' && role.group === 'direct')
         || (manualFilter === 'TI transversal' && role.group === 'transversal');
       const searchable = [
         role.area, role.summary, ...role.responsibilities, ...role.tools, ...role.training, ...role.deliverables,
@@ -312,8 +312,8 @@ export default function ManualFunctions({ areaFilter }: { areaFilter?: string } 
     <section className="workspace-manual" aria-label="Manuais de Funções e Capacitação">
       {!areaFilter && <section className="manual-org-intro" aria-labelledby="manual-org-title">
         <p className="workspace-kicker">ESTRUTURA ORGANIZACIONAL · MANUAL REVISADO</p>
-        <h2 id="manual-org-title">Coordenação Geral e seis áreas diretas, com TI transversal.</h2>
-        <p>A Coordenação Geral integra as áreas, define prioridades e acompanha o projeto, sem exclusividade docente ou atribuição automática de execução. As seis áreas diretas são Gestão de Pessoas, Administrativo-Financeiro, Marketing, Mecânica Naval, Elétrica e Eletrônica - ELT. Produtos e Redes Sociais são frentes internas de Marketing.</p>
+        <h2 id="manual-org-title">Coordenação Geral e seis setores, com TI transversal.</h2>
+        <p>A Coordenação Geral integra as áreas, define prioridades e acompanha o projeto, sem exclusividade docente ou atribuição automática de execução. As seis setores são Gestão de Pessoas, Administrativo-Financeiro, Marketing, Mecânica Naval, Elétrica e Eletrônica - ELT. Produtos e Redes Sociais são frentes internas de Marketing.</p>
         <div className="manual-org-area-list">
           <span>{roles.find((role) => role.group === 'coordination')?.area}</span>
           {directRoles.map((role) => (
@@ -330,7 +330,7 @@ export default function ManualFunctions({ areaFilter }: { areaFilter?: string } 
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar área, responsabilidade ou competência…" />
         </label>
         <div className="manual-nucleus-filter" aria-label="Filtrar funções">
-          {(['Todas', 'Coordenação', 'Áreas diretas', 'TI transversal'] as const).map((item) => (
+          {(['Todas', 'Coordenação', 'Setores', 'TI transversal'] as const).map((item) => (
             <button key={item} type="button" className={manualFilter === item ? 'is-selected' : ''} onClick={() => setManualFilter(item)} aria-pressed={manualFilter === item}>{item}</button>
           ))}
         </div>

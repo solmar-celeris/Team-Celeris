@@ -2259,3 +2259,13 @@
 .workspace-manual .manual-matrix-note {
   color: var(--muted) !important;
 }
+
+
+/* Contraste explícito do título do organograma: não herdar cores claras
+   eventualmente gravadas pelo editor visual no tema claro. */
+:root:not([data-theme="dark"]) .workspace-manual .manual-org-intro h2 {
+  color: #172b43 !important;
+}
+:root[data-theme="dark"] .workspace-manual .manual-org-intro h2 {
+  color: #e6f2ff !important;
+}
