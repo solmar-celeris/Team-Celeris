@@ -75,6 +75,7 @@ function getAuthError(input: string | { message?: string; code?: string; status?
 
 export default function AuthPanel({ theme, onThemeChange }: AuthPanelProps) {
   const [mode, setMode] = useState<AuthMode>('login');
+  const [developerStudioOpen, setDeveloperStudioOpen] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<MemberProfile | null>(null);
   const [accessState, setAccessState] = useState<AccessState>(null);
@@ -393,12 +394,12 @@ export default function AuthPanel({ theme, onThemeChange }: AuthPanelProps) {
   const displayName = profile?.full_name.trim() || session?.user.email || 'Integrante';
 
   if (session && accessState === 'active' && profile && supabase && mode !== 'update-password') {
-    if (profile.role === 'developer') {
+    if (profile.role === 'developer' && developerStudioOpen) {
       return (
         <DeveloperStudio
           client={supabase}
           userId={session.user.id}
-          onLogout={() => void handleLogout()}
+          onLogout={() => setDeveloperStudioOpen(false)}
         />
       );
     }
@@ -421,6 +422,8 @@ export default function AuthPanel({ theme, onThemeChange }: AuthPanelProps) {
         theme={theme}
         onThemeChange={onThemeChange}
         onRefreshProfile={refreshOwnProfile}
+        isDeveloper={profile.role === 'developer'}
+        onOpenDeveloperStudio={() => setDeveloperStudioOpen(true)}
         onLogout={() => void handleLogout()}
       />
     );
