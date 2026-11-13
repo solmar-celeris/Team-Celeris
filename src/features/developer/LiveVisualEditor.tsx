@@ -60,6 +60,8 @@ export default function LiveVisualEditor({ client,userId,isDeveloper,open,onClos
   const [message,setMessage] = useState('');
   const [busy,setBusy] = useState(false);
   const widgets = useMemo(() => items.filter((item): item is VisualItem => 'kind' in item && item.kind === 'widget' && item.page === page),[items,page]);
+  const publishedWidgets = useMemo(() => published.filter((item): item is VisualItem => 'kind' in item && item.kind === 'widget' && item.page === page),[published,page]);
+  const visibleWidgets = open && isDeveloper ? widgets : publishedWidgets;
   const selectedWidget = widgets.find(item => item.id === selectedId) ?? null;
 
   useEffect(() => {
@@ -74,7 +76,7 @@ export default function LiveVisualEditor({ client,userId,isDeveloper,open,onClos
   },[client]);
 
   useEffect(() => {
-    if (!open || !isDeveloper) { setMount(null); return; }
+    
     const main = document.querySelector('.workspace-main');
     if (!main) return;
     const node = document.createElement('div');
@@ -83,7 +85,7 @@ export default function LiveVisualEditor({ client,userId,isDeveloper,open,onClos
     if (heading?.nextSibling) main.insertBefore(node,heading.nextSibling); else main.appendChild(node);
     setMount(node);
     return () => { node.remove(); setMount(null); };
-  },[open,isDeveloper,page]);
+  },[page]);
 
   useEffect(() => {
     if (!open || !isDeveloper) return;
@@ -103,7 +105,7 @@ export default function LiveVisualEditor({ client,userId,isDeveloper,open,onClos
     return () => { document.removeEventListener('click',click,true); window.removeEventListener('keydown',escape); document.body.classList.remove('tc-visual-editing'); };
   },[open,isDeveloper,onClose]);
 
-  useEffect(() => { applyRules(items); },[items,page]);
+  useEffect(() => { applyRules(open && isDeveloper ? items : published); },[items,published,open,isDeveloper,page]);
 
   function add(type:WidgetType) {
     const item:VisualItem = { id:crypto.randomUUID(),kind:'widget',page,type,content:type==='heading'?'Novo título':type==='button'?'Clique aqui':type==='container'?'Novo contêiner':type==='divider'?'': 'Escreva seu conteúdo' };
@@ -127,8 +129,8 @@ export default function LiveVisualEditor({ client,userId,isDeveloper,open,onClos
     else { if (publish) { setPublished(items); setMessage('Página publicada para a equipe.'); } else setMessage('Rascunho salvo.'); }
     setBusy(false);
   }
-  if (!open || !isDeveloper) return null;
-  const portal = mount ? createPortal(<div className="tc-builder-widgets">{widgets.map(item=><WidgetView key={item.id} item={item} selected={selectedId===item.id} onSelect={()=>{setSelectedId(item.id);setSelectedRule(null);}}/>)}</div>,mount) : null;
+  const portal = mount ? createPortal(<div className="tc-builder-widgets">{visibleWidgets.map(item=><WidgetView key={item.id} item={item} selected={Boolean(open && isDeveloper && selectedId===item.id)} onSelect={()=>{if(open && isDeveloper){setSelectedId(item.id);setSelectedRule(null);}}}/>)}</div>,mount) : null;
+  if (!open || !isDeveloper) return portal;
   return <>{portal}<aside className="tc-visual-editor" aria-label="Editor visual da página atual">
     <header><div><strong>Editor visual</strong><small>Página: {page}</small></div><button type="button" onClick={onClose} aria-label="Sair do modo de edição"><X size={17}/></button></header>
     <p className="tc-editor-help">Adicione blocos como no Elementor, selecione para editar e remova o que não precisar. Os blocos ficam nesta página.</p>
