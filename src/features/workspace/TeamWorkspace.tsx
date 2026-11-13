@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ComponentType, type DragEvent, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Filter, Folder, GripVertical, House, Megaphone, MessageCircle, Trash2, X, Paperclip, ExternalLink, Video, type LucideProps } from 'lucide-react';
+import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Filter, Folder, GripVertical, House, MessageCircle, Trash2, X, Paperclip, ExternalLink, Video, type LucideProps } from 'lucide-react';
 import {
   activityTypeLabels,
   activityFlowLabels,
@@ -359,7 +359,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   const [tab, setTab] = useState<WorkspaceTab>(() => tabForPush(pushTarget));
   const [chatOpen, setChatOpen] = useState(() => pushTarget?.type === 'chat');
   const [activeChannel, setActiveChannel] = useState<WorkspaceChannel | null>(null);
-  const [manualSection, setManualSection] = useState<'normas' | 'funcoes'>('normas');
+  const [manualSection, setManualSection] = useState<'normas' | 'funcoes'>('funcoes');
   const [chatTargetUserId, setChatTargetUserId] = useState<string | null>(null);
   const [chatReturnTab] = useState<WorkspaceTab>('home');
   const [chatCreateGroupRequest, setChatCreateGroupRequest] = useState(false);
@@ -1123,7 +1123,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
     const leavingLiveMeeting = tab === 'agenda' && agendaSubtab === 'meetings' && nextTab !== 'agenda';
     if (jitsiRoomActive && (nextTab !== tab || leavingLiveMeeting) && !window.confirm('Você está em uma reunião. Sair desta tela desconectará sua chamada. Deseja continuar?')) return;
     if (jitsiRoomActive && (nextTab !== tab || leavingLiveMeeting)) setJitsiRoomActive(false);
-    if (nextTab === 'manual') setManualSection('normas');
+    if (nextTab === 'manual') setManualSection('funcoes');
     setTab(nextTab);
   }
 
@@ -1448,14 +1448,14 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           {tab === 'agenda' && agendaSubtab === 'meetings' && <MeetingsWorkspace displayName={displayName} onRoomActiveChange={setJitsiRoomActive} />}
           {tab === 'agenda' && agendaSubtab === 'availability' && <AvailabilityWorkspace client={client} userId={userId} profile={profile} />}
           {tab === 'agenda' && agendaSubtab === 'calendar' && <TeamCalendar client={client} userId={userId} isAdmin={profile.role === 'admin'} initialDate={calendarFocusDate} initialEventId={pushTarget?.type === 'calendar' ? pushTarget.itemId : undefined} />}
-          {tab === 'manual' && activeChannel && (
+          {tab === 'manual' && (
             <section className="workspace-documentation" aria-label="Documentação da equipe">
               <div className="workspace-documentation-tabs" role="tablist" aria-label="Seções da documentação">
                 <button type="button" role="tab" aria-selected={manualSection === 'normas'} className={manualSection === 'normas' ? 'is-active' : ''} onClick={() => setManualSection('normas')}>Normas de Conduta</button>
                 <button type="button" role="tab" aria-selected={manualSection === 'funcoes'} className={manualSection === 'funcoes' ? 'is-active' : ''} onClick={() => setManualSection('funcoes')}>Manuais de Funções</button>
               </div>
               {manualSection === 'normas' ? (
-                <ChannelManualWorkspace client={client} userId={userId} channelId={activeChannel.id} kind="conduct" title="Normas de Conduta" isAdmin={profile.role === 'admin'} fallback={<div className="channel-manual-empty"><BookOpen size={24} /><strong>Normas de Conduta</strong><span>O documento institucional ainda não foi publicado. Um Administrador poderá adicionar o PDF, DOCX ou editar o texto nesta seção.</span></div>} />
+                activeChannel ? <ChannelManualWorkspace client={client} userId={userId} channelId={activeChannel.id} kind="conduct" title="Normas de Conduta" isAdmin={profile.role === 'admin'} fallback={<div className="channel-manual-empty"><BookOpen size={24} /><strong>Normas de Conduta</strong><span>O documento institucional ainda não foi publicado. Um Administrador poderá adicionar o PDF, DOCX ou editar o texto nesta seção.</span></div>} /> : <div className="channel-manual-empty"><BookOpen size={24} /><strong>Normas de Conduta</strong><span>O Canal Geral ainda não foi carregado. Verifique a migration do canal único no Supabase. Os Manuais de Funções continuam disponíveis na outra seção.</span></div>
               ) : <ManualFunctions />}
             </section>
           )}
