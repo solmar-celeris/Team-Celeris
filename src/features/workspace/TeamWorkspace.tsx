@@ -31,6 +31,7 @@ import {
   weeklyStatusLabels,
 } from './domain';
 import ProfileMenu from '../profile/ProfileMenu';
+import LiveVisualEditor from '../developer/LiveVisualEditor';
 import SharedContentWorkspace from './SharedContentWorkspace';
 import TeamChat from './TeamChat';
 import TeamCalendar from './TeamCalendar';
@@ -50,7 +51,6 @@ type TeamWorkspaceProps = {
   onThemeChange: (theme: 'light' | 'dark') => void;
   onRefreshProfile: () => void | Promise<void>;
   isDeveloper: boolean;
-  onOpenDeveloperStudio: () => void;
   onLogout: () => void;
 };
 
@@ -356,7 +356,8 @@ function safeDriveUrl(value: string): string | null {
   } catch { return null; }
 }
 
-export default function TeamWorkspace({ client, userId, profile, theme, onThemeChange, isDeveloper, onOpenDeveloperStudio, onLogout }: TeamWorkspaceProps) {
+export default function TeamWorkspace({ client, userId, profile, theme, onThemeChange, isDeveloper, onLogout }: TeamWorkspaceProps) {
+  const [visualEditorOpen, setVisualEditorOpen] = useState(false);
   const [pushTarget] = useState<PushDeepLink | null>(() => parsePushDeepLink());
   const [tab, setTab] = useState<WorkspaceTab>(() => tabForPush(pushTarget));
   const [chatOpen, setChatOpen] = useState(() => pushTarget?.type === 'chat');
@@ -1183,7 +1184,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             onThemeChange={onThemeChange}
             onUpdated={handleProfileUpdated}
             isDeveloper={isDeveloper}
-            onOpenDeveloperStudio={onOpenDeveloperStudio}
+            onOpenDeveloperStudio={() => setVisualEditorOpen(true)}
             onLogout={handleProfileLogout}
           />
           <button className="workspace-chat-launcher workspace-chat-launcher-mobile" type="button" aria-label="Abrir Chat" title="Chat" onClick={() => setChatOpen(true)}><MessageCircle aria-hidden="true" /></button>
@@ -1514,6 +1515,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           onSave={(start, end) => void saveProjectPeriod(start, end)}
         />
       )}
+      <LiveVisualEditor client={client} userId={userId} isDeveloper={isDeveloper} open={visualEditorOpen} onClose={() => setVisualEditorOpen(false)} />
     </section>
   );
 }

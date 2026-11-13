@@ -4,7 +4,6 @@ import { syncMedianOneSignalIdentity } from '../../lib/medianOneSignal';
 import { syncDesktopOneSignalIdentity } from '../../lib/desktopNotifications';
 import { supabase, supabaseConfigured } from '../../lib/supabase';
 import TeamWorkspace from '../workspace/TeamWorkspace';
-import DeveloperStudio from '../developer/DeveloperStudio';
 import PublishedPageView from '../developer/PublishedPageView';
 
 type AuthMode = 'login' | 'signup' | 'reset' | 'update-password';
@@ -75,7 +74,6 @@ function getAuthError(input: string | { message?: string; code?: string; status?
 
 export default function AuthPanel({ theme, onThemeChange }: AuthPanelProps) {
   const [mode, setMode] = useState<AuthMode>('login');
-  const [developerStudioOpen, setDeveloperStudioOpen] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<MemberProfile | null>(null);
   const [accessState, setAccessState] = useState<AccessState>(null);
@@ -394,15 +392,6 @@ export default function AuthPanel({ theme, onThemeChange }: AuthPanelProps) {
   const displayName = profile?.full_name.trim() || session?.user.email || 'Integrante';
 
   if (session && accessState === 'active' && profile && supabase && mode !== 'update-password') {
-    if (profile.role === 'developer' && developerStudioOpen) {
-      return (
-        <DeveloperStudio
-          client={supabase}
-          userId={session.user.id}
-          onLogout={() => setDeveloperStudioOpen(false)}
-        />
-      );
-    }
     const publishedPageSlug = new URLSearchParams(window.location.search).get('page');
     if (publishedPageSlug && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(publishedPageSlug)) {
       return (
@@ -423,7 +412,6 @@ export default function AuthPanel({ theme, onThemeChange }: AuthPanelProps) {
         onThemeChange={onThemeChange}
         onRefreshProfile={refreshOwnProfile}
         isDeveloper={profile.role === 'developer'}
-        onOpenDeveloperStudio={() => setDeveloperStudioOpen(true)}
         onLogout={() => void handleLogout()}
       />
     );
