@@ -25,6 +25,8 @@ type ProfileMenuProps = {
   theme: 'light' | 'dark';
   onThemeChange: (theme: 'light' | 'dark') => void;
   onUpdated: (value: { fullName: string; photoUrl: string | null }) => void;
+  isDeveloper: boolean;
+  onOpenDeveloperStudio: () => void;
   onLogout: () => void;
 };
 
@@ -41,7 +43,7 @@ function initialFrom(name: string): string {
   return Array.from(name.trim())[0]?.toLocaleUpperCase('pt-BR') ?? '?';
 }
 
-export default function ProfileMenu({ client, userId, fallbackName, photoUrl, theme, onThemeChange, onUpdated, onLogout }: ProfileMenuProps) {
+export default function ProfileMenu({ client, userId, fallbackName, photoUrl, theme, onThemeChange, onUpdated, isDeveloper, onOpenDeveloperStudio, onLogout }: ProfileMenuProps) {
   const [open, setOpen] = useState(false);
   const [fullName, setFullName] = useState(fallbackName);
   const [avatarPath, setAvatarPath] = useState<string | null>(null);
@@ -284,6 +286,13 @@ export default function ProfileMenu({ client, userId, fallbackName, photoUrl, th
           </div>
 
           <form onSubmit={(event) => void saveProfile(event)}>
+            {isDeveloper && (
+              <section className="profile-theme-section" aria-label="Ferramentas de desenvolvimento">
+                <button type="button" className="profile-secondary-button" onClick={() => { setOpen(false); onOpenDeveloperStudio(); }}>
+                  &lt;/&gt; Abrir modo de edição
+                </button>
+              </section>
+            )}
             <section className="profile-theme-section" aria-labelledby="profile-theme-title">
               <div className="profile-theme-heading">
                 <div><p className="workspace-kicker">APARÊNCIA</p><h3 id="profile-theme-title">Tema da interface</h3></div>
