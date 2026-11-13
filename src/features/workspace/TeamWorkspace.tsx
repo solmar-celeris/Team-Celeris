@@ -1165,14 +1165,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
         <a className="workspace-brand" href="#workspace" aria-label="Team Celeris">
           <img src="/assets/solmar-celeris-site-logo.png" alt="" />
         </a>
-        <nav className="workspace-nav" aria-label="Navegação principal">
-          {workspaceTabs.map(({ id, label, icon: Icon }) => (
-            <button key={id} type="button" title={label} aria-label={label} className={tab === id ? 'is-active' : ''} onClick={() => navigateToTab(id)} aria-current={tab === id ? 'page' : undefined}>
-              <span className="workspace-nav-icon"><Icon aria-hidden="true" /></span>
-              <span className="workspace-nav-label">{label}</span>
-            </button>
-          ))}
-        </nav>
+
         <div className="workspace-top-actions">
           <span className={`workspace-role workspace-role-${profile.role}`} title={`Nível de acesso: ${profile.role==='admin'?'Administrador':profile.role==='developer'?'Desenvolvedor':'Membro'}`}>{profile.role==='admin'?'Administrador':profile.role==='developer'?'Desenvolvedor':'Membro'}</span>
           <div className="workspace-theme-switch" role="group" aria-label="Tema da interface">
@@ -1194,6 +1187,15 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           <button className="workspace-chat-launcher workspace-chat-launcher-mobile" type="button" aria-label="Abrir Chat" title="Chat" onClick={() => setChatOpen(true)}><MessageCircle aria-hidden="true" /></button>
         </div>
       </header>
+
+      <nav className="workspace-nav workspace-bottom-nav" aria-label="Navegação principal">
+        {workspaceTabs.map(({ id, label, icon: Icon }) => (
+          <button key={id} type="button" title={label} aria-label={label} className={tab === id ? 'is-active' : ''} onClick={() => navigateToTab(id)} aria-current={tab === id ? 'page' : undefined}>
+            <span className="workspace-nav-icon"><Icon aria-hidden="true" /></span>
+            <span className="workspace-nav-label">{label}</span>
+          </button>
+        ))}
+      </nav>
 
       <div className="workspace-frame">
         <main className={`workspace-main${tab === 'membersChat' ? ' is-chat-page' : ''}${tab === 'home' ? ' is-home-page' : ''}`} id="workspace">
