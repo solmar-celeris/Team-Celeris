@@ -2235,3 +2235,27 @@
   .workspace-theme-switch button { width: 27px; height: 27px; }
   .workspace-theme-switch button svg { width: 14px; height: 14px; }
 }
+
+
+/* Manual de funções: mantém contraste em ambos os temas, inclusive textos
+   provenientes de conteúdo formatado/editado anteriormente. */
+.workspace-manual .manual-role-head p,
+.workspace-manual .manual-org-intro > p:not(.workspace-kicker),
+.workspace-manual .manual-org-area-list > span,
+.workspace-manual .manual-responsibilities li,
+.workspace-manual .manual-marketing-fronts section > strong,
+.workspace-manual .manual-details li,
+.workspace-manual .manual-transversal-card p,
+.workspace-manual .manual-transversal-card li,
+.workspace-manual .manual-table td,
+.workspace-manual .manual-matrix-disclaimer,
+.workspace-manual .manual-platforms,
+.workspace-manual .manual-note,
+.workspace-manual .manual-note li {
+  color: var(--ink) !important;
+}
+.workspace-manual .manual-org-area-list small,
+.workspace-manual .manual-section-heading > p,
+.workspace-manual .manual-matrix-note {
+  color: var(--muted) !important;
+}
