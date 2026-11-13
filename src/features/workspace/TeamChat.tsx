@@ -930,7 +930,7 @@ export default function TeamChat({ client, userId, isAdmin, members, initialMess
                   {isAdmin && member.user_id !== userId && member.role === 'admin' && <button type="button" disabled={memberActionBusyId !== null} onClick={() => void updateTeamMember(member, 'demote')}><ShieldMinus aria-hidden="true" /> Tirar administrador</button>}
                   {isAdmin && member.user_id !== userId && member.role !== 'admin' && member.role !== 'developer' && <button type="button" disabled={memberActionBusyId !== null} onClick={() => void updateTeamMember(member, 'developer_on')}><Code2 aria-hidden="true" /> Tornar Desenvolvedor</button>}
                   {isAdmin && member.user_id !== userId && member.role === 'developer' && <button type="button" disabled={memberActionBusyId !== null} onClick={() => void updateTeamMember(member, 'developer_off')}><Code2 aria-hidden="true" /> Remover Desenvolvedor</button>}
-                  {isAdmin && member.user_id !== userId && <button type="button" className="is-danger" disabled={memberActionBusyId !== null} onClick={() => void updateTeamMember(member, 'remove')}><Trash2 aria-hidden="true" /> Excluir membro da equipe</button>}
+                  {isAdmin && member.user_id !== userId && <button type="button" className="is-danger" disabled={memberActionBusyId !== null} onClick={() => void updateTeamMember(member, 'remove')}><Trash2 aria-hidden="true" /> Remover membro</button>}
                   {direct && <button type="button" disabled={conversationDeletionBusy} onClick={() => { setMemberMenuId(null); confirmDeleteConversation('direct', direct.id, member.full_name); }}><Trash2 aria-hidden="true" /> Apagar conversa</button>}
                 </div>}
               </div>;

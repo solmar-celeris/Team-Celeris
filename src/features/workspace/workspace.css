@@ -2219,3 +2219,19 @@
 
 .workspace-role{display:inline-flex;align-items:center;justify-content:center;min-height:25px;padding:0 9px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--muted);font-size:10px;font-weight:750;white-space:nowrap}.workspace-role-admin{color:#8a4b08;border-color:#edcf9c;background:#fff7e8}.workspace-role-developer{color:#075b94;border-color:#b7d9f2;background:#eaf5fd}.workspace-role-member,.workspace-role-area_lead,.workspace-role-reader{color:var(--muted)}
 @media(max-width:760px){.workspace-role{min-height:22px;padding-inline:6px;font-size:8px}}
+
+
+/* Seletor de tema ao lado da identificação do nível de acesso. */
+.workspace-theme-switch { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 3px; padding: 3px; border: 1px solid rgba(255,255,255,.22); border-radius: 999px; background: rgba(255,255,255,.07); }
+.workspace-theme-switch button { display: grid; width: 30px; height: 30px; place-items: center; border: 0; border-radius: 50%; color: rgba(255,255,255,.78); background: transparent; cursor: pointer; }
+.workspace-theme-switch button svg { width: 15px; height: 15px; }
+.workspace-theme-switch button.is-active { color: #123b58; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.16); }
+:root[data-theme="dark"] .workspace-theme-switch button.is-active { color: #e7f3ff; background: #245477; }
+.workspace-theme-switch button:focus-visible { outline: 2px solid var(--sky); outline-offset: 2px; }
+.workspace-normas-coming-soon { display: grid; min-height: min(55vh, 440px); place-items: center; padding: 24px; }
+.workspace-normas-coming-soon span { color: var(--muted); font-size: clamp(22px, 4vw, 34px); font-weight: 850; letter-spacing: .18em; }
+@media (max-width: 760px) {
+  .workspace-theme-switch { gap: 1px; padding: 2px; }
+  .workspace-theme-switch button { width: 27px; height: 27px; }
+  .workspace-theme-switch button svg { width: 14px; height: 14px; }
+}

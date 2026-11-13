@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ComponentType, type DragEvent, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Filter, Folder, GripVertical, House, Megaphone, MessageCircle, Trash2, X, Paperclip, ExternalLink, Video, type LucideProps } from 'lucide-react';
+import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Filter, Folder, GripVertical, House, Megaphone, MessageCircle, Moon, Sun, Trash2, X, Paperclip, ExternalLink, Video, type LucideProps } from 'lucide-react';
 import {
   activityTypeLabels,
   activityFlowLabels,
@@ -1157,7 +1157,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             : { kicker: 'DOCUMENTAÇÃO DA EQUIPE', title: 'Documentação', subtitle: 'Consulte as normas de conduta e os manuais de funções de todas as áreas em um único lugar.' };
 
   const contextualPageHeading = tab === 'manual'
-    ? { ...pageHeading, kicker: 'DOCUMENTAÇÃO DA EQUIPE', title: 'Documentação', subtitle: 'Normas de conduta e manuais de funções reunidos em um único lugar.' }
+    ? { ...pageHeading, kicker: 'NORMAS E REFERÊNCIAS', title: 'Normas', subtitle: 'Normas de conduta e manuais de funções reunidos em um único lugar.' }
     : pageHeading;
 
   return (
@@ -1176,6 +1176,10 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
         </nav>
         <div className="workspace-top-actions">
           <span className={`workspace-role workspace-role-${profile.role}`} title={`Nível de acesso: ${profile.role==='admin'?'Administrador':profile.role==='developer'?'Desenvolvedor':'Membro'}`}>{profile.role==='admin'?'Administrador':profile.role==='developer'?'Desenvolvedor':'Membro'}</span>
+          <div className="workspace-theme-switch" role="group" aria-label="Tema da interface">
+            <button type="button" className={theme === 'light' ? 'is-active' : ''} aria-label="Ativar tema claro" title="Tema claro" aria-pressed={theme === 'light'} onClick={() => onThemeChange('light')}><Sun aria-hidden="true" /></button>
+            <button type="button" className={theme === 'dark' ? 'is-active' : ''} aria-label="Ativar tema escuro" title="Tema escuro" aria-pressed={theme === 'dark'} onClick={() => onThemeChange('dark')}><Moon aria-hidden="true" /></button>
+          </div>
           <ProfileMenu
             client={client}
             userId={userId}
@@ -1461,7 +1465,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
                 <button type="button" role="tab" aria-selected={manualSection === 'funcoes'} className={manualSection === 'funcoes' ? 'is-active' : ''} onClick={() => setManualSection('funcoes')}>Manuais de Funções</button>
               </div>
               {manualSection === 'normas' ? (
-                activeChannel ? <ChannelManualWorkspace client={client} userId={userId} channelId={activeChannel.id} kind="conduct" title="Normas de Conduta" isAdmin={profile.role === 'admin'} fallback={<div className="channel-manual-empty"><BookOpen size={24} /><strong>Normas de Conduta</strong><span>O documento institucional ainda não foi publicado. Um Administrador poderá adicionar o PDF, DOCX ou editar o texto nesta seção.</span></div>} /> : <div className="channel-manual-empty"><BookOpen size={24} /><strong>Normas de Conduta</strong><span>O Canal Geral ainda não foi carregado. Verifique a migration do canal único no Supabase. Os Manuais de Funções continuam disponíveis na outra seção.</span></div>
+                <div className="workspace-normas-coming-soon" role="status"><span>EM BREVE</span></div>
               ) : <ManualFunctions />}
             </section>
           )}
