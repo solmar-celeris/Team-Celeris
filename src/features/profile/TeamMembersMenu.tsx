@@ -217,7 +217,7 @@ export default function TeamMembersMenu({ client, userId, isAdmin, onSelfProfile
   const selfMember = members.find((member) => member.user_id === userId);
   const canManageMembers = isAdmin && selfMember?.status === 'active';
 
-  async function updateMember(member: TeamMember, action: 'promote' | 'demote' | 'remove') {
+  async function updateMember(member: TeamMember, action: 'promote' | 'demote' | 'developer_on' | 'developer_off' | 'remove') {
     if (!canManageMembers || member.user_id === userId || busyUserId) return;
     if (action === 'remove' && !window.confirm('Excluir este membro da equipe? O acesso será revogado permanentemente. A conta Auth e o histórico serão preservados.')) return;
     setBusyUserId(member.user_id);
@@ -225,16 +225,16 @@ export default function TeamMembersMenu({ client, userId, isAdmin, onSelfProfile
     setNotice('');
     try {
       const { error } = await client.rpc(
-        action === 'promote' ? 'admin_promote_team_member' : action === 'demote' ? 'admin_demote_team_member' : 'admin_remove_team_member',
-        { p_user_id: member.user_id },
+        action === 'promote' ? 'admin_promote_team_member' : action === 'demote' ? 'admin_demote_team_member' : action === 'developer_on' || action === 'developer_off' ? 'admin_set_developer_role' : 'admin_remove_team_member',
+        action === 'developer_on' || action === 'developer_off' ? { p_user_id: member.user_id, p_enabled: action === 'developer_on' } : { p_user_id: member.user_id },
       );
       if (error) throw error;
       await loadMembers(false, true);
-      setNotice(action === 'promote' ? 'Permissão de administrador atualizada.' : action === 'demote' ? 'Administrador convertido em membro.' : 'Membro excluído da equipe. A conta Auth e o histórico foram preservados; o acesso foi revogado.');
+      setNotice(action === 'promote' ? 'Permissão de administrador atualizada.' : action === 'demote' ? 'Administrador convertido em membro.' : action === 'developer_on' ? 'Função de Desenvolvedor concedida.' : action === 'developer_off' ? 'Função de Desenvolvedor removida.' : 'Membro excluído da equipe. A conta Auth e o histórico foram preservados; o acesso foi revogado.');
     } catch {
       setActionError(action === 'remove'
         ? 'Não foi possível excluir o membro. Confirme que as migrations de membros foram aplicadas.'
-        : 'Não foi possível atualizar a função. Tente novamente ou fale com um administrador.');
+        : 'Não foi possível atualizar a função. Confirme que a migration de Desenvolvedor foi aplicada e tente novamente.');
     } finally {
       setBusyUserId(null);
     }
@@ -340,6 +340,8 @@ export default function TeamMembersMenu({ client, userId, isAdmin, onSelfProfile
                         <div className="team-member-options-menu">
                           {member.status === 'active' && member.role !== 'admin' && <button type="button" onClick={() => void updateMember(member, 'promote')} disabled={busyUserId !== null}><ShieldPlus size={15} /> Tornar administrador</button>}
                           {member.status === 'active' && member.role === 'admin' && <button type="button" onClick={() => void updateMember(member, 'demote')} disabled={busyUserId !== null}><ShieldMinus size={15} /> Remover administrador</button>}
+                          {member.status === 'active' && member.role !== 'admin' && member.role !== 'developer' && <button type="button" onClick={() => void updateMember(member, 'developer_on')} disabled={busyUserId !== null}><ShieldPlus size={15} /> Tornar desenvolvedor</button>}
+                          {member.status === 'active' && member.role === 'developer' && <button type="button" onClick={() => void updateMember(member, 'developer_off')} disabled={busyUserId !== null}><ShieldMinus size={15} /> Tirar desenvolvedor</button>}
                           <button className="is-danger" type="button" onClick={() => void updateMember(member, 'remove')} disabled={busyUserId !== null}><Trash2 size={15} /> Remover membro</button>
                         </div>
                       </details>
