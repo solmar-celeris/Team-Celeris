@@ -1,0 +1,15 @@
+{
+  "id": "/",
+  "name": "Team Celeris",
+  "short_name": "Team Celeris",
+  "description": "Espaço da equipe Team Celeris.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#014B89",
+  "icons": [
+    { "src": "/icons/celeris-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/celeris-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
