@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { LogOut, Moon, Sun } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import {
   disableDesktopNotifications,
   enableDesktopNotifications,
@@ -22,8 +22,6 @@ type ProfileMenuProps = {
   userId: string;
   fallbackName: string;
   photoUrl: string | null;
-  theme: 'light' | 'dark';
-  onThemeChange: (theme: 'light' | 'dark') => void;
   onUpdated: (value: { fullName: string; photoUrl: string | null }) => void;
   isDeveloper: boolean;
   onOpenDeveloperStudio: () => void;
@@ -43,7 +41,7 @@ function initialFrom(name: string): string {
   return Array.from(name.trim())[0]?.toLocaleUpperCase('pt-BR') ?? '?';
 }
 
-export default function ProfileMenu({ client, userId, fallbackName, photoUrl, theme, onThemeChange, onUpdated, isDeveloper, onOpenDeveloperStudio, onLogout }: ProfileMenuProps) {
+export default function ProfileMenu({ client, userId, fallbackName, photoUrl, onUpdated, isDeveloper, onOpenDeveloperStudio, onLogout }: ProfileMenuProps) {
   const [open, setOpen] = useState(false);
   const [fullName, setFullName] = useState(fallbackName);
   const [avatarPath, setAvatarPath] = useState<string | null>(null);
@@ -293,20 +291,6 @@ export default function ProfileMenu({ client, userId, fallbackName, photoUrl, th
                 </button>
               </section>
             )}
-            <section className="profile-theme-section" aria-labelledby="profile-theme-title">
-              <div className="profile-theme-heading">
-                <div><p className="workspace-kicker">APARÊNCIA</p><h3 id="profile-theme-title">Tema da interface</h3></div>
-              </div>
-              <div className="profile-theme-options" role="group" aria-labelledby="profile-theme-title">
-                <button type="button" className={`profile-theme-option${theme === 'light' ? ' is-selected' : ''}`} aria-pressed={theme === 'light'} onClick={() => onThemeChange('light')}>
-                  <Sun size={16} aria-hidden="true" /> Claro
-                </button>
-                <button type="button" className={`profile-theme-option${theme === 'dark' ? ' is-selected' : ''}`} aria-pressed={theme === 'dark'} onClick={() => onThemeChange('dark')}>
-                  <Moon size={16} aria-hidden="true" /> Escuro
-                </button>
-              </div>
-            </section>
-
             <section className="profile-notification-section" aria-labelledby="profile-notification-title">
               <div className="profile-notification-heading">
                 <div><p className="workspace-kicker">NESTE COMPUTADOR</p><h3 id="profile-notification-title">Notificações do navegador</h3></div>

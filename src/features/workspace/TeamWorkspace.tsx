@@ -1168,17 +1168,14 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
 
         <div className="workspace-top-actions">
           <span className={`workspace-role workspace-role-${profile.role}`} title={`Nível de acesso: ${profile.role==='admin'?'Administrador':profile.role==='developer'?'Desenvolvedor':'Membro'}`}>{profile.role==='admin'?'Administrador':profile.role==='developer'?'Desenvolvedor':'Membro'}</span>
-          <div className="workspace-theme-switch" role="group" aria-label="Tema da interface">
-            <button type="button" className={theme === 'light' ? 'is-active' : ''} aria-label="Ativar tema claro" title="Tema claro" aria-pressed={theme === 'light'} onClick={() => onThemeChange('light')}><Sun aria-hidden="true" /></button>
-            <button type="button" className={theme === 'dark' ? 'is-active' : ''} aria-label="Ativar tema escuro" title="Tema escuro" aria-pressed={theme === 'dark'} onClick={() => onThemeChange('dark')}><Moon aria-hidden="true" /></button>
-          </div>
+          <button type="button" className={`workspace-theme-toggle ${theme === 'dark' ? 'is-on' : 'is-off'}`} role="switch" aria-checked={theme === 'dark'} aria-label={theme === 'dark' ? 'Desativar tema escuro' : 'Ativar tema escuro'} title={theme === 'dark' ? 'Tema escuro ligado' : 'Tema claro ligado'} onClick={() => onThemeChange(theme === 'dark' ? 'light' : 'dark')}>
+            <span className="workspace-theme-toggle-thumb">{theme === 'dark' ? <Moon aria-hidden="true" /> : <Sun aria-hidden="true" />}</span>
+          </button>
           <ProfileMenu
             client={client}
             userId={userId}
             fallbackName={displayName}
             photoUrl={avatarUrl}
-            theme={theme}
-            onThemeChange={onThemeChange}
             onUpdated={handleProfileUpdated}
             isDeveloper={isDeveloper}
             onOpenDeveloperStudio={() => setVisualEditorOpen(true)}
@@ -1186,6 +1183,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           />
           <button className="workspace-chat-launcher workspace-chat-launcher-mobile" type="button" aria-label="Abrir Chat" title="Chat" onClick={() => setChatOpen(true)}><MessageCircle aria-hidden="true" /></button>
         </div>
+        <nav clas
       </header>
 
       <nav className="workspace-nav workspace-bottom-nav" aria-label="Navegação principal">

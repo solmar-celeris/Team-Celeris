@@ -2516,3 +2516,58 @@
     padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
+
+
+/* Desktop retains navigation in the top header; mobile uses the fixed bottom bar. */
+.workspace-screen > .workspace-topbar > .workspace-desktop-nav { display: flex !important; }
+.workspace-screen > .workspace-bottom-nav { display: none !important; }
+.workspace-theme-toggle {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 46px;
+  width: 46px;
+  height: 26px;
+  align-items: center;
+  padding: 2px;
+  border: 1px solid rgba(255,255,255,.34);
+  border-radius: 999px;
+  background: rgba(255,255,255,.18);
+  cursor: pointer;
+  transition: background .18s ease;
+}
+.workspace-theme-toggle-thumb {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  place-items: center;
+  border-radius: 50%;
+  color: #174b78;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,.22);
+  transition: transform .18s ease;
+}
+.workspace-theme-toggle-thumb svg { width: 12px; height: 12px; }
+.workspace-theme-toggle.is-on { background: #245477; }
+.workspace-theme-toggle.is-on .workspace-theme-toggle-thumb { transform: translateX(20px); color: #17344d; }
+.workspace-theme-toggle:focus-visible { outline: 2px solid var(--sky); outline-offset: 3px; }
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav { display: none !important; }
+  .workspace-screen > .workspace-bottom-nav {
+    position: fixed !important;
+    z-index: 9999 !important;
+    inset: auto 0 0 0 !important;
+    display: grid !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+    min-height: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+    padding: 5px 4px calc(5px + env(safe-area-inset-bottom, 0px)) !important;
+    border: 0 !important;
+    border-top: 1px solid var(--line) !important;
+    border-radius: 14px 14px 0 0 !important;
+    background: var(--card) !important;
+    box-shadow: 0 -5px 22px rgba(0,25,50,.16) !important;
+  }
+}
