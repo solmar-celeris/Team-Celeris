@@ -2596,3 +2596,28 @@
     height: 21px !important;
   }
 }
+
+
+/* Desktop: distribuir igualmente os itens da navegação por toda a faixa disponível. */
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    justify-content: space-evenly !important;
+    align-items: center !important;
+    gap: clamp(4px, 0.7vw, 12px) !important;
+    margin-inline: clamp(8px, 1.4vw, 22px) !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav > button {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    justify-content: center !important;
+    padding-inline: clamp(5px, 0.65vw, 12px) !important;
+    gap: clamp(6px, 0.55vw, 10px) !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav .workspace-nav-label {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+}
