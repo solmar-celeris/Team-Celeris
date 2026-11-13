@@ -2216,3 +2216,6 @@
 .workspace-documentation-tabs button { appearance: none; border: 1px solid var(--border, #d9dee8); border-radius: 999px; background: transparent; color: var(--text, inherit); padding: 9px 15px; font: inherit; font-size: .88rem; font-weight: 650; cursor: pointer; }
 .workspace-documentation-tabs button.is-active { background: var(--accent-soft, rgba(59,130,246,.12)); border-color: var(--accent, #3985e8); color: var(--accent-strong, #2563eb); }
 .workspace-documentation-tabs button:focus-visible { outline: 2px solid var(--accent, #3985e8); outline-offset: 3px; }
+
+.workspace-role{display:inline-flex;align-items:center;justify-content:center;min-height:25px;padding:0 9px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--muted);font-size:10px;font-weight:750;white-space:nowrap}.workspace-role-admin{color:#8a4b08;border-color:#edcf9c;background:#fff7e8}.workspace-role-developer{color:#075b94;border-color:#b7d9f2;background:#eaf5fd}.workspace-role-member,.workspace-role-area_lead,.workspace-role-reader{color:var(--muted)}
+@media(max-width:760px){.workspace-role{min-height:22px;padding-inline:6px;font-size:8px}}

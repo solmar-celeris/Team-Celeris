@@ -1175,6 +1175,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           ))}
         </nav>
         <div className="workspace-top-actions">
+          <span className={`workspace-role workspace-role-${profile.role}`} title={`Nível de acesso: ${profile.role==='admin'?'Administrador':profile.role==='developer'?'Desenvolvedor':'Membro'}`}>{profile.role==='admin'?'Administrador':profile.role==='developer'?'Desenvolvedor':'Membro'}</span>
           <ProfileMenu
             client={client}
             userId={userId}
