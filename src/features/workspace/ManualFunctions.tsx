@@ -4,7 +4,7 @@ import DocumentationPrompts from './DocumentationPrompts';
 
 type ManualRole = {
   area: string;
-  group: 'coordination' | 'direct' | 'transversal';
+  group: 'coordination' | 'direct';
   summary: string;
   responsibilities: string[];
   tools: string[];
@@ -161,25 +161,7 @@ const roles: ManualRole[] = [
     training: ['Programação de ESP32 e de outros microcontroladores e dispositivos utilizados no projeto.', 'Eletrônica aplicada, desenvolvimento, montagem e teste de circuitos, instrumentação, sistemas embarcados e integração de sensores.', 'Protocolos de comunicação, aquisição e processamento de dados, instrumentação, automação, lógica de controle e análise de dados.'],
     deliverables: ['Código-fonte, programação de dispositivos e lógicas de automação documentados.', 'Diagramas eletrônicos e de integração, listas de componentes, sensores, instrumentos e módulos e registros de configuração dos dispositivos.', 'Registros de montagem, calibração, inspeção, testes e diagnóstico de circuitos, sensores, sistemas embarcados e sistemas automatizados.', 'Sistemas de telemetria e monitoramento, interfaces e painéis de visualização, registros de dados e relatórios operacionais.'],
   },
-  {
-    area: 'Tecnologia da Informação (TI)',
-    group: 'transversal',
-    summary: 'Apoio transversal aos integrantes de todas as áreas com ferramentas, aplicativos, sistemas e automações conforme suas necessidades; não é nível hierárquico nem substitui atribuições técnicas.',
-    responsibilities: [
-      'Conversar com integrantes das áreas para compreender rotinas, dificuldades e necessidades; identificar oportunidades de melhoria atendíveis por tecnologia.',
-      'Disponibilizar, adaptar, configurar ou desenvolver ferramentas, aplicativos, formulários, painéis e sistemas que apoiem as atividades das equipes.',
-      'Criar automações para reduzir tarefas repetitivas, integrar informações e simplificar fluxos de trabalho.',
-      'Apoiar a integração de ferramentas e informações entre áreas, respeitando processos e necessidades de cada equipe.',
-      'Orientar usuários sobre uso das soluções, boas práticas, permissões, organização e segurança das informações.',
-      'Prestar suporte, avaliar resultados e ajustar soluções conforme o retorno dos usuários.',
-      'Priorizar demandas em conjunto com a Coordenação Geral, considerando impacto, urgência, esforço e recursos disponíveis.',
-      'Apoiar a organização de arquivos CAD e resultados de simulação sem substituir a validação técnica da área responsável.',
-      'Em Eletrônica, apoiar plataformas digitais, organização e integração de informações e ferramentas de software; circuitos, firmware, aquisição de sinais, instrumentação, comunicação embarcada e validação técnica permanecem sob responsabilidade de Eletrônica.',
-    ],
-    tools: ['Visual Studio Code, Git e GitHub.', 'HTML, CSS, JavaScript e Python, conforme a aplicação.', 'Bancos de dados, hospedagem, APIs e integração de sistemas.', 'Segurança digital, backup, gestão de acessos, documentação e automação.', 'Noções de formatos CAD e arquivos de resultados de simulação.'],
-    training: ['Fundamentos de programação e desenvolvimento web.', 'Git e GitHub.', 'Banco de dados e integração de APIs.', 'Segurança da informação.', 'Python para automação e análise de dados.'],
-    deliverables: ['Ferramentas, aplicativos, formulários, painéis e sistemas de apoio às áreas.', 'Automações e integrações que reduzam retrabalho e facilitem fluxos.', 'Orientações e suporte à adoção e ao uso das soluções.', 'Soluções de acompanhamento, organização e visualização de informações conforme demanda.', 'Registro das soluções desenvolvidas, instruções de uso e histórico de melhorias.'],
-  },
+
 ];
 
 export function getManualRoleHtml(areaFilter: string): string {
@@ -239,12 +221,11 @@ const competencies: Competency[] = [
   { skill: 'Ansys Mechanical', area: 'Mecânica Naval', level: 'Básico', recommendation: 'YouTube: aulas introdutórias de Ansys Workbench/Mechanical, malha, materiais e condições de contorno; materiais gratuitos da Ansys Learning.' },
   { skill: 'Ansys Fluent e CFD', area: 'Mecânica Naval', level: 'Básico', recommendation: 'O DOCX associa a esta linha a recomendação “Telemetria, eletrônica aplicada, automação, ESP32 e sensores”; mantida como consta na matriz, sem inferir outra recomendação.' },
   { skill: 'Eletrônica', area: 'Elétrica', level: 'Básico', recommendation: 'YouTube: Mundo da Elétrica e aulas de dimensionamento fotovoltaico; consultar materiais técnicos gratuitos de fabricantes.', sourceNote: 'Linha preservada como registrada no DOCX (“Eletrônica | Elétrica | Básico”). A recomendação associada menciona dimensionamento fotovoltaico; a célula pode estar desalinhada no documento e não é interpretada aqui como competência técnica adicional.' },
-  { skill: 'Baterias, BMS e MPPT', area: 'Elétrica / TI — apoio transversal / Eletrônica', level: 'Básico', recommendation: 'YouTube: Mundo da Elétrica e canais de eletrônica/energia; buscar aulas sobre LiFePO4, BMS, MPPT e dimensionamento.' },
+  { skill: 'Baterias, BMS e MPPT', area: 'Elétrica / Eletrônica', level: 'Básico', recommendation: 'YouTube: Mundo da Elétrica e canais de eletrônica/energia; buscar aulas sobre LiFePO4, BMS, MPPT e dimensionamento.' },
   { skill: 'Dimensionamento e segurança elétrica', area: 'Elétrica', level: 'Conforme atividade', recommendation: 'YouTube: Mundo da Elétrica; cursos e materiais gratuitos de segurança elétrica. Atividades práticas exigem capacitação e autorização adequadas.' },
   { skill: 'Telemetria, eletrônica aplicada, automação, ESP32 e sensores', area: 'Eletrônica - ELT', level: 'Básico', recommendation: 'YouTube: aulas de ESP32/Arduino, eletrônica básica e automação; documentação e exemplos oficiais do Arduino e Espressif. Buscar conteúdos introdutórios de circuitos, sensores, acionamentos e lógica de controle.' },
-  { skill: 'Programação e desenvolvimento web', area: 'TI — apoio transversal', level: 'Básico', recommendation: 'Curso em Vídeo: Python, HTML, CSS e JavaScript; Fundação Bradesco: cursos de tecnologia; YouTube: aulas práticas de desenvolvimento.' },
-  { skill: 'Git e organização de código', area: 'TI — apoio transversal / Eletrônica', level: 'Básico', recommendation: 'Curso em Vídeo: curso de Git e GitHub; YouTube: versionamento, branches e colaboração com GitHub.' },
-  { skill: 'Impressão 3D', area: 'Mecânica Naval / apoio de TI quando aplicável', level: 'Básico', recommendation: 'YouTube: aulas de modelagem 3D, fatiamento e calibração; tutoriais gratuitos do fabricante da impressora e do fatiador utilizado.' },
+  { skill: 'Git e organização de código', area: 'Eletrônica - ELT', level: 'Básico', recommendation: 'Curso em Vídeo: curso de Git e GitHub; YouTube: versionamento, branches e colaboração com GitHub.' },
+  { skill: 'Impressão 3D', area: 'Mecânica Naval', level: 'Básico', recommendation: 'YouTube: aulas de modelagem 3D, fatiamento e calibração; tutoriais gratuitos do fabricante da impressora e do fatiador utilizado.' },
   { skill: 'Operação de prensa', area: 'Integrantes autorizados', level: 'Treinamento específico obrigatório', recommendation: 'Priorizar manual do fabricante, treinamento presencial e procedimento interno. Vídeos são apenas material complementar, nunca substituem autorização e treinamento prático.' },
   { skill: 'Documentação técnica', area: 'Todas as áreas', level: 'Básico', recommendation: 'FM2S: Introdução ao Lean e gestão da qualidade; YouTube: desenho técnico, elaboração de relatórios e organização de documentação.' },
 ];
@@ -265,15 +246,13 @@ const interfaces = [
   { area: 'Marketing', detail: 'Divulgação de atividades e resultados; produtos e materiais; contrapartidas em conjunto com Gestão de Pessoas.' },
   { area: 'Mecânica Naval', detail: 'Integração da estrutura, componentes, fabricação e testes com Elétrica e Eletrônica.' },
   { area: 'Elétrica', detail: 'Integração de geração, armazenamento, distribuição, alimentação e acionamento com Mecânica Naval e Eletrônica; alinhamento dos pontos de medição e requisitos de energia.' },
-  { area: 'Eletrônica - ELT', detail: 'Integração de circuitos, sensores, instrumentação, sistemas embarcados, automação e telemetria com Elétrica e Mecânica Naval; apoio de TI em ferramentas digitais e integração de informações quando necessário.' },
-  { area: 'TI — apoio transversal', detail: 'Apoio aos integrantes das áreas com ferramentas, aplicativos, sistemas e automações adequados às necessidades e demandas de cada equipe.' },
+  { area: 'Eletrônica - ELT', detail: 'Integração de circuitos, sensores, instrumentação, sistemas embarcados, automação e telemetria com Elétrica e Mecânica Naval; integração de informações e ferramentas digitais conforme a necessidade do projeto.' },
 ];
 
 const guidelines = [
   'As responsabilidades orientam a atuação das áreas, sem impedir colaboração entre integrantes.',
   'Demandas que envolvam mais de uma área devem ter responsáveis, prazos e entregas acordados.',
   'A Coordenação Geral mantém a visão integrada e conduz o alinhamento de prioridades.',
-  'A TI apoia transversalmente as pessoas das áreas com ferramentas, aplicativos e automações, sem substituir suas responsabilidades técnicas.',
   'Treinamentos, procedimentos e autorizações de segurança devem ser respeitados antes de operar máquinas, ferramentas ou sistemas energizados.',
   'Este manual deve ser revisado sempre que houver alteração relevante no organograma, nas atividades ou nos recursos do projeto.',
 ];
@@ -287,7 +266,7 @@ const platforms = [
 
 export default function ManualFunctions({ areaFilter }: { areaFilter?: string } = {}) {
   const [query, setQuery] = useState('');
-  const [manualFilter, setManualFilter] = useState<'Todas' | 'Coordenação' | 'Setores' | 'TI transversal'>('Todas');
+  const [manualFilter, setManualFilter] = useState<'Todas' | 'Coordenação' | 'Setores'>('Todas');
 
   const filteredRoles = useMemo(() => {
     const term = query.trim().toLocaleLowerCase('pt-BR');
@@ -297,7 +276,7 @@ export default function ManualFunctions({ areaFilter }: { areaFilter?: string } 
       const matchesGroup = manualFilter === 'Todas'
         || (manualFilter === 'Coordenação' && role.group === 'coordination')
         || (manualFilter === 'Setores' && role.group === 'direct')
-        || (manualFilter === 'TI transversal' && role.group === 'transversal');
+;
       const searchable = [
         role.area, role.summary, ...role.responsibilities, ...role.tools, ...role.training, ...role.deliverables,
         ...(role.fronts ?? []).flatMap((front) => [front.name, ...front.responsibilities]),
@@ -312,7 +291,7 @@ export default function ManualFunctions({ areaFilter }: { areaFilter?: string } 
     <section className="workspace-manual" aria-label="Manuais de Funções e Capacitação">
       {!areaFilter && <section className="manual-org-intro" aria-labelledby="manual-org-title">
         <p className="workspace-kicker">ESTRUTURA ORGANIZACIONAL · MANUAL REVISADO</p>
-        <h2 id="manual-org-title">Coordenação Geral e seis setores, com TI transversal.</h2>
+        <h2 id="manual-org-title">Coordenação Geral e seis setores.</h2>
         <p>A Coordenação Geral integra as áreas, define prioridades e acompanha o projeto, sem exclusividade docente ou atribuição automática de execução. Os seis setores são Gestão de Pessoas, Administrativo-Financeiro, Marketing, Mecânica Naval, Elétrica e Eletrônica - ELT. Produtos e Redes Sociais são frentes internas de Marketing.</p>
         <div className="manual-org-area-list">
           <span>{roles.find((role) => role.group === 'coordination')?.area}</span>
@@ -320,7 +299,6 @@ export default function ManualFunctions({ areaFilter }: { areaFilter?: string } 
             <span key={role.area}>{role.area}{role.fronts && <small>{role.fronts.map((front) => front.name).join(' · ')}</small>}</span>
           ))}
         </div>
-        <p className="manual-org-footnote"><strong>TI — apoio transversal:</strong> atende às necessidades dos integrantes das áreas com ferramentas, aplicativos, sistemas e automações, sem constituir nível hierárquico nem assumir responsabilidades técnicas. As informações do organograma e dos cards partem da mesma definição de áreas.</p>
       </section>}
 
       {!areaFilter && <div className="manual-controls">
@@ -330,7 +308,7 @@ export default function ManualFunctions({ areaFilter }: { areaFilter?: string } 
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar área, responsabilidade ou competência…" />
         </label>
         <div className="manual-nucleus-filter" aria-label="Filtrar funções">
-          {(['Todas', 'Coordenação', 'Setores', 'TI transversal'] as const).map((item) => (
+          {(['Todas', 'Coordenação', 'Setores'] as const).map((item) => (
             <button key={item} type="button" className={manualFilter === item ? 'is-selected' : ''} onClick={() => setManualFilter(item)} aria-pressed={manualFilter === item}>{item}</button>
           ))}
         </div>
@@ -343,8 +321,8 @@ export default function ManualFunctions({ areaFilter }: { areaFilter?: string } 
           {filteredRoles.map((role) => (
             <article className="manual-role-card" key={role.area}>
               <header className="manual-role-head">
-                <span className={`manual-nucleus-tag ${role.group === 'coordination' ? 'is-management' : role.group === 'transversal' ? 'is-transversal' : 'is-engineering'}`}>
-                  {role.group === 'coordination' ? 'COORDENAÇÃO GERAL' : role.group === 'transversal' ? 'APOIO TRANSVERSAL'  : 'SETOR'}
+                <span className={`manual-nucleus-tag ${role.group === 'coordination' ? 'is-management' : 'is-engineering'}`}>
+                  {role.group === 'coordination' ? 'COORDENAÇÃO GERAL' : 'SETOR'}
                 </span>
                 <h3>{role.area}</h3>
                 <p>{role.summary}</p>
