@@ -109,3 +109,5 @@
 @media (max-width: 420px) {
   .profile-menu-trigger { width: 34px !important; min-width: 34px !important; max-width: 34px !important; }
 }
+
+@media(max-width:760px){.profile-developer-tools{display:none!important}}

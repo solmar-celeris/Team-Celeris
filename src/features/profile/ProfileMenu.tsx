@@ -287,7 +287,7 @@ export default function ProfileMenu({ client, userId, fallbackName, photoUrl, th
 
           <form onSubmit={(event) => void saveProfile(event)}>
             {isDeveloper && (
-              <section className="profile-theme-section" aria-label="Ferramentas de desenvolvimento">
+              <section className="profile-theme-section profile-developer-tools" aria-label="Ferramentas de desenvolvimento">
                 <button type="button" className="profile-secondary-button" onClick={() => { setOpen(false); onOpenDeveloperStudio(); }}>
                   &lt;/&gt; Abrir modo de edição
                 </button>
