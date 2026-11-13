@@ -2269,3 +2269,36 @@
 :root[data-theme="dark"] .workspace-manual .manual-org-intro h2 {
   color: #e6f2ff !important;
 }
+
+
+/* Etiquetas do organograma e dos cards: cores explícitas para os dois temas. */
+:root:not([data-theme="dark"]) .workspace-manual .manual-nucleus-tag.is-engineering {
+  color: #176347 !important;
+  background: #e8f6ef !important;
+  border-color: #b9dfcd !important;
+}
+:root[data-theme="dark"] .workspace-manual .manual-nucleus-tag.is-engineering {
+  color: #a8e5cf !important;
+  background: #123b32 !important;
+  border-color: #286b56 !important;
+}
+:root:not([data-theme="dark"]) .workspace-manual .manual-nucleus-tag.is-management {
+  color: #174b78 !important;
+  background: #eaf4fd !important;
+  border-color: #bdd9ef !important;
+}
+:root[data-theme="dark"] .workspace-manual .manual-nucleus-tag.is-management {
+  color: #b9ddff !important;
+  background: #17344d !important;
+  border-color: #315d7d !important;
+}
+:root:not([data-theme="dark"]) .workspace-manual .manual-nucleus-tag.is-transversal {
+  color: #8a4b08 !important;
+  background: #fff4e5 !important;
+  border-color: #efd1a5 !important;
+}
+:root[data-theme="dark"] .workspace-manual .manual-nucleus-tag.is-transversal {
+  color: #ffd29a !important;
+  background: #493018 !important;
+  border-color: #80552b !important;
+}

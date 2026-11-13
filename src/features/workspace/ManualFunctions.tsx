@@ -191,7 +191,7 @@ export function getManualRoleHtml(areaFilter: string): string {
   const fronts = role.fronts?.length
     ? `<p><strong>Frentes internas de ${role.area}</strong></p><div class="manual-role-front-grid">${role.fronts.map((front) => `<div><p><strong>${front.name}</strong></p>${list(front.responsibilities)}</div>`).join('')}</div>`
     : '';
-  return `<p><strong>ÁREA DIRETA</strong></p><p><strong>${role.area}</strong></p><p>${role.summary}</p><hr>${section('Responsabilidades', role.responsibilities)}${fronts}<hr>${section('Ferramentas e conhecimentos', role.tools)}${section('Capacitação recomendada', role.training)}${section('Entregas esperadas', role.deliverables)}`;
+  return `<p><strong>SETOR</strong></p><p><strong>${role.area}</strong></p><p>${role.summary}</p><hr>${section('Responsabilidades', role.responsibilities)}${fronts}<hr>${section('Ferramentas e conhecimentos', role.tools)}${section('Capacitação recomendada', role.training)}${section('Entregas esperadas', role.deliverables)}`;
 }
 
 const transversal = [
@@ -313,7 +313,7 @@ export default function ManualFunctions({ areaFilter }: { areaFilter?: string } 
       {!areaFilter && <section className="manual-org-intro" aria-labelledby="manual-org-title">
         <p className="workspace-kicker">ESTRUTURA ORGANIZACIONAL · MANUAL REVISADO</p>
         <h2 id="manual-org-title">Coordenação Geral e seis setores, com TI transversal.</h2>
-        <p>A Coordenação Geral integra as áreas, define prioridades e acompanha o projeto, sem exclusividade docente ou atribuição automática de execução. As seis setores são Gestão de Pessoas, Administrativo-Financeiro, Marketing, Mecânica Naval, Elétrica e Eletrônica - ELT. Produtos e Redes Sociais são frentes internas de Marketing.</p>
+        <p>A Coordenação Geral integra as áreas, define prioridades e acompanha o projeto, sem exclusividade docente ou atribuição automática de execução. Os seis setores são Gestão de Pessoas, Administrativo-Financeiro, Marketing, Mecânica Naval, Elétrica e Eletrônica - ELT. Produtos e Redes Sociais são frentes internas de Marketing.</p>
         <div className="manual-org-area-list">
           <span>{roles.find((role) => role.group === 'coordination')?.area}</span>
           {directRoles.map((role) => (
@@ -344,7 +344,7 @@ export default function ManualFunctions({ areaFilter }: { areaFilter?: string } 
             <article className="manual-role-card" key={role.area}>
               <header className="manual-role-head">
                 <span className={`manual-nucleus-tag ${role.group === 'coordination' ? 'is-management' : role.group === 'transversal' ? 'is-transversal' : 'is-engineering'}`}>
-                  {role.group === 'coordination' ? 'COORDENAÇÃO GERAL' : role.group === 'transversal' ? 'APOIO TRANSVERSAL' : 'ÁREA DIRETA'}
+                  {role.group === 'coordination' ? 'COORDENAÇÃO GERAL' : role.group === 'transversal' ? 'APOIO TRANSVERSAL'  : 'SETOR'}
                 </span>
                 <h3>{role.area}</h3>
                 <p>{role.summary}</p>
