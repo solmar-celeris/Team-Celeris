@@ -2571,3 +2571,28 @@
     box-shadow: 0 -5px 22px rgba(0,25,50,.16) !important;
   }
 }
+
+
+/* Desktop: ampliar os ícones da navegação para ocupar melhor o espaço do cabeçalho.
+   A barra mobile permanece com as dimensões compactas já definidas acima. */
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav {
+    gap: 8px !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav > button {
+    min-height: 46px !important;
+    padding: 0 10px !important;
+    gap: 9px !important;
+    font-size: 12px !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav .workspace-nav-icon {
+    width: 32px !important;
+    height: 32px !important;
+    flex: 0 0 32px !important;
+    border-radius: 9px !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav .workspace-nav-icon svg {
+    width: 21px !important;
+    height: 21px !important;
+  }
+}
