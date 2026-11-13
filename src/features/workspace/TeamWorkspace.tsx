@@ -36,7 +36,6 @@ import SharedContentWorkspace from './SharedContentWorkspace';
 import TeamChat from './TeamChat';
 import TeamCalendar from './TeamCalendar';
 import ManualFunctions from './ManualFunctions';
-import ChannelManualWorkspace from './ChannelManualWorkspace';
 import AvailabilityWorkspace from './AvailabilityWorkspace';
 import MeetingsWorkspace from './MeetingsWorkspace';
 import WeeklyActivityCard, { type WeeklyReportDraft } from './WeeklyActivityCard';
