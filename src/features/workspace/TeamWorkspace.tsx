@@ -1183,7 +1183,14 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           />
           <button className="workspace-chat-launcher workspace-chat-launcher-mobile" type="button" aria-label="Abrir Chat" title="Chat" onClick={() => setChatOpen(true)}><MessageCircle aria-hidden="true" /></button>
         </div>
-        <nav clas
+        <nav className="workspace-nav workspace-desktop-nav" aria-label="Navegação principal">
+          {workspaceTabs.map(({ id, label, icon: Icon }) => (
+            <button key={id} type="button" title={label} aria-label={label} className={tab === id ? 'is-active' : ''} onClick={() => navigateToTab(id)} aria-current={tab === id ? 'page' : undefined}>
+              <span className="workspace-nav-icon"><Icon aria-hidden="true" /></span>
+              <span className="workspace-nav-label">{label}</span>
+            </button>
+          ))}
+        </nav>
       </header>
 
       <nav className="workspace-nav workspace-bottom-nav" aria-label="Navegação principal">
