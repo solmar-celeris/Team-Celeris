@@ -19,11 +19,11 @@ Deno.serve(async (request) => {
   const authorization = request.headers.get('Authorization');
   if (!authorization?.startsWith('Bearer ')) return reply(401, { error: 'unauthorized' });
 
-  const projectUrl = Deno.env.get('SUPABASE_URL');
-  const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
-  const livekitUrl = Deno.env.get('LIVEKIT_URL');
-  const livekitApiKey = Deno.env.get('LIVEKIT_API_KEY');
-  const livekitApiSecret = Deno.env.get('LIVEKIT_API_SECRET');
+  const projectUrl = Deno.env.get('SUPABASE_URL')?.trim();
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY')?.trim();
+  const livekitUrl = Deno.env.get('LIVEKIT_URL')?.trim();
+  const livekitApiKey = Deno.env.get('LIVEKIT_API_KEY')?.trim();
+  const livekitApiSecret = Deno.env.get('LIVEKIT_API_SECRET')?.trim();
   if (!projectUrl || !anonKey || !livekitUrl || !livekitApiKey || !livekitApiSecret) {
     return reply(503, { error: 'meeting_service_not_configured' });
   }
@@ -104,7 +104,12 @@ Deno.serve(async (request) => {
       participant_limit: room.participant_limit,
     });
   } catch (error) {
-    console.error('meeting_token_issue_failed', error instanceof Error ? error.message : 'unknown');
+    console.error('meeting_token_issue_failed', {
+      message: error instanceof Error ? error.message : 'unknown',
+      livekit_host: livekitApiHost,
+      api_key_length: livekitApiKey.length,
+      api_key_suffix: livekitApiKey.slice(-4),
+    });
     return reply(503, { error: 'meeting_media_service_unavailable' });
   }
 });
