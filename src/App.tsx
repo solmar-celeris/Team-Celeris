@@ -1,6 +1,8 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import AuthPanel from './features/auth/AuthPanel';
 import { installMedianPushNavigation } from './lib/medianPushNavigation';
+import PublicMeetingEntry from './features/workspace/PublicMeetingEntry';
+import { supabaseConfigured } from './lib/supabase';
 
 installMedianPushNavigation();
 
@@ -9,6 +11,9 @@ const DashboardPreview = import.meta.env.DEV
   : null;
 
 export default function App() {
+  const publicMeetingId = new URLSearchParams(window.location.search).get('meeting');
+  if (publicMeetingId && supabaseConfigured) return <PublicMeetingEntry roomId={publicMeetingId} />;
+
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const savedTheme = window.localStorage.getItem('team-celeris-theme');
     if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
