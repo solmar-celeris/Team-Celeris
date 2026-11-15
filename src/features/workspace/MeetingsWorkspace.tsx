@@ -29,7 +29,12 @@ function MeetingVideoLayout() {
     { source: Track.Source.Camera, withPlaceholder: false },
     { source: Track.Source.ScreenShare, withPlaceholder: false },
   ]);
-  const videoTracks = tracks.filter((track) => Boolean(track.publication?.track));
+  type PublishedVideoTrack = (typeof tracks)[number] & {
+    publication: NonNullable<(typeof tracks)[number]['publication']>;
+  };
+  const videoTracks = tracks.filter(
+    (track): track is PublishedVideoTrack => Boolean(track.publication?.track),
+  );
 
   if (videoTracks.length === 0) {
     return <div className="meetings-video-empty">Aguardando o vídeo dos participantes…</div>;
