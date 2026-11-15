@@ -23,6 +23,9 @@ Deno.serve(async (request) => {
 
   const projectUrl = Deno.env.get('SUPABASE_URL')?.trim();
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')?.trim();
+  const publishableKeysRaw = Deno.env.get('SUPABASE_PUBLISHABLE_KEYS') || '{}';
+  let publishableKeys: Record<string, string> = {};
+  try { publishableKeys = JSON.parse(publishableKeysRaw); } catch { /* Legacy projects may not define publishable keys. */ }
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')?.trim();
   const livekitUrl = Deno.env.get('LIVEKIT_URL')?.trim();
   const livekitApiKey = Deno.env.get('LIVEKIT_API_KEY')?.trim();
@@ -55,7 +58,9 @@ Deno.serve(async (request) => {
 
   let userId: string | null = null;
   let profileName = '';
-  if (authorization && authorization !== `Bearer ${anonKey}`) {
+  const bearerToken = authorization?.slice('Bearer '.length) || '';
+  const isPublicApiKey = bearerToken === anonKey || Object.values(publishableKeys).includes(bearerToken) || bearerToken.startsWith('sb_publishable_');
+  if (authorization && !isPublicApiKey) {
     const { data: { user }, error: authError } = await userClient.auth.getUser();
     if (authError || !user) return reply(401, { error: 'unauthorized' });
     const { data: profile, error: profileError } = await userClient
