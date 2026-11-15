@@ -49,17 +49,6 @@ function MeetingVideoLayout() {
         >
           <VideoTrack
             trackRef={track}
-            className="meetings-custom-video-background"
-            style={{
-              display: 'block',
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              objectPosition: 'center',
-            }}
-          />
-          <VideoTrack
-            trackRef={track}
             className="meetings-custom-video"
             style={{
               display: 'block',
