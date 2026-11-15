@@ -693,3 +693,74 @@
   .public-meeting-header span { display: none; }
   .public-meeting-entry form { padding: 24px; }
 }
+
+
+.workspace-meetings-overlay.is-fullscreen .meetings-call-controls {
+  position: absolute !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: 18px !important;
+  transform: translateX(-50%) !important;
+  display: flex !important;
+  flex-flow: row nowrap !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  width: max-content !important;
+  max-width: calc(100% - 28px) !important;
+  min-height: 0 !important;
+  padding: 10px 14px !important;
+  border: 1px solid rgba(255,255,255,.18) !important;
+  border-radius: 18px !important;
+  color: #f8fafc !important;
+  background: rgba(17,29,43,.82) !important;
+  box-shadow: 0 12px 36px rgba(0,0,0,.32) !important;
+  backdrop-filter: blur(18px) saturate(150%) !important;
+}
+.workspace-meetings-overlay.is-fullscreen .meetings-call-controls button.meetings-control {
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 9px !important;
+  min-width: 124px !important;
+  min-height: 46px !important;
+  padding: 0 17px !important;
+  border: 1px solid rgba(255,255,255,.13) !important;
+  border-radius: 12px !important;
+  color: #f8fafc !important;
+  background: rgba(255,255,255,.11) !important;
+  font: 600 13px/1.1 Inter,system-ui,sans-serif !important;
+}
+.workspace-meetings-overlay.is-fullscreen .meetings-call-controls button.meetings-control:hover {
+  background: rgba(255,255,255,.2) !important;
+}
+.workspace-meetings-overlay.is-fullscreen .meetings-call-controls button.meetings-control.is-off,
+.workspace-meetings-overlay.is-fullscreen .meetings-call-controls button.meetings-control.meetings-control-leave {
+  color: #fff !important;
+  background: #c93645 !important;
+  border-color: #e35a66 !important;
+}
+.workspace-meetings-overlay.is-fullscreen .meetings-call-controls button.meetings-control.is-active {
+  color: #fff !important;
+  background: #0e74be !important;
+  border-color: #70beff !important;
+}
+@media (max-width: 620px) {
+  .workspace-meetings-overlay.is-fullscreen .meetings-call-controls {
+    left: 50% !important;
+    right: auto !important;
+    bottom: 10px !important;
+    width: calc(100% - 20px) !important;
+    max-width: 480px !important;
+    gap: 5px !important;
+    padding: 7px !important;
+  }
+  .workspace-meetings-overlay.is-fullscreen .meetings-call-controls button.meetings-control {
+    min-width: 0 !important;
+    flex: 1 1 0 !important;
+    padding: 0 7px !important;
+    font-size: 11px !important;
+  }
+}
