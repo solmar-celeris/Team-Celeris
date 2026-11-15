@@ -72,3 +72,27 @@
 .meetings-share-button { display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:10px 12px; border:1px solid var(--line) !important; border-radius:9px; color:var(--ocean) !important; background:var(--card) !important; font-size:11px; font-weight:800; cursor:pointer; }
 :root[data-theme="dark"] .meetings-share-button { color:#b9ddff !important; }
 @media(max-width:620px) { .meetings-room-actions { width:100%; } .meetings-room-actions > button { flex:1; } .meetings-live-actions { flex-wrap:wrap; } }
+
+
+/* Barra própria de controles: sempre visível, inclusive em telas menores. */
+.meetings-livekit-room { display:flex; flex-direction:column; gap:10px; padding:10px; box-sizing:border-box; }
+.meetings-call-controls { display:flex; flex:0 0 auto; align-items:center; justify-content:center; flex-wrap:wrap; gap:9px; padding:10px; border:1px solid rgba(255,255,255,.14); border-radius:12px; background:#17232f; }
+.meetings-call-controls button { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:42px; padding:9px 14px; border:1px solid rgba(255,255,255,.2); border-radius:10px; color:#fff; background:#29445b; font-size:12px; font-weight:750; cursor:pointer; }
+.meetings-call-controls button.is-off { border-color:#a83d3d; background:#8f2929; }
+.meetings-call-controls button.is-active { border-color:#5da9e8; background:#155b91; }
+.meetings-call-controls button.meetings-control-leave { background:#9d2929; }
+.meetings-video-area { flex:1 1 auto; min-height:0; overflow:hidden; }
+.meetings-video-area .lk-video-conference { height:100%; min-height:0; }
+.meetings-video-area .lk-control-bar { display:none !important; }
+.meetings-video-area .lk-participant-tile video,
+.meetings-video-area .lk-focus-layout video,
+.meetings-video-area .lk-grid-layout video,
+.meetings-video-area video.lk-participant-media-video { object-fit:contain !important; }
+.meetings-live-actions .meetings-share-button { min-height:40px; }
+@media(max-width:620px) {
+ .meetings-livekit-room { height:72vh; min-height:460px; padding:7px; }
+ .meetings-call-controls { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; padding:8px; }
+ .meetings-call-controls button { min-width:0; padding:9px 7px; font-size:10px; }
+ .meetings-call-controls button span { white-space:normal; }
+ .meetings-video-area { min-height:250px; }
+}
