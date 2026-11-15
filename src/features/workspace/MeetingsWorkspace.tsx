@@ -72,7 +72,7 @@ export function MeetingVideoLayout() {
   );
 }
 
-export function MeetingControls({ onLeave }: { onLeave: () => void }) {
+export function MeetingControls({ onLeave, variant = 'host' }: { onLeave: () => void; variant?: 'host' | 'guest' }) {
   const { localParticipant, isMicrophoneEnabled, isCameraEnabled, isScreenShareEnabled } = useLocalParticipant();
   const [screenShareBusy, setScreenShareBusy] = useState(false);
   const screenShareLock = useRef(false);
@@ -91,7 +91,7 @@ export function MeetingControls({ onLeave }: { onLeave: () => void }) {
   };
 
   return (
-    <nav className="meetings-call-controls" aria-label="Controles da reunião">
+    <nav className={variant === "host" ? "meetings-call-controls meetings-call-controls-host" : "meetings-call-controls"} aria-label="Controles da reunião">
       <button type="button" className={isMicrophoneEnabled ? 'meetings-control' : 'meetings-control is-off'} aria-label={isMicrophoneEnabled ? 'Desligar microfone' : 'Ligar microfone'} aria-pressed={isMicrophoneEnabled}
         onClick={() => void localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled)}>
         {isMicrophoneEnabled ? <Mic size={22} strokeWidth={1.9} /> : <MicOff size={22} strokeWidth={1.9} />}
