@@ -24,7 +24,7 @@ type MeetingsWorkspaceProps = {
   initialRoomId?: string | null;
 };
 
-function MeetingVideoLayout() {
+export function MeetingVideoLayout() {
   const tracks = useTracks([
     { source: Track.Source.Camera, withPlaceholder: false },
     { source: Track.Source.ScreenShare, withPlaceholder: false },
@@ -32,9 +32,17 @@ function MeetingVideoLayout() {
   type PublishedVideoTrack = (typeof tracks)[number] & {
     publication: NonNullable<(typeof tracks)[number]['publication']>;
   };
-  const videoTracks = tracks.filter(
+  const publishedTracks = tracks.filter(
     (track): track is PublishedVideoTrack => Boolean(track.publication?.track),
   );
+  // Quando alguém compartilha a tela, prioriza essa transmissão e não monta
+  // uma segunda cópia da câmera por cima/ao lado do conteúdo compartilhado.
+  const screenTracks = publishedTracks.filter((track) => track.source === Track.Source.ScreenShare);
+  const videoTracks = screenTracks.length > 0 ? screenTracks : publishedTracks;
+  const uniqueTracks = Array.from(new Map(videoTracks.map((track) => [
+    track.publication.trackSid || `${track.participant.identity}-${track.source}`,
+    track,
+  ])).values());
 
   if (videoTracks.length === 0) {
     return <div className="meetings-video-empty">Aguardando o vídeo dos participantes…</div>;
@@ -42,7 +50,7 @@ function MeetingVideoLayout() {
 
   return (
     <div className="meetings-custom-video-grid">
-      {videoTracks.map((track) => (
+      {uniqueTracks.map((track) => (
         <div
           className="meetings-custom-video-tile"
           key={`${track.participant.identity}-${track.source}`}
@@ -64,8 +72,23 @@ function MeetingVideoLayout() {
   );
 }
 
-function MeetingControls({ onLeave }: { onLeave: () => void }) {
+export function MeetingControls({ onLeave }: { onLeave: () => void }) {
   const { localParticipant, isMicrophoneEnabled, isCameraEnabled, isScreenShareEnabled } = useLocalParticipant();
+  const [screenShareBusy, setScreenShareBusy] = useState(false);
+  const screenShareLock = useRef(false);
+  const toggleScreenShare = async () => {
+    if (screenShareLock.current) return;
+    screenShareLock.current = true;
+    setScreenShareBusy(true);
+    try {
+      await localParticipant.setScreenShareEnabled(!isScreenShareEnabled);
+    } catch (error) {
+      console.error('Não foi possível alternar o compartilhamento de tela.', error);
+    } finally {
+      screenShareLock.current = false;
+      setScreenShareBusy(false);
+    }
+  };
 
   return (
     <nav className="meetings-call-controls" aria-label="Controles da reunião">
@@ -79,8 +102,8 @@ function MeetingControls({ onLeave }: { onLeave: () => void }) {
         {isCameraEnabled ? <Video size={22} strokeWidth={1.9} /> : <VideoOff size={22} strokeWidth={1.9} />}
         <span>{isCameraEnabled ? 'Câmera' : 'Ativar câmera'}</span>
       </button>
-      <button type="button" className={isScreenShareEnabled ? 'meetings-control is-active' : 'meetings-control'} aria-label={isScreenShareEnabled ? 'Parar compartilhamento' : 'Compartilhar tela'} aria-pressed={isScreenShareEnabled}
-        onClick={() => void localParticipant.setScreenShareEnabled(!isScreenShareEnabled)}>
+      <button type="button" className={isScreenShareEnabled ? 'meetings-control is-active' : 'meetings-control'} aria-label={isScreenShareEnabled ? 'Parar compartilhamento' : 'Compartilhar tela'} aria-pressed={isScreenShareEnabled} disabled={screenShareBusy}
+        onClick={() => void toggleScreenShare()}>
         <MonitorUp size={22} strokeWidth={1.9} />
         <span>{isScreenShareEnabled ? 'Parar tela' : 'Compartilhar'}</span>
       </button>
