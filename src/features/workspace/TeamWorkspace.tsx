@@ -1510,7 +1510,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
               </div>
             </header>
             <div className="workspace-meetings-overlay-body">
-              <MeetingsWorkspace client={client} userId={userId} displayName={displayName} onRoomActiveChange={setMeetingRoomActive} initialRoomId={meetingInviteId} />
+              <MeetingsWorkspace client={client} userId={userId} displayName={displayName} onRoomActiveChange={(active) => { setMeetingRoomActive(active); if (active) setMeetingsFullscreen(true); }} initialRoomId={meetingInviteId} />
             </div>
           </div>
         </section>
