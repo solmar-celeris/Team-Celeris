@@ -96,3 +96,63 @@
  .meetings-call-controls button span { white-space:normal; }
  .meetings-video-area { min-height:420px; }
 }
+
+
+/* Layout final da sala: vídeo amplo em cima e ações fixas no rodapé. */
+.meetings-livekit-room {
+  display:flex !important;
+  flex-direction:column !important;
+  gap:12px !important;
+  width:100% !important;
+  height:calc(100vh - 170px) !important;
+  min-height:720px !important;
+  max-height:none !important;
+  padding:12px !important;
+  box-sizing:border-box !important;
+  overflow:hidden !important;
+}
+.meetings-video-area {
+  order:1 !important;
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+}
+.meetings-video-area .lk-video-conference {
+  display:flex !important;
+  flex-direction:column !important;
+  width:100% !important;
+  height:100% !important;
+  min-height:0 !important;
+}
+.meetings-video-area .lk-control-bar { display:none !important; }
+.meetings-call-controls {
+  order:2 !important;
+  position:relative !important;
+  z-index:10 !important;
+  flex:0 0 auto !important;
+  width:100% !important;
+  min-height:68px;
+  margin-top:auto !important;
+  padding:12px !important;
+  background:#17232f !important;
+  box-sizing:border-box !important;
+}
+.meetings-video-area .lk-participant-tile video,
+.meetings-video-area .lk-focus-layout video,
+.meetings-video-area .lk-grid-layout video,
+.meetings-video-area video.lk-participant-media-video {
+  object-fit:contain !important;
+}
+@media(max-width:620px) {
+  .meetings-livekit-room {
+    height:calc(100dvh - 150px) !important;
+    min-height:650px !important;
+    padding:7px !important;
+  }
+  .meetings-video-area { min-height:0 !important; }
+  .meetings-call-controls {
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:8px !important;
+  }
+}
