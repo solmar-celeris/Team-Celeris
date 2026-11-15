@@ -156,3 +156,103 @@
     gap:8px !important;
   }
 }
+
+
+/* Ajuste da sala: grade de vídeo sem painel lateral e controles no topo. */
+.meetings-live {
+  display:flex !important;
+  flex-direction:column !important;
+  height:100% !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+}
+.meetings-livekit-room {
+  display:flex !important;
+  flex:1 1 auto !important;
+  flex-direction:column !important;
+  width:100% !important;
+  height:100% !important;
+  min-height:0 !important;
+  max-height:none !important;
+  gap:10px !important;
+  padding:10px !important;
+  overflow:hidden !important;
+  box-sizing:border-box !important;
+}
+.meetings-call-controls {
+  order:0 !important;
+  display:flex !important;
+  flex:0 0 auto !important;
+  width:100% !important;
+  justify-content:center !important;
+  align-items:center !important;
+  gap:10px !important;
+  margin:0 !important;
+  padding:10px 12px !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  border-radius:13px !important;
+  background:#17232f !important;
+}
+.meetings-call-controls button {
+  min-width:132px !important;
+  min-height:44px !important;
+  border:1px solid rgba(255,255,255,.16) !important;
+  border-radius:11px !important;
+  color:#f8fbff !important;
+  background:#29445b !important;
+  font-size:12px !important;
+  font-weight:700 !important;
+  transition:background .18s ease, transform .18s ease !important;
+}
+.meetings-call-controls button:hover { background:#356080 !important; transform:translateY(-1px); }
+.meetings-call-controls button.is-off,
+.meetings-call-controls button.meetings-control-leave { background:#a52c32 !important; }
+.meetings-call-controls button.is-active { background:#1266a3 !important; }
+.meetings-video-area {
+  order:1 !important;
+  display:flex !important;
+  flex:1 1 0 !important;
+  width:100% !important;
+  min-width:0 !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+  border-radius:12px !important;
+  background:#080d12 !important;
+}
+.meetings-participant-grid,
+.meetings-video-area .lk-grid-layout {
+  display:grid !important;
+  width:100% !important;
+  height:100% !important;
+  min-width:0 !important;
+  min-height:0 !important;
+  grid-template-columns:minmax(0,1fr) !important;
+  grid-template-rows:minmax(0,1fr) !important;
+  gap:0 !important;
+}
+.meetings-video-area .lk-participant-tile {
+  width:100% !important;
+  height:100% !important;
+  min-width:0 !important;
+  min-height:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:#080d12 !important;
+}
+.meetings-video-area video,
+.meetings-video-area .lk-participant-tile video {
+  width:100% !important;
+  height:100% !important;
+  object-fit:contain !important;
+  object-position:center center !important;
+}
+.meetings-video-area .lk-focus-layout,
+.meetings-video-area .lk-focus-layout .lk-grid-layout {
+  display:none !important;
+}
+@media(max-width:760px) {
+  .meetings-livekit-room { padding:7px !important; gap:8px !important; }
+  .meetings-call-controls { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:7px !important; }
+  .meetings-call-controls button { min-width:0 !important; width:100% !important; padding:8px 5px !important; font-size:10px !important; }
+  .meetings-video-area { min-height:0 !important; }
+}
