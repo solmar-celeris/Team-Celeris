@@ -17,7 +17,7 @@ Deno.serve(async (request) => {
   if (request.method !== 'POST') return reply(405, { error: 'method_not_allowed' });
 
   const authorization = request.headers.get('Authorization');
-  if (!authorization?.startsWith('Bearer ')) return reply(401, { error: 'unauthorized' });
+  if (authorization && !authorization.startsWith('Bearer ')) return reply(401, { error: 'unauthorized' });
 
   const projectUrl = Deno.env.get('SUPABASE_URL')?.trim();
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')?.trim();
@@ -42,20 +42,22 @@ Deno.serve(async (request) => {
     ? body.display_name.trim().slice(0, 80)
     : '';
   const userClient = createClient(projectUrl, anonKey, {
-    global: { headers: { Authorization: authorization } },
+    ...(authorization ? { global: { headers: { Authorization: authorization } } } : {}),
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  const { data: { user }, error: authError } = await userClient.auth.getUser();
-  if (authError || !user) return reply(401, { error: 'unauthorized' });
-
-  const { data: profile, error: profileError } = await userClient
-    .from('profiles')
-    .select('full_name,status')
-    .eq('user_id', user.id)
-    .maybeSingle();
-  if (profileError) return reply(503, { error: 'profile_lookup_failed' });
-  if (!profile || profile.status !== 'active') return reply(403, { error: 'active_member_required' });
+  let userId: string | null = null;
+  let profileName = '';
+  if (authorization) {
+    const { data: { user }, error: authError } = await userClient.auth.getUser();
+    if (authError || !user) return reply(401, { error: 'unauthorized' });
+    const { data: profile, error: profileError } = await userClient
+      .from('profiles').select('full_name,status').eq('user_id', user.id).maybeSingle();
+    if (profileError) return reply(503, { error: 'profile_lookup_failed' });
+    if (!profile || profile.status !== 'active') return reply(403, { error: 'active_member_required' });
+    userId = user.id;
+    profileName = profile.full_name || '';
+  }
 
   const { data: room, error: roomError } = await userClient
     .from('meeting_rooms')
@@ -79,14 +81,15 @@ Deno.serve(async (request) => {
       await roomService.createRoom({ name: room.room_name, maxParticipants: room.participant_limit });
     }
     const participants = await roomService.listParticipants(room.room_name);
-    const alreadyJoined = participants.some((participant) => participant.identity === user.id);
+    const identity = userId || `guest-${crypto.randomUUID()}`;
+    const alreadyJoined = participants.some((participant) => participant.identity === identity);
     if (!alreadyJoined && participants.length >= room.participant_limit) {
       return reply(409, { error: 'room_full', participant_limit: room.participant_limit });
     }
 
     const token = new AccessToken(livekitApiKey, livekitApiSecret, {
-      identity: user.id,
-      name: displayName || profile.full_name || 'Integrante Team Celeris',
+      identity,
+      name: displayName || profileName || 'Convidado Team Celeris',
       ttl: '15m',
     });
     token.addGrant({
