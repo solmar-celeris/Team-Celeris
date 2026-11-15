@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { LiveKitRoom, VideoConference, RoomAudioRenderer } from '@livekit/components-react';
 import '@livekit/components-styles';
@@ -65,7 +65,7 @@ export default function MeetingsWorkspace({ client, userId, displayName, onRoomA
     } finally { setWorking(false); }
   };
 
-  const createRoom = async (event: React.FormEvent<HTMLFormElement>) => {
+  const createRoom = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const cleanTitle = title.trim();
     if (!cleanTitle) return;
