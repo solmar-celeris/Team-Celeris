@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { LiveKitRoom, VideoConference, RoomAudioRenderer } from '@livekit/components-react';
 import '@livekit/components-styles';
-import { CalendarClock, LoaderCircle, Plus, Radio, Video, X } from 'lucide-react';
+import { CalendarClock, Check, Copy, LoaderCircle, Plus, Radio, Share2, Video, X } from 'lucide-react';
 import './meetings-workspace.css';
 
 type MeetingRoom = {
@@ -20,9 +20,10 @@ type MeetingsWorkspaceProps = {
   userId: string;
   displayName: string;
   onRoomActiveChange: (active: boolean) => void;
+  initialRoomId?: string | null;
 };
 
-export default function MeetingsWorkspace({ client, userId, displayName, onRoomActiveChange }: MeetingsWorkspaceProps) {
+export default function MeetingsWorkspace({ client, userId, displayName, onRoomActiveChange, initialRoomId }: MeetingsWorkspaceProps) {
   const [rooms, setRooms] = useState<MeetingRoom[]>([]);
   const [title, setTitle] = useState('');
   const [loading, setLoading] = useState(true);
@@ -30,6 +31,8 @@ export default function MeetingsWorkspace({ client, userId, displayName, onRoomA
   const [error, setError] = useState('');
   const [activeRoom, setActiveRoom] = useState<MeetingRoom | null>(null);
   const [connection, setConnection] = useState<{ token: string; serverUrl: string } | null>(null);
+  const [copiedRoomId, setCopiedRoomId] = useState<string | null>(null);
+  const inviteHandled = useRef(false);
 
   const loadRooms = useCallback(async () => {
     setLoading(true);
@@ -63,6 +66,31 @@ export default function MeetingsWorkspace({ client, userId, displayName, onRoomA
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Falha ao entrar na reunião.');
     } finally { setWorking(false); }
+  };
+
+  useEffect(() => {
+    if (!initialRoomId || loading || inviteHandled.current || connection) return;
+    const invitedRoom = rooms.find((room) => room.id === initialRoomId);
+    if (invitedRoom) {
+      inviteHandled.current = true;
+      void joinRoom(invitedRoom);
+    } else if (rooms.length > 0) {
+      inviteHandled.current = true;
+      setError('Esta reunião não está disponível. Ela pode ter sido encerrada ou o convite é inválido.');
+    }
+  }, [initialRoomId, loading, rooms, connection]);
+
+  const copyInvite = async (room: MeetingRoom) => {
+    const inviteUrl = new URL(window.location.href);
+    inviteUrl.search = '';
+    inviteUrl.searchParams.set('meeting', room.id);
+    try {
+      await navigator.clipboard.writeText(inviteUrl.toString());
+      setCopiedRoomId(room.id);
+      window.setTimeout(() => setCopiedRoomId((current) => current === room.id ? null : current), 2500);
+    } catch {
+      setError('Não foi possível copiar automaticamente. Copie o endereço da página e acrescente ?meeting=' + room.id);
+    }
   };
 
   const createRoom = async (event: FormEvent<HTMLFormElement>) => {
@@ -105,8 +133,9 @@ export default function MeetingsWorkspace({ client, userId, displayName, onRoomA
     return (
       <section className="meetings-workspace meetings-live" aria-label="Sala de reunião">
         <header className="meetings-live-header">
-          <div><span className="meetings-eyebrow">REUNIÃO EM ANDAMENTO</span><h2>{activeRoom.title}</h2><p>Até {activeRoom.participant_limit} participantes</p></div>
+          <div><span className="meetings-eyebrow">REUNIÃO EM ANDAMENTO</span><h2>{activeRoom.title}</h2><p>Até {activeRoom.participant_limit} participantes · Convide membros pelo link da sala</p></div>
           <div className="meetings-live-actions">
+            <button type="button" className="meetings-share-button" onClick={() => void copyInvite(activeRoom)}>{copiedRoomId === activeRoom.id ? <Check size={16}/> : <Share2 size={16}/>} {copiedRoomId === activeRoom.id ? 'Link copiado' : 'Compartilhar'}</button>
             {activeRoom.created_by === userId && <button type="button" className="meetings-end-button" onClick={() => void endRoom()}>Encerrar reunião</button>}
             <button type="button" className="meetings-leave-button" onClick={leaveRoom}><X size={16}/> Sair</button>
           </div>
@@ -125,7 +154,7 @@ export default function MeetingsWorkspace({ client, userId, displayName, onRoomA
   return (
     <section className="meetings-workspace" aria-labelledby="meetings-title">
       <header className="meetings-intro">
-        <div><p className="meetings-eyebrow">PLATAFORMA DE VIDEOCONFERÊNCIA</p><h2 id="meetings-title">Reuniões da equipe</h2><p>Crie uma sala ou entre em uma reunião ativa. O acesso é restrito aos membros ativos do Team Celeris.</p></div>
+        <div><p className="meetings-eyebrow">PLATAFORMA DE VIDEOCONFERÊNCIA</p><h2 id="meetings-title">Reuniões da equipe</h2><p>Crie uma sala e compartilhe o convite com outros membros ativos. O acesso exige uma conta ativa no Team Celeris.</p></div>
         <span className="meetings-provider"><Video size={16}/> LiveKit</span>
       </header>
       <form className="meetings-create-form" onSubmit={createRoom}>
@@ -139,7 +168,7 @@ export default function MeetingsWorkspace({ client, userId, displayName, onRoomA
         rooms.length === 0 ? <p className="meetings-empty">Nenhuma reunião ativa no momento. Crie a primeira sala.</p> :
         <div className="meetings-room-list">{rooms.map(room => <article className="meetings-room-card" key={room.id}>
           <div className="meetings-room-icon"><Video size={19}/></div><div className="meetings-room-info"><strong>{room.title}</strong><span><CalendarClock size={13}/> {new Date(room.created_at).toLocaleString('pt-BR')} · Limite de {room.participant_limit} pessoas</span></div>
-          <button type="button" onClick={() => void joinRoom(room)} disabled={working}><Video size={15}/> Entrar</button>
+          <div className="meetings-room-actions"><button type="button" className="meetings-share-button" onClick={() => void copyInvite(room)}><Copy size={14}/> {copiedRoomId === room.id ? 'Copiado' : 'Copiar convite'}</button><button type="button" onClick={() => void joinRoom(room)} disabled={working}><Video size={15}/> Entrar</button></div>
         </article>)}</div>}
       {working && <p className="meetings-working"><LoaderCircle className="meetings-spinner" size={16}/> Preparando sua reunião…</p>}
     </section>
