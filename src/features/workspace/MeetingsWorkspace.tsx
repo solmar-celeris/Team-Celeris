@@ -248,7 +248,7 @@ export default function MeetingsWorkspace({ client, userId, displayName, onRoomA
   return (
     <section className="meetings-workspace" aria-labelledby="meetings-title">
       <header className="meetings-intro">
-        <div><p className="meetings-eyebrow">PLATAFORMA DE VIDEOCONFERÊNCIA</p><h2 id="meetings-title">Reuniões da equipe</h2><p>Crie uma sala e compartilhe o convite com outros membros ativos. O acesso exige uma conta ativa no Team Celeris.</p></div>
+        <div><p className="meetings-eyebrow">PLATAFORMA DE VIDEOCONFERÊNCIA</p><h2 id="meetings-title">Reuniões da equipe</h2><p>Crie uma sala e compartilhe o link. Qualquer pessoa com o convite poderá entrar, mesmo sem conta no Team Celeris.</p></div>
         <span className="meetings-provider"><Video size={16}/> LiveKit</span>
       </header>
       <form className="meetings-create-form" onSubmit={createRoom}>
