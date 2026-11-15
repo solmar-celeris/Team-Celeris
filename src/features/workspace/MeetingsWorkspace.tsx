@@ -184,7 +184,7 @@ export default function MeetingsWorkspace({ client, userId, displayName, onRoomA
     try {
       await navigator.clipboard.writeText(inviteUrl.toString());
       setCopiedRoomId(room.id);
-      window.setTimeout(() => setCopiedRoomId((current) => current === room.id ? null : current), 2500);
+      window.setTimeout(() => setCopiedRoomId((current) => current === room.id ? null : current), 1000);
     } catch {
       setError('Não foi possível copiar automaticamente. Copie o endereço da página e acrescente ?meeting=' + room.id);
     }
