@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { LiveKitRoom, VideoTrack, RoomAudioRenderer, useTracks, useLocalParticipant } from '@livekit/components-react';
 import { Track } from 'livekit-client';
 import '@livekit/components-styles';
-import { CalendarClock, Check, Copy, LoaderCircle, Mic, MicOff, MonitorUp, Plus, Radio, Share2, Video, VideoOff, X } from 'lucide-react';
+import { CalendarClock, Check, Copy, LoaderCircle, Mic, MicOff, MonitorUp, Plus, Radio, Share2, Video, VideoOff, X, PhoneOff } from 'lucide-react';
 import './meetings-workspace.css';
 
 type MeetingRoom = {
@@ -72,7 +72,7 @@ export function MeetingVideoLayout() {
   );
 }
 
-export function MeetingControls({ onLeave, variant = 'host' }: { onLeave: () => void; variant?: 'host' | 'guest' }) {
+export function MeetingControls({ onLeave, onShareInvite, onEndMeeting, canEndMeeting = false, variant = 'host' }: { onLeave: () => void; onShareInvite?: () => void; onEndMeeting?: () => void; canEndMeeting?: boolean; variant?: 'host' | 'guest' }) {
   const { localParticipant, isMicrophoneEnabled, isCameraEnabled, isScreenShareEnabled } = useLocalParticipant();
   const [screenShareBusy, setScreenShareBusy] = useState(false);
   const screenShareLock = useRef(false);
@@ -107,9 +107,15 @@ export function MeetingControls({ onLeave, variant = 'host' }: { onLeave: () => 
         <MonitorUp size={22} strokeWidth={1.9} />
         <span>{isScreenShareEnabled ? 'Parar tela' : 'Compartilhar'}</span>
       </button>
-      <button type="button" className="meetings-control meetings-control-leave" aria-label="Sair da reunião" onClick={onLeave}>
-        <X size={22} strokeWidth={1.9} /><span>Sair</span>
+      {onShareInvite && <button type="button" className="meetings-control meetings-control-invite" aria-label="Compartilhar convite" onClick={onShareInvite}>
+        <Share2 size={22} strokeWidth={1.9} /><span>Compartilhar convite</span>
+      </button>}
+      <button type="button" className="meetings-control meetings-control-leave" aria-label="Sair do lobby" onClick={onLeave}>
+        <X size={22} strokeWidth={1.9} /><span>Sair do lobby</span>
       </button>
+      {canEndMeeting && onEndMeeting && <button type="button" className="meetings-control meetings-control-end" aria-label="Encerrar reunião para todos" onClick={onEndMeeting}>
+        <PhoneOff size={22} strokeWidth={1.9} /><span>Encerrar reunião</span>
+      </button>}
     </nav>
   );
 }
@@ -213,11 +219,22 @@ export default function MeetingsWorkspace({ client, userId, displayName, onRoomA
   };
 
   const endRoom = async () => {
-    if (!activeRoom) return;
-    const { error: updateError } = await client.from('meeting_rooms')
-      .update({ status: 'ended' }).eq('id', activeRoom.id);
-    if (updateError) setError(updateError.message);
-    else leaveRoom();
+    if (!activeRoom || activeRoom.created_by !== userId || working) return;
+    const confirmed = window.confirm('Encerrar esta reunião para todos os participantes? Ninguém poderá entrar novamente por este convite.');
+    if (!confirmed) return;
+    setWorking(true);
+    setError('');
+    try {
+      const { error: endError } = await client.functions.invoke('create-meeting-token', {
+        body: { action: 'end_room', room_id: activeRoom.id },
+      });
+      if (endError) throw endError;
+      leaveRoom();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Não foi possível encerrar a reunião.');
+    } finally {
+      setWorking(false);
+    }
   };
 
   if (connection && activeRoom) {
@@ -225,17 +242,13 @@ export default function MeetingsWorkspace({ client, userId, displayName, onRoomA
       <section className="meetings-workspace meetings-live" aria-label="Sala de reunião">
         <header className="meetings-live-header">
           <div><span className="meetings-eyebrow">REUNIÃO EM ANDAMENTO</span><h2>{activeRoom.title}</h2><p>Até {activeRoom.participant_limit} participantes · Convide membros pelo link da sala</p></div>
-          <div className="meetings-live-actions">
-            <button type="button" className="meetings-share-button" onClick={() => void copyInvite(activeRoom)}>{copiedRoomId === activeRoom.id ? <Check size={16}/> : <Share2 size={16}/>} {copiedRoomId === activeRoom.id ? 'Link copiado' : 'Compartilhar reunião'}</button>
-            {activeRoom.created_by === userId && <button type="button" className="meetings-end-button" onClick={() => void endRoom()}>Encerrar reunião</button>}
-            <button type="button" className="meetings-leave-button" onClick={leaveRoom}><X size={16}/> Sair</button>
-          </div>
+
         </header>
         {error && <p className="meetings-error" role="alert">{error}</p>}
         <LiveKitRoom token={connection.token} serverUrl={connection.serverUrl} connect audio video
           options={{ adaptiveStream: true, dynacast: true }}
           onDisconnected={leaveRoom} className="meetings-livekit-room">
-          <MeetingControls onLeave={leaveRoom} />
+          <MeetingControls onLeave={leaveRoom} onShareInvite={() => void copyInvite(activeRoom)} onEndMeeting={() => void endRoom()} canEndMeeting={activeRoom.created_by === userId} />
           <div className="meetings-video-area">
             <MeetingVideoLayout />
           </div>
