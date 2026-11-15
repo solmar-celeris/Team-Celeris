@@ -72,6 +72,11 @@ Deno.serve(async (request) => {
       .replace(/^ws:/i, 'http:')
       .replace(/\/$/, '');
     const roomService = new RoomServiceClient(livekitApiHost, livekitApiKey, livekitApiSecret);
+    // Ensure the media room exists and enforce the provider-side participant ceiling.
+    const existingRooms = await roomService.listRooms([room.room_name]);
+    if (existingRooms.length === 0) {
+      await roomService.createRoom({ name: room.room_name, maxParticipants: room.participant_limit });
+    }
     const participants = await roomService.listParticipants(room.room_name);
     const alreadyJoined = participants.some((participant) => participant.identity === user.id);
     if (!alreadyJoined && participants.length >= room.participant_limit) {
