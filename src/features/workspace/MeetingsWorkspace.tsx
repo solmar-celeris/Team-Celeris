@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { LiveKitRoom, VideoConference, RoomAudioRenderer, useLocalParticipant } from '@livekit/components-react';
+import { LiveKitRoom, GridLayout, ParticipantTile, RoomAudioRenderer, Track, useTracks, useLocalParticipant } from '@livekit/components-react';
 import '@livekit/components-styles';
 import { CalendarClock, Check, Copy, LoaderCircle, Mic, MicOff, MonitorUp, Plus, Radio, Share2, Video, VideoOff, X } from 'lucide-react';
 import './meetings-workspace.css';
@@ -22,6 +22,18 @@ type MeetingsWorkspaceProps = {
   onRoomActiveChange: (active: boolean) => void;
   initialRoomId?: string | null;
 };
+
+function MeetingVideoLayout() {
+  const tracks = useTracks([
+    { source: Track.Source.Camera, withPlaceholder: true },
+    { source: Track.Source.ScreenShare, withPlaceholder: false },
+  ]);
+  return (
+    <GridLayout tracks={tracks} className="meetings-participant-grid">
+      <ParticipantTile />
+    </GridLayout>
+  );
+}
 
 function MeetingControls({ onLeave }: { onLeave: () => void }) {
   const { localParticipant, isMicrophoneEnabled, isCameraEnabled, isScreenShareEnabled } = useLocalParticipant();
@@ -173,7 +185,7 @@ export default function MeetingsWorkspace({ client, userId, displayName, onRoomA
           onDisconnected={leaveRoom} className="meetings-livekit-room">
           <MeetingControls onLeave={leaveRoom} />
           <div className="meetings-video-area">
-            <VideoConference />
+            <MeetingVideoLayout />
           </div>
           <RoomAudioRenderer />
         </LiveKitRoom>
