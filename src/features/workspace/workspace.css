@@ -2656,3 +2656,30 @@
     height: 3px !important;
   }
 }
+
+
+/* Reuniões como atalho flutuante, imediatamente acima do Chat. */
+.workspace-meetings-launcher {
+  position:fixed !important;
+  z-index:96 !important;
+  right:24px !important;
+  bottom:90px !important;
+  color:#fff !important;
+  background:linear-gradient(145deg,#0b6eb5,#014b89) !important;
+  border:1px solid rgba(255,255,255,.28) !important;
+}
+.workspace-meetings-launcher:hover { background:linear-gradient(145deg,#1686d2,#06396b) !important; }
+.workspace-meetings-overlay {
+  position:fixed; z-index:300; inset:0; display:flex; flex-direction:column;
+  width:100vw; height:100vh; height:100dvh; overflow:hidden;
+  color:var(--ink); background:var(--card); isolation:isolate;
+}
+.workspace-meetings-overlay-body {
+  flex:1 1 auto; min-height:0; overflow:auto;
+  padding:clamp(14px,2vw,28px);
+}
+.workspace-meetings-overlay-body > .meetings-workspace { width:100%; max-width:1500px; margin:0 auto; }
+@media(max-width:760px) {
+  .workspace-meetings-launcher { right:16px !important; bottom:88px !important; width:48px !important; height:48px !important; }
+  .workspace-meetings-overlay-body { padding:12px 10px max(18px,env(safe-area-inset-bottom)); }
+}
