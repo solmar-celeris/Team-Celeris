@@ -42,7 +42,7 @@ export function MeetingVideoLayout() {
   const uniqueTracks = Array.from(new Map(videoTracks.map((track) => [
     track.publication.trackSid || `${track.participant.identity}-${track.source}`,
     track,
-  ])).values());
+  ] as const)).values());
 
   if (videoTracks.length === 0) {
     return <div className="meetings-video-empty">Aguardando o vídeo dos participantes…</div>;
