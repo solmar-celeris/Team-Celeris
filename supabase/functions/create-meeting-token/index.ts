@@ -34,7 +34,7 @@ Deno.serve(async (request) => {
     return reply(503, { error: 'meeting_service_not_configured' });
   }
 
-  let body: { room_id?: unknown; display_name?: unknown };
+  let body: { action?: unknown; room_id?: unknown; display_name?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -75,11 +75,11 @@ Deno.serve(async (request) => {
   // sem abrir SELECT público na tabela meeting_rooms.
   const { data: room, error: roomError } = await adminClient
     .from('meeting_rooms')
-    .select('room_name,title,status,participant_limit')
+    .select('room_name,title,status,participant_limit,created_by')
     .eq('id', body.room_id)
     .maybeSingle();
   if (roomError) return reply(503, { error: 'room_lookup_failed' });
-  if (!room || room.status !== 'active') return reply(404, { error: 'room_not_available' });
+  if (!room) return reply(404, { error: 'room_not_available' });
 
   // Browser clients connect over WSS; the server-side RoomServiceClient requires HTTPS.
   const livekitApiHost = livekitUrl
@@ -89,6 +89,28 @@ Deno.serve(async (request) => {
 
   try {
     const roomService = new RoomServiceClient(livekitApiHost, livekitApiKey, livekitApiSecret);
+
+    if (body.action === 'end_room') {
+      if (!userId) return reply(401, { error: 'host_authentication_required' });
+      if (room.created_by !== userId) return reply(403, { error: 'only_room_creator_can_end' });
+      if (room.status !== 'active') return reply(404, { error: 'room_not_available' });
+
+      // Remove todos os participantes da sala LiveKit e bloqueia novos tokens.
+      try { await roomService.deleteRoom(room.room_name); } catch (error) {
+        const message = error instanceof Error ? error.message : '';
+        if (!/not found|does not exist/i.test(message)) throw error;
+      }
+      const { error: updateError } = await adminClient
+        .from('meeting_rooms').update({ status: 'ended' }).eq('id', body.room_id);
+      if (updateError) return reply(503, { error: 'room_end_update_failed' });
+      return reply(200, { ended: true });
+    }
+
+    if (body.action !== undefined && body.action !== 'join_room') {
+      return reply(400, { error: 'invalid_action' });
+    }
+    if (room.status !== 'active') return reply(404, { error: 'room_not_available' });
+
     // Ensure the media room exists and enforce the provider-side participant ceiling.
     const existingRooms = await roomService.listRooms([room.room_name]);
     if (existingRooms.length === 0) {
