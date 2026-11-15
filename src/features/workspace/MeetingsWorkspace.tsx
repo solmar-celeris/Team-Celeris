@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { LiveKitRoom, VideoTrack, RoomAudioRenderer, useTracks, useLocalParticipant } from '@livekit/components-react';
 import { Track } from 'livekit-client';
 import '@livekit/components-styles';
-import { CalendarClock, Copy, LoaderCircle, Mic, MicOff, MonitorUp, Plus, Radio, Share2, Video, VideoOff, X, PhoneOff } from 'lucide-react';
+import { CalendarClock, Check, Copy, LoaderCircle, Mic, MicOff, MonitorUp, Plus, Radio, Share2, Video, VideoOff, X, PhoneOff } from 'lucide-react';
 import './meetings-workspace.css';
 
 type MeetingRoom = {
@@ -72,7 +72,7 @@ export function MeetingVideoLayout() {
   );
 }
 
-export function MeetingControls({ onLeave, onShareInvite, onEndMeeting, canEndMeeting = false, variant = 'host' }: { onLeave: () => void; onShareInvite?: () => void; onEndMeeting?: () => void; canEndMeeting?: boolean; variant?: 'host' | 'guest' }) {
+export function MeetingControls({ onLeave, onShareInvite, onEndMeeting, canEndMeeting = false, inviteCopied = false, variant = 'host' }: { onLeave: () => void; onShareInvite?: () => void; onEndMeeting?: () => void; canEndMeeting?: boolean; inviteCopied?: boolean; variant?: 'host' | 'guest' }) {
   const { localParticipant, isMicrophoneEnabled, isCameraEnabled, isScreenShareEnabled } = useLocalParticipant();
   const [screenShareBusy, setScreenShareBusy] = useState(false);
   const screenShareLock = useRef(false);
@@ -107,8 +107,8 @@ export function MeetingControls({ onLeave, onShareInvite, onEndMeeting, canEndMe
         <MonitorUp size={22} strokeWidth={1.9} />
         <span>{isScreenShareEnabled ? 'Parar tela' : 'Compartilhar'}</span>
       </button>
-      {onShareInvite && <button type="button" className="meetings-control meetings-control-invite" aria-label="Compartilhar convite" onClick={onShareInvite}>
-        <Share2 size={22} strokeWidth={1.9} /><span>Compartilhar convite</span>
+      {onShareInvite && <button type="button" className={inviteCopied ? "meetings-control meetings-control-invite is-copied" : "meetings-control meetings-control-invite"} aria-label={inviteCopied ? "Link copiado" : "Compartilhar convite"} onClick={onShareInvite}>
+        {inviteCopied ? <Check className="meetings-copy-success-icon" size={22} strokeWidth={2.5} /> : <Share2 size={22} strokeWidth={1.9} />}<span>{inviteCopied ? "Link copiado" : "Compartilhar convite"}</span>
       </button>}
       <button type="button" className="meetings-control meetings-control-leave" aria-label="Sair do lobby" onClick={onLeave}>
         <X size={22} strokeWidth={1.9} /><span>Sair do lobby</span>
@@ -248,7 +248,7 @@ export default function MeetingsWorkspace({ client, userId, displayName, onRoomA
         <LiveKitRoom token={connection.token} serverUrl={connection.serverUrl} connect audio video
           options={{ adaptiveStream: true, dynacast: true }}
           onDisconnected={leaveRoom} className="meetings-livekit-room">
-          <MeetingControls onLeave={leaveRoom} onShareInvite={() => void copyInvite(activeRoom)} onEndMeeting={() => void endRoom()} canEndMeeting={activeRoom.created_by === userId} />
+          <MeetingControls onLeave={leaveRoom} onShareInvite={() => void copyInvite(activeRoom)} onEndMeeting={() => void endRoom()} canEndMeeting={activeRoom.created_by === userId} inviteCopied={copiedRoomId === activeRoom.id} />
           <div className="meetings-video-area">
             <MeetingVideoLayout />
           </div>
@@ -275,7 +275,7 @@ export default function MeetingsWorkspace({ client, userId, displayName, onRoomA
         rooms.length === 0 ? <p className="meetings-empty">Nenhuma reunião ativa no momento. Crie a primeira sala.</p> :
         <div className="meetings-room-list">{rooms.map(room => <article className="meetings-room-card" key={room.id}>
           <div className="meetings-room-icon"><Video size={19}/></div><div className="meetings-room-info"><strong>{room.title}</strong><span><CalendarClock size={13}/> {new Date(room.created_at).toLocaleString('pt-BR')} · Limite de {room.participant_limit} pessoas</span></div>
-          <div className="meetings-room-actions"><button type="button" className="meetings-share-button" onClick={() => void copyInvite(room)}><Copy size={14}/> {copiedRoomId === room.id ? 'Copiado' : 'Copiar convite'}</button><button type="button" onClick={() => void joinRoom(room)} disabled={working}><Video size={15}/> Entrar</button></div>
+          <div className="meetings-room-actions"><button type="button" className={copiedRoomId === room.id ? "meetings-share-button is-copied" : "meetings-share-button"} onClick={() => void copyInvite(room)}>{copiedRoomId === room.id ? <><Check size={14} className="meetings-copy-success-icon"/> Link copiado</> : <><Copy size={14}/> Copiar convite</>}</button><button type="button" onClick={() => void joinRoom(room)} disabled={working}><Video size={15}/> Entrar</button></div>
         </article>)}</div>}
       {working && <p className="meetings-working"><LoaderCircle className="meetings-spinner" size={16}/> Preparando sua reunião…</p>}
     </section>
