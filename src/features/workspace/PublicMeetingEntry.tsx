@@ -37,7 +37,7 @@ export default function PublicMeetingEntry({ roomId }: { roomId: string }) {
         <LiveKitRoom token={connection.token} serverUrl={connection.serverUrl} connect audio video
           options={{ adaptiveStream: true, dynacast: true }}
           onDisconnected={() => setConnection(null)} className="meetings-livekit-room public-meetings-livekit-room">
-          <MeetingControls onLeave={() => setConnection(null)} />
+          <MeetingControls variant="guest" onLeave={() => setConnection(null)} />
           <div className="meetings-video-area"><MeetingVideoLayout /></div>
           <RoomAudioRenderer />
         </LiveKitRoom>
