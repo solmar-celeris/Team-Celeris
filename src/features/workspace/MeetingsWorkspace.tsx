@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { LiveKitRoom, VideoConference, RoomAudioRenderer } from '@livekit/components-react';
+import { LiveKitRoom, VideoConference, RoomAudioRenderer, useLocalParticipant } from '@livekit/components-react';
 import '@livekit/components-styles';
-import { CalendarClock, Check, Copy, LoaderCircle, Plus, Radio, Share2, Video, X } from 'lucide-react';
+import { CalendarClock, Check, Copy, LoaderCircle, Mic, MicOff, MonitorUp, Plus, Radio, Share2, Video, VideoOff, X } from 'lucide-react';
 import './meetings-workspace.css';
 
 type MeetingRoom = {
@@ -22,6 +22,33 @@ type MeetingsWorkspaceProps = {
   onRoomActiveChange: (active: boolean) => void;
   initialRoomId?: string | null;
 };
+
+function MeetingControls({ onLeave }: { onLeave: () => void }) {
+  const { localParticipant, isMicrophoneEnabled, isCameraEnabled, isScreenShareEnabled } = useLocalParticipant();
+
+  return (
+    <nav className="meetings-call-controls" aria-label="Controles da reunião">
+      <button type="button" className={isMicrophoneEnabled ? '' : 'is-off'} aria-pressed={isMicrophoneEnabled}
+        onClick={() => void localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled)}>
+        {isMicrophoneEnabled ? <Mic size={18} /> : <MicOff size={18} />}
+        <span>{isMicrophoneEnabled ? 'Desligar microfone' : 'Ligar microfone'}</span>
+      </button>
+      <button type="button" className={isCameraEnabled ? '' : 'is-off'} aria-pressed={isCameraEnabled}
+        onClick={() => void localParticipant.setCameraEnabled(!isCameraEnabled)}>
+        {isCameraEnabled ? <Video size={18} /> : <VideoOff size={18} />}
+        <span>{isCameraEnabled ? 'Desligar câmera' : 'Ligar câmera'}</span>
+      </button>
+      <button type="button" className={isScreenShareEnabled ? 'is-active' : ''} aria-pressed={isScreenShareEnabled}
+        onClick={() => void localParticipant.setScreenShareEnabled(!isScreenShareEnabled)}>
+        <MonitorUp size={18} />
+        <span>{isScreenShareEnabled ? 'Parar compartilhamento' : 'Compartilhar tela'}</span>
+      </button>
+      <button type="button" className="meetings-control-leave" onClick={onLeave}>
+        <X size={18} /><span>Sair da reunião</span>
+      </button>
+    </nav>
+  );
+}
 
 export default function MeetingsWorkspace({ client, userId, displayName, onRoomActiveChange, initialRoomId }: MeetingsWorkspaceProps) {
   const [rooms, setRooms] = useState<MeetingRoom[]>([]);
@@ -135,7 +162,7 @@ export default function MeetingsWorkspace({ client, userId, displayName, onRoomA
         <header className="meetings-live-header">
           <div><span className="meetings-eyebrow">REUNIÃO EM ANDAMENTO</span><h2>{activeRoom.title}</h2><p>Até {activeRoom.participant_limit} participantes · Convide membros pelo link da sala</p></div>
           <div className="meetings-live-actions">
-            <button type="button" className="meetings-share-button" onClick={() => void copyInvite(activeRoom)}>{copiedRoomId === activeRoom.id ? <Check size={16}/> : <Share2 size={16}/>} {copiedRoomId === activeRoom.id ? 'Link copiado' : 'Compartilhar'}</button>
+            <button type="button" className="meetings-share-button" onClick={() => void copyInvite(activeRoom)}>{copiedRoomId === activeRoom.id ? <Check size={16}/> : <Share2 size={16}/>} {copiedRoomId === activeRoom.id ? 'Link copiado' : 'Compartilhar reunião'}</button>
             {activeRoom.created_by === userId && <button type="button" className="meetings-end-button" onClick={() => void endRoom()}>Encerrar reunião</button>}
             <button type="button" className="meetings-leave-button" onClick={leaveRoom}><X size={16}/> Sair</button>
           </div>
@@ -144,7 +171,10 @@ export default function MeetingsWorkspace({ client, userId, displayName, onRoomA
         <LiveKitRoom token={connection.token} serverUrl={connection.serverUrl} connect audio video
           options={{ adaptiveStream: true, dynacast: true }}
           onDisconnected={leaveRoom} className="meetings-livekit-room">
-          <VideoConference />
+          <MeetingControls onLeave={leaveRoom} />
+          <div className="meetings-video-area">
+            <VideoConference />
+          </div>
           <RoomAudioRenderer />
         </LiveKitRoom>
       </section>
