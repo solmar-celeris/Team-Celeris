@@ -423,3 +423,32 @@
   object-position:center center !important;
   aspect-ratio:auto !important;
 }
+
+
+/* Último ajuste: preservar o quadro integral da câmera, sem zoom/crop. */
+.meetings-video-area .lk-participant-tile,
+.meetings-video-area .lk-participant-tile > div {
+  width:100% !important;
+  height:100% !important;
+  min-width:0 !important;
+  min-height:0 !important;
+  aspect-ratio:auto !important;
+}
+.meetings-video-area .lk-participant-tile {
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  overflow:hidden !important;
+  background:#080d12 !important;
+}
+.meetings-video-area video,
+.meetings-video-area .lk-participant-media-video {
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  max-width:100% !important;
+  max-height:100% !important;
+  object-fit:contain !important;
+  object-position:center !important;
+}
