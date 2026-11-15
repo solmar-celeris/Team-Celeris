@@ -65,12 +65,13 @@ Deno.serve(async (request) => {
   if (roomError) return reply(503, { error: 'room_lookup_failed' });
   if (!room || room.status !== 'active') return reply(404, { error: 'room_not_available' });
 
-  try {
-    // Browser clients connect over WSS; the server-side RoomServiceClient requires HTTPS.
-    const livekitApiHost = livekitUrl
+  // Browser clients connect over WSS; the server-side RoomServiceClient requires HTTPS.
+  const livekitApiHost = livekitUrl
       .replace(/^wss:/i, 'https:')
       .replace(/^ws:/i, 'http:')
-      .replace(/\/$/, '');
+    .replace(/\/$/, '');
+
+  try {
     const roomService = new RoomServiceClient(livekitApiHost, livekitApiKey, livekitApiSecret);
     // Ensure the media room exists and enforce the provider-side participant ceiling.
     const existingRooms = await roomService.listRooms([room.room_name]);
