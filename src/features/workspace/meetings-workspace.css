@@ -153,3 +153,156 @@
   }
   .meetings-video-area { min-height: 0 !important; }
 }
+
+
+/* Sala em tela ampla: cabeçalho preservado e vídeo preenchendo todo o espaço restante. */
+.meetings-live {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  height: calc(100dvh - 16px) !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+.meetings-live-header {
+  position: relative !important;
+  z-index: 5 !important;
+  flex: 0 0 auto !important;
+  min-height: 64px !important;
+  margin: 0 0 8px !important;
+}
+.meetings-livekit-room {
+  position: relative !important;
+  display: block !important;
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 14px !important;
+  background: #080d12 !important;
+  box-sizing: border-box !important;
+}
+.meetings-video-area {
+  position: absolute !important;
+  inset: 0 !important;
+  display: flex !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  background: #080d12 !important;
+}
+.meetings-custom-video-grid {
+  display: grid !important;
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-auto-rows: minmax(0, 1fr) !important;
+  gap: 0 !important;
+}
+.meetings-custom-video-tile {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 0 !important;
+  background: #080d12 !important;
+}
+.meetings-custom-video-tile video,
+.meetings-custom-video-tile video.meetings-custom-video {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+}
+.meetings-call-controls {
+  position: absolute !important;
+  z-index: 4 !important;
+  right: 14px !important;
+  bottom: 14px !important;
+  left: 14px !important;
+  display: flex !important;
+  flex: 0 0 auto !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 8px 12px !important;
+  border: 1px solid rgba(255,255,255,.16) !important;
+  border-radius: 14px !important;
+  background: rgba(13, 25, 37, .82) !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: 0 5px 22px rgba(0,0,0,.25) !important;
+  box-sizing: border-box !important;
+}
+.meetings-call-controls button.meetings-control {
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-width: 112px !important;
+  min-height: 42px !important;
+  padding: 9px 14px !important;
+  border: 1px solid rgba(255,255,255,.18) !important;
+  border-radius: 10px !important;
+  color: #fff !important;
+  background: #29445b !important;
+  font-size: 12px !important;
+  font-weight: 650 !important;
+  cursor: pointer !important;
+}
+.meetings-call-controls button.meetings-control span {
+  display: inline !important;
+  max-width: none !important;
+  white-space: nowrap !important;
+  font-size: 12px !important;
+}
+.meetings-call-controls button.meetings-control.is-off,
+.meetings-call-controls button.meetings-control.meetings-control-leave {
+  color: #fff !important;
+  background: #a52b32 !important;
+}
+.meetings-call-controls button.meetings-control.is-active {
+  color: #fff !important;
+  background: #075e9b !important;
+}
+@media (max-width: 760px) {
+  .meetings-live {
+    height: calc(100dvh - 10px) !important;
+  }
+  .meetings-live-header {
+    align-items: flex-start !important;
+    gap: 8px !important;
+    margin-bottom: 7px !important;
+  }
+  .meetings-live-header h2 { font-size: 17px !important; }
+  .meetings-live-actions { gap: 5px !important; }
+  .meetings-call-controls {
+    right: 7px !important;
+    bottom: 7px !important;
+    left: 7px !important;
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 5px !important;
+    padding: 6px !important;
+  }
+  .meetings-call-controls button.meetings-control {
+    min-width: 0 !important;
+    min-height: 42px !important;
+    padding: 7px 4px !important;
+    gap: 4px !important;
+    font-size: 10px !important;
+  }
+  .meetings-call-controls button.meetings-control span { font-size: 10px !important; }
+}
