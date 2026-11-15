@@ -72,7 +72,7 @@ export function MeetingVideoLayout() {
   );
 }
 
-export function MeetingControls({ onLeave, onShareInvite, onEndMeeting, canEndMeeting = false, inviteCopied = false, variant = 'host' }: { onLeave: () => void; onShareInvite?: () => void; onEndMeeting?: () => void; canEndMeeting?: boolean; inviteCopied?: boolean; variant?: 'host' | 'guest' }) {
+export function MeetingControls({ onLeave, onShareInvite, onEndMeeting, onStartRecording, onStopRecording, onDownloadRecording, canEndMeeting = false, inviteCopied = false, isRecording = false, recordingBusy = false, recordingReady = false, variant = 'host' }: { onLeave: () => void; onShareInvite?: () => void; onEndMeeting?: () => void; onStartRecording?: () => void; onStopRecording?: () => void; onDownloadRecording?: () => void; canEndMeeting?: boolean; inviteCopied?: boolean; isRecording?: boolean; recordingBusy?: boolean; recordingReady?: boolean; variant?: 'host' | 'guest' }) {
   const { localParticipant, isMicrophoneEnabled, isCameraEnabled, isScreenShareEnabled } = useLocalParticipant();
   const [screenShareBusy, setScreenShareBusy] = useState(false);
   const screenShareLock = useRef(false);
@@ -113,6 +113,9 @@ export function MeetingControls({ onLeave, onShareInvite, onEndMeeting, canEndMe
       <button type="button" className="meetings-control meetings-control-leave" aria-label="Sair do lobby" onClick={onLeave}>
         <X size={22} strokeWidth={1.9} /><span>Sair do lobby</span>
       </button>
+      {canEndMeeting && onStartRecording && !isRecording && !recordingReady && <button type="button" className="meetings-control meetings-control-record" disabled={recordingBusy} onClick={onStartRecording}><Radio size={22} /><span>{recordingBusy ? 'Preparando…' : 'Gravar reunião'}</span></button>}
+      {canEndMeeting && onStopRecording && isRecording && <button type="button" className="meetings-control meetings-control-record is-recording" disabled={recordingBusy} onClick={onStopRecording}><Radio size={22} /><span>{recordingBusy ? 'Salvando…' : 'Parar gravação'}</span></button>}
+      {canEndMeeting && onDownloadRecording && recordingReady && <button type="button" className="meetings-control meetings-control-download" onClick={onDownloadRecording}><Video size={22} /><span>Baixar gravação</span></button>}
       {canEndMeeting && onEndMeeting && <button type="button" className="meetings-control meetings-control-end" aria-label="Encerrar reunião para todos" onClick={onEndMeeting}>
         <PhoneOff size={22} strokeWidth={1.9} /><span>Encerrar reunião</span>
       </button>}
@@ -129,6 +132,10 @@ export default function MeetingsWorkspace({ client, userId, displayName, onRoomA
   const [activeRoom, setActiveRoom] = useState<MeetingRoom | null>(null);
   const [connection, setConnection] = useState<{ token: string; serverUrl: string } | null>(null);
   const [copiedRoomId, setCopiedRoomId] = useState<string | null>(null);
+  const [recording, setRecording] = useState<{ egressId: string; storagePath: string } | null>(null);
+  const [recordingBusy, setRecordingBusy] = useState(false);
+  const [recordingReady, setRecordingReady] = useState(false);
+  const [recordingPath, setRecordingPath] = useState<string | null>(null);
   const inviteHandled = useRef(false);
 
   const loadRooms = useCallback(async () => {
@@ -212,7 +219,60 @@ export default function MeetingsWorkspace({ client, userId, displayName, onRoomA
     } finally { setWorking(false); }
   };
 
+  const stopRecording = async () => {
+    if (!activeRoom || !recording || recordingBusy) return;
+    setRecordingBusy(true);
+    setError('');
+    try {
+      const { data, error: invokeError } = await client.functions.invoke('meeting-recording', {
+        body: { action: 'stop', room_id: activeRoom.id, egress_id: recording.egressId, storage_path: recording.storagePath },
+      });
+      if (invokeError) throw invokeError;
+      if (!data?.download_url) throw new Error(data?.error || 'A gravação ainda está sendo processada.');
+      setRecordingPath(recording.storagePath);
+      setRecording(null);
+      setRecordingReady(true);
+      window.open(data.download_url, '_blank', 'noopener,noreferrer');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Não foi possível finalizar a gravação.');
+    } finally { setRecordingBusy(false); }
+  };
+
+  const startRecording = async () => {
+    if (!activeRoom || recordingBusy || recording) return;
+    setRecordingBusy(true);
+    setError('');
+    try {
+      const { data, error: invokeError } = await client.functions.invoke('meeting-recording', {
+        body: { action: 'start', room_id: activeRoom.id },
+      });
+      if (invokeError) throw invokeError;
+      if (!data?.egress_id || !data?.storage_path) throw new Error(data?.error || 'Não foi possível iniciar a gravação.');
+      setRecording({ egressId: data.egress_id, storagePath: data.storage_path });
+      setRecordingReady(false);
+      setRecordingPath(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Não foi possível iniciar a gravação.');
+    } finally { setRecordingBusy(false); }
+  };
+
+  const downloadRecording = async () => {
+    if (!activeRoom || !recordingPath) return;
+    setRecordingBusy(true);
+    try {
+      const { data, error: invokeError } = await client.functions.invoke('meeting-recording', {
+        body: { action: 'download', room_id: activeRoom.id, storage_path: recordingPath },
+      });
+      if (invokeError) throw invokeError;
+      if (!data?.download_url) throw new Error(data?.error || 'Não foi possível gerar o link de download.');
+      window.open(data.download_url, '_blank', 'noopener,noreferrer');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Não foi possível baixar a gravação.');
+    } finally { setRecordingBusy(false); }
+  };
+
   const leaveRoom = () => {
+    if (recording) void stopRecording();
     setConnection(null);
     setActiveRoom(null);
     void loadRooms();
@@ -248,7 +308,7 @@ export default function MeetingsWorkspace({ client, userId, displayName, onRoomA
         <LiveKitRoom token={connection.token} serverUrl={connection.serverUrl} connect audio video
           options={{ adaptiveStream: true, dynacast: true }}
           onDisconnected={leaveRoom} className="meetings-livekit-room">
-          <MeetingControls onLeave={leaveRoom} onShareInvite={() => void copyInvite(activeRoom)} onEndMeeting={() => void endRoom()} canEndMeeting={activeRoom.created_by === userId} inviteCopied={copiedRoomId === activeRoom.id} />
+          <MeetingControls onLeave={leaveRoom} onShareInvite={() => void copyInvite(activeRoom)} onEndMeeting={() => void endRoom()} onStartRecording={() => void startRecording()} onStopRecording={() => void stopRecording()} onDownloadRecording={() => void downloadRecording()} canEndMeeting={activeRoom.created_by === userId} inviteCopied={copiedRoomId === activeRoom.id} isRecording={Boolean(recording)} recordingBusy={recordingBusy} recordingReady={recordingReady} />
           <div className="meetings-video-area">
             <MeetingVideoLayout />
           </div>
