@@ -41,23 +41,23 @@ function MeetingControls({ onLeave }: { onLeave: () => void }) {
 
   return (
     <nav className="meetings-call-controls" aria-label="Controles da reunião">
-      <button type="button" className={isMicrophoneEnabled ? '' : 'is-off'} aria-pressed={isMicrophoneEnabled}
+      <button type="button" className={isMicrophoneEnabled ? 'meetings-control' : 'meetings-control is-off'} aria-label={isMicrophoneEnabled ? 'Desligar microfone' : 'Ligar microfone'} aria-pressed={isMicrophoneEnabled}
         onClick={() => void localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled)}>
-        {isMicrophoneEnabled ? <Mic size={18} /> : <MicOff size={18} />}
-        <span>{isMicrophoneEnabled ? 'Desligar microfone' : 'Ligar microfone'}</span>
+        {isMicrophoneEnabled ? <Mic size={22} strokeWidth={1.9} /> : <MicOff size={22} strokeWidth={1.9} />}
+        <span>{isMicrophoneEnabled ? 'Microfone' : 'Ativar microfone'}</span>
       </button>
-      <button type="button" className={isCameraEnabled ? '' : 'is-off'} aria-pressed={isCameraEnabled}
+      <button type="button" className={isCameraEnabled ? 'meetings-control' : 'meetings-control is-off'} aria-label={isCameraEnabled ? 'Desligar câmera' : 'Ligar câmera'} aria-pressed={isCameraEnabled}
         onClick={() => void localParticipant.setCameraEnabled(!isCameraEnabled)}>
-        {isCameraEnabled ? <Video size={18} /> : <VideoOff size={18} />}
-        <span>{isCameraEnabled ? 'Desligar câmera' : 'Ligar câmera'}</span>
+        {isCameraEnabled ? <Video size={22} strokeWidth={1.9} /> : <VideoOff size={22} strokeWidth={1.9} />}
+        <span>{isCameraEnabled ? 'Câmera' : 'Ativar câmera'}</span>
       </button>
-      <button type="button" className={isScreenShareEnabled ? 'is-active' : ''} aria-pressed={isScreenShareEnabled}
+      <button type="button" className={isScreenShareEnabled ? 'meetings-control is-active' : 'meetings-control'} aria-label={isScreenShareEnabled ? 'Parar compartilhamento' : 'Compartilhar tela'} aria-pressed={isScreenShareEnabled}
         onClick={() => void localParticipant.setScreenShareEnabled(!isScreenShareEnabled)}>
-        <MonitorUp size={18} />
-        <span>{isScreenShareEnabled ? 'Parar compartilhamento' : 'Compartilhar tela'}</span>
+        <MonitorUp size={22} strokeWidth={1.9} />
+        <span>{isScreenShareEnabled ? 'Parar tela' : 'Compartilhar'}</span>
       </button>
-      <button type="button" className="meetings-control-leave" onClick={onLeave}>
-        <X size={18} /><span>Sair da reunião</span>
+      <button type="button" className="meetings-control meetings-control-leave" aria-label="Sair da reunião" onClick={onLeave}>
+        <X size={22} strokeWidth={1.9} /><span>Sair</span>
       </button>
     </nav>
   );
