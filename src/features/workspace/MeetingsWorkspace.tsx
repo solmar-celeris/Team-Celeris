@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { LiveKitRoom, GridLayout, ParticipantTile, VideoTrack, RoomAudioRenderer, useTracks, useLocalParticipant } from '@livekit/components-react';
+import { LiveKitRoom, VideoTrack, RoomAudioRenderer, useTracks, useLocalParticipant } from '@livekit/components-react';
 import { Track } from 'livekit-client';
 import '@livekit/components-styles';
 import { CalendarClock, Check, Copy, LoaderCircle, Mic, MicOff, MonitorUp, Plus, Radio, Share2, Video, VideoOff, X } from 'lucide-react';
@@ -26,13 +26,36 @@ type MeetingsWorkspaceProps = {
 
 function MeetingVideoLayout() {
   const tracks = useTracks([
-    { source: Track.Source.Camera, withPlaceholder: true },
+    { source: Track.Source.Camera, withPlaceholder: false },
     { source: Track.Source.ScreenShare, withPlaceholder: false },
   ]);
+  const videoTracks = tracks.filter((track) => Boolean(track.publication?.track));
+
+  if (videoTracks.length === 0) {
+    return <div className="meetings-video-empty">Aguardando o vídeo dos participantes…</div>;
+  }
+
   return (
-    <GridLayout tracks={tracks} className="meetings-participant-grid">
-      <ParticipantTile><VideoTrack style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center center', position: 'absolute', inset: 0 }} /></ParticipantTile>
-    </GridLayout>
+    <div className="meetings-custom-video-grid">
+      {videoTracks.map((track) => (
+        <div
+          className="meetings-custom-video-tile"
+          key={`${track.participant.identity}-${track.source}`}
+        >
+          <VideoTrack
+            trackRef={track}
+            className="meetings-custom-video"
+            style={{
+              display: 'block',
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              objectPosition: 'center',
+            }}
+          />
+        </div>
+      ))}
+    </div>
   );
 }
 
