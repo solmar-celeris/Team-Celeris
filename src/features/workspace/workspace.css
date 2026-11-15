@@ -2703,12 +2703,6 @@
 .workspace-meetings-header-caption {
   margin-left:8px; color:rgba(255,255,255,.72); font-size:11px; font-weight:500;
 }
-.workspace-meetings-window-action {
-  display:grid; width:40px; height:40px; place-items:center; border:0; border-radius:10px;
-  color:#fff; background:rgba(255,255,255,.1); cursor:pointer;
-}
-.workspace-meetings-window-action:hover { background:rgba(255,255,255,.2); }
-.workspace-meetings-window-action svg { width:20px; height:20px; }
 .workspace-meetings-overlay-body {
   display:flex; flex:1 1 auto; min-width:0; min-height:0; overflow:auto; padding:clamp(14px,1.7vw,26px);
 }
@@ -2721,20 +2715,12 @@
   flex:1 1 auto; width:100%; height:auto; min-height:0; max-height:none;
 }
 .workspace-meetings-overlay-body .meetings-video-area { flex:1 1 auto; min-height:0; }
-.workspace-meetings-overlay.is-fullscreen { padding:0; background:rgba(4,15,29,.96); }
-.workspace-meetings-overlay.is-fullscreen .workspace-meetings-dialog {
-  width:100vw; height:100vh; height:100dvh; max-width:none; max-height:none;
-  border:0; border-radius:0;
-}
-.workspace-meetings-overlay.is-fullscreen .workspace-meetings-overlay-body { padding:clamp(12px,1.2vw,20px); }
 @media(max-width:760px) {
   .workspace-meetings-overlay { padding:8px; }
   .workspace-meetings-dialog { width:100%; height:94dvh; border-radius:14px; }
   .workspace-meetings-dialog-header { flex-basis:58px; min-height:58px; padding:7px 10px; }
   .workspace-meetings-header-caption { display:none; }
   .workspace-meetings-overlay-body { padding:10px 8px; }
-  .workspace-meetings-overlay.is-fullscreen { padding:0; }
-  .workspace-meetings-overlay.is-fullscreen .workspace-meetings-dialog { height:100dvh; border-radius:0; }
   .workspace-meetings-overlay-body .meetings-live-header { align-items:flex-start; }
   .workspace-meetings-overlay-body .meetings-livekit-room { min-height:0; }
 }
