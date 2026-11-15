@@ -66,8 +66,12 @@ Deno.serve(async (request) => {
   if (!room || room.status !== 'active') return reply(404, { error: 'room_not_available' });
 
   try {
-    const livekitHost = livekitUrl.replace(/\/$/, '');
-    const roomService = new RoomServiceClient(livekitHost, livekitApiKey, livekitApiSecret);
+    // Browser clients connect over WSS; the server-side RoomServiceClient requires HTTPS.
+    const livekitApiHost = livekitUrl
+      .replace(/^wss:/i, 'https:')
+      .replace(/^ws:/i, 'http:')
+      .replace(/\/$/, '');
+    const roomService = new RoomServiceClient(livekitApiHost, livekitApiKey, livekitApiSecret);
     const participants = await roomService.listParticipants(room.room_name);
     const alreadyJoined = participants.some((participant) => participant.identity === user.id);
     if (!alreadyJoined && participants.length >= room.participant_limit) {
