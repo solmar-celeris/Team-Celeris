@@ -13,7 +13,10 @@ const DashboardPreview = import.meta.env.DEV
 export default function App() {
   const publicMeetingId = new URLSearchParams(window.location.search).get('meeting');
   if (publicMeetingId && supabaseConfigured) return <PublicMeetingEntry roomId={publicMeetingId} />;
+  return <AuthenticatedApp />;
+}
 
+function AuthenticatedApp() {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const savedTheme = window.localStorage.getItem('team-celeris-theme');
     if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
