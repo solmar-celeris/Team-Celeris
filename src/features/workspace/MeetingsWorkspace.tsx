@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { LiveKitRoom, VideoTrack, RoomAudioRenderer, useTracks, useLocalParticipant } from '@livekit/components-react';
 import { Track } from 'livekit-client';
 import '@livekit/components-styles';
-import { CalendarClock, Check, Copy, LoaderCircle, Mic, MicOff, MonitorUp, Plus, Radio, Share2, Video, VideoOff, X, PhoneOff } from 'lucide-react';
+import { CalendarClock, Copy, LoaderCircle, Mic, MicOff, MonitorUp, Plus, Radio, Share2, Video, VideoOff, X, PhoneOff } from 'lucide-react';
 import './meetings-workspace.css';
 
 type MeetingRoom = {
