@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { LiveKitRoom, GridLayout, ParticipantTile, RoomAudioRenderer, useTracks, useLocalParticipant } from '@livekit/components-react';
+import { LiveKitRoom, GridLayout, ParticipantTile, VideoTrack, RoomAudioRenderer, useTracks, useLocalParticipant } from '@livekit/components-react';
 import { Track } from 'livekit-client';
 import '@livekit/components-styles';
 import { CalendarClock, Check, Copy, LoaderCircle, Mic, MicOff, MonitorUp, Plus, Radio, Share2, Video, VideoOff, X } from 'lucide-react';
@@ -31,7 +31,7 @@ function MeetingVideoLayout() {
   ]);
   return (
     <GridLayout tracks={tracks} className="meetings-participant-grid">
-      <ParticipantTile />
+      <ParticipantTile><VideoTrack style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center center', position: 'absolute', inset: 0 }} /></ParticipantTile>
     </GridLayout>
   );
 }
