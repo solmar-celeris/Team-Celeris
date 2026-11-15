@@ -23,10 +23,11 @@ Deno.serve(async (request) => {
 
   const projectUrl = Deno.env.get('SUPABASE_URL')?.trim();
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')?.trim();
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')?.trim();
   const livekitUrl = Deno.env.get('LIVEKIT_URL')?.trim();
   const livekitApiKey = Deno.env.get('LIVEKIT_API_KEY')?.trim();
   const livekitApiSecret = Deno.env.get('LIVEKIT_API_SECRET')?.trim();
-  if (!projectUrl || !anonKey || !livekitUrl || !livekitApiKey || !livekitApiSecret) {
+  if (!projectUrl || !anonKey || !serviceRoleKey || !livekitUrl || !livekitApiKey || !livekitApiSecret) {
     return reply(503, { error: 'meeting_service_not_configured' });
   }
 
@@ -48,6 +49,10 @@ Deno.serve(async (request) => {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
+  const adminClient = createClient(projectUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
   let userId: string | null = null;
   let profileName = '';
   if (authorization && authorization !== `Bearer ${anonKey}`) {
@@ -61,7 +66,9 @@ Deno.serve(async (request) => {
     profileName = profile.full_name || '';
   }
 
-  const { data: room, error: roomError } = await userClient
+  // Acesso público por link: a sala é consultada apenas no backend com service role,
+  // sem abrir SELECT público na tabela meeting_rooms.
+  const { data: room, error: roomError } = await adminClient
     .from('meeting_rooms')
     .select('room_name,title,status,participant_limit')
     .eq('id', body.room_id)
