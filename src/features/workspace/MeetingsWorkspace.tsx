@@ -285,6 +285,7 @@ export default function MeetingsWorkspace({ client, userId, displayName, onRoomA
     setWorking(true);
     setError('');
     try {
+      if (recording) await stopRecording();
       const { error: endError } = await client.functions.invoke('create-meeting-token', {
         body: { action: 'end_room', room_id: activeRoom.id },
       });
