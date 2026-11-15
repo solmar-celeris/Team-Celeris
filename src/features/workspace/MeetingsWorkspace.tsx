@@ -232,7 +232,7 @@ export default function MeetingsWorkspace({ client, userId, displayName, onRoomA
       setRecordingPath(recording.storagePath);
       setRecording(null);
       setRecordingReady(true);
-      window.open(data.download_url, '_blank', 'noopener,noreferrer');
+      window.location.assign(data.download_url);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Não foi possível finalizar a gravação.');
     } finally { setRecordingBusy(false); }
@@ -265,7 +265,7 @@ export default function MeetingsWorkspace({ client, userId, displayName, onRoomA
       });
       if (invokeError) throw invokeError;
       if (!data?.download_url) throw new Error(data?.error || 'Não foi possível gerar o link de download.');
-      window.open(data.download_url, '_blank', 'noopener,noreferrer');
+      window.location.assign(data.download_url);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Não foi possível baixar a gravação.');
     } finally { setRecordingBusy(false); }
