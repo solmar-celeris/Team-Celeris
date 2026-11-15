@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ComponentType, type DragEvent, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Filter, Folder, GripVertical, Newspaper, Megaphone, MessageCircle, Moon, Sun, Trash2, X, Paperclip, ExternalLink, Video, type LucideProps } from 'lucide-react';
+import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Filter, Folder, GripVertical, Newspaper, Megaphone, MessageCircle, Moon, Sun, Trash2, X, Paperclip, ExternalLink, Video, Maximize2, Minimize2, type LucideProps } from 'lucide-react';
 import {
   activityTypeLabels,
   activityFlowLabels,
@@ -365,6 +365,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   });
   const [tab, setTab] = useState<WorkspaceTab>(() => tabForPush(pushTarget));
   const [meetingsOpen, setMeetingsOpen] = useState(Boolean(meetingInviteId));
+  const [meetingsFullscreen, setMeetingsFullscreen] = useState(false);
   const [chatOpen, setChatOpen] = useState(() => pushTarget?.type === 'chat');
   const [activeChannel, setActiveChannel] = useState<WorkspaceChannel | null>(null);
   const [manualSection, setManualSection] = useState<'normas' | 'funcoes'>('funcoes');
@@ -1497,15 +1498,20 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
       </button>
 
       {meetingsOpen && (
-        <section className="workspace-meetings-overlay" role="dialog" aria-modal="true" aria-label="Reuniões Team Celeris">
-          <header className="workspace-chat-overlay-header">
-            <div className="workspace-chat-overlay-title"><Video aria-hidden="true" /><strong>Reuniões</strong></div>
-            <div className="workspace-chat-overlay-actions">
-              <button type="button" className="workspace-chat-close" aria-label="Fechar Reuniões" title="Fechar Reuniões" onClick={() => { if (meetingRoomActive && !window.confirm('Fechar esta janela desconectará você da reunião. Deseja continuar?')) return; setMeetingsOpen(false); setMeetingRoomActive(false); }}><X aria-hidden="true" /></button>
+        <section className={`workspace-meetings-overlay${meetingsFullscreen ? ' is-fullscreen' : ''}`} role="dialog" aria-modal="true" aria-label="Reuniões Team Celeris">
+          <div className="workspace-meetings-dialog">
+            <header className="workspace-chat-overlay-header workspace-meetings-dialog-header">
+              <div className="workspace-chat-overlay-title"><Video aria-hidden="true" /><strong>Reuniões</strong><span className="workspace-meetings-header-caption">Team Celeris · Videoconferência</span></div>
+              <div className="workspace-chat-overlay-actions">
+                <button type="button" className="workspace-meetings-window-action" aria-label={meetingsFullscreen ? 'Sair da tela cheia' : 'Expandir para tela cheia'} title={meetingsFullscreen ? 'Sair da tela cheia' : 'Tela cheia'} onClick={() => setMeetingsFullscreen(value => !value)}>
+                  {meetingsFullscreen ? <Minimize2 aria-hidden="true" /> : <Maximize2 aria-hidden="true" />}
+                </button>
+                <button type="button" className="workspace-chat-close" aria-label="Fechar Reuniões" title="Fechar Reuniões" onClick={() => { if (meetingRoomActive && !window.confirm('Fechar esta janela desconectará você da reunião. Deseja continuar?')) return; setMeetingsOpen(false); setMeetingsFullscreen(false); setMeetingRoomActive(false); }}><X aria-hidden="true" /></button>
+              </div>
+            </header>
+            <div className="workspace-meetings-overlay-body">
+              <MeetingsWorkspace client={client} userId={userId} displayName={displayName} onRoomActiveChange={setMeetingRoomActive} initialRoomId={meetingInviteId} />
             </div>
-          </header>
-          <div className="workspace-meetings-overlay-body">
-            <MeetingsWorkspace client={client} userId={userId} displayName={displayName} onRoomActiveChange={setMeetingRoomActive} initialRoomId={meetingInviteId} />
           </div>
         </section>
       )}
