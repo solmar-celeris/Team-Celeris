@@ -368,7 +368,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   const [chatCreateGroupRequest, setChatCreateGroupRequest] = useState(false);
   const [agendaSubtab, setAgendaSubtab] = useState<AgendaSubtab>('calendar');
   const [homeFiltersOpen, setHomeFiltersOpen] = useState(false);
-  const [jitsiRoomActive, setJitsiRoomActive] = useState(false);
+  const [meetingRoomActive, setMeetingRoomActive] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [activityAttachments, setActivityAttachments] = useState<ActivityAttachment[]>([]);
   const [attachmentUrls, setAttachmentUrls] = useState<Record<string, string>>({});
@@ -1124,21 +1124,21 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
 
   function navigateToTab(nextTab: WorkspaceTab) {
     const leavingLiveMeeting = tab === 'agenda' && agendaSubtab === 'meetings' && nextTab !== 'agenda';
-    if (jitsiRoomActive && (nextTab !== tab || leavingLiveMeeting) && !window.confirm('Você está em uma reunião. Sair desta tela desconectará sua chamada. Deseja continuar?')) return;
-    if (jitsiRoomActive && (nextTab !== tab || leavingLiveMeeting)) setJitsiRoomActive(false);
+    if (meetingRoomActive && (nextTab !== tab || leavingLiveMeeting) && !window.confirm('Você está em uma reunião. Sair desta tela desconectará sua chamada. Deseja continuar?')) return;
+    if (meetingRoomActive && (nextTab !== tab || leavingLiveMeeting)) setMeetingRoomActive(false);
     if (nextTab === 'manual') setManualSection('funcoes');
     setTab(nextTab);
   }
 
   function navigateToAgendaSubtab(nextSubtab: AgendaSubtab) {
-    if (jitsiRoomActive && nextSubtab !== 'meetings' && !window.confirm('Você está em uma reunião. Sair desta tela desconectará sua chamada. Deseja continuar?')) return;
-    if (jitsiRoomActive && nextSubtab !== 'meetings') setJitsiRoomActive(false);
+    if (meetingRoomActive && nextSubtab !== 'meetings' && !window.confirm('Você está em uma reunião. Sair desta tela desconectará sua chamada. Deseja continuar?')) return;
+    if (meetingRoomActive && nextSubtab !== 'meetings') setMeetingRoomActive(false);
     setAgendaSubtab(nextSubtab);
     setTab('agenda');
   }
 
   function handleProfileLogout() {
-    if (jitsiRoomActive && !window.confirm('Você está em uma reunião. Sair do Team Celeris desconectará sua chamada. Deseja continuar?')) return;
+    if (meetingRoomActive && !window.confirm('Você está em uma reunião. Sair do Team Celeris desconectará sua chamada. Deseja continuar?')) return;
     onLogout();
   }
 
@@ -1462,7 +1462,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           {tab === 'conversations' && (
             <SharedContentWorkspace client={client} mode="announcements" userId={userId} isAdmin={profile.role === 'admin'} areas={activeAreas} members={members} areaId={null} isGeneralChannel={true} channelId={activeChannel?.id ?? ''} targetAnnouncementId={pushTarget?.type === 'announcement' ? pushTarget.itemId : undefined} />
           )}
-          {tab === 'agenda' && agendaSubtab === 'meetings' && <MeetingsWorkspace displayName={displayName} onRoomActiveChange={setJitsiRoomActive} />}
+          {tab === 'agenda' && agendaSubtab === 'meetings' && <MeetingsWorkspace displayName={displayName} onRoomActiveChange={setMeetingRoomActive} />}
           {tab === 'agenda' && agendaSubtab === 'availability' && <AvailabilityWorkspace client={client} userId={userId} profile={profile} />}
           {tab === 'agenda' && agendaSubtab === 'calendar' && <TeamCalendar client={client} userId={userId} isAdmin={profile.role === 'admin'} initialDate={calendarFocusDate} initialEventId={pushTarget?.type === 'calendar' ? pushTarget.itemId : undefined} />}
           {tab === 'manual' && (
