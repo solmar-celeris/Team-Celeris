@@ -397,3 +397,29 @@
   }
   .meetings-call-controls button.meetings-control span { font-size:10px !important; }
 }
+
+
+/* Correção definitiva do enquadramento: preservar a imagem inteira da câmera. */
+.meetings-video-area .lk-participant-tile {
+  position:relative !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  overflow:hidden !important;
+  background:#080d12 !important;
+}
+.meetings-video-area .lk-participant-tile video,
+.meetings-video-area video.lk-participant-media-video,
+.meetings-video-area .lk-focus-layout video,
+.meetings-video-area .lk-grid-layout video {
+  position:relative !important;
+  inset:auto !important;
+  display:block !important;
+  width:100% !important;
+  height:100% !important;
+  max-width:100% !important;
+  max-height:100% !important;
+  object-fit:contain !important;
+  object-position:center center !important;
+  aspect-ratio:auto !important;
+}
