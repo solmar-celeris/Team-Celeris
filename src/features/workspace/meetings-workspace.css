@@ -932,3 +932,9 @@
   flex: 0 0 auto !important;
   stroke: currentColor !important;
 }
+
+
+.meetings-control-record { color: #fff !important; background: #a23b32 !important; }
+.meetings-control-record.is-recording { background: #b42318 !important; animation: meetings-record-pulse 1.5s ease-in-out infinite; }
+.meetings-control-download { color: #fff !important; background: #16764a !important; }
+@keyframes meetings-record-pulse { 50% { box-shadow: 0 0 0 5px rgba(180,35,24,.18); } }
