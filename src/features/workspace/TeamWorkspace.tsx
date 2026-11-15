@@ -359,14 +359,18 @@ function safeDriveUrl(value: string): string | null {
 export default function TeamWorkspace({ client, userId, profile, theme, onThemeChange, isDeveloper, onLogout }: TeamWorkspaceProps) {
   const [visualEditorOpen, setVisualEditorOpen] = useState(false);
   const [pushTarget] = useState<PushDeepLink | null>(() => parsePushDeepLink());
-  const [tab, setTab] = useState<WorkspaceTab>(() => tabForPush(pushTarget));
+  const [meetingInviteId] = useState<string | null>(() => {
+    const value = new URLSearchParams(window.location.search).get('meeting');
+    return value && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value) ? value : null;
+  });
+  const [tab, setTab] = useState<WorkspaceTab>(() => meetingInviteId ? 'agenda' : tabForPush(pushTarget));
   const [chatOpen, setChatOpen] = useState(() => pushTarget?.type === 'chat');
   const [activeChannel, setActiveChannel] = useState<WorkspaceChannel | null>(null);
   const [manualSection, setManualSection] = useState<'normas' | 'funcoes'>('funcoes');
   const [chatTargetUserId, setChatTargetUserId] = useState<string | null>(null);
   const [chatReturnTab] = useState<WorkspaceTab>('home');
   const [chatCreateGroupRequest, setChatCreateGroupRequest] = useState(false);
-  const [agendaSubtab, setAgendaSubtab] = useState<AgendaSubtab>('calendar');
+  const [agendaSubtab, setAgendaSubtab] = useState<AgendaSubtab>(() => meetingInviteId ? 'meetings' : 'calendar');
   const [homeFiltersOpen, setHomeFiltersOpen] = useState(false);
   const [meetingRoomActive, setMeetingRoomActive] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -1462,7 +1466,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           {tab === 'conversations' && (
             <SharedContentWorkspace client={client} mode="announcements" userId={userId} isAdmin={profile.role === 'admin'} areas={activeAreas} members={members} areaId={null} isGeneralChannel={true} channelId={activeChannel?.id ?? ''} targetAnnouncementId={pushTarget?.type === 'announcement' ? pushTarget.itemId : undefined} />
           )}
-          {tab === 'agenda' && agendaSubtab === 'meetings' && <MeetingsWorkspace client={client} userId={userId} displayName={displayName} onRoomActiveChange={setMeetingRoomActive} />}
+          {tab === 'agenda' && agendaSubtab === 'meetings' && <MeetingsWorkspace client={client} userId={userId} displayName={displayName} onRoomActiveChange={setMeetingRoomActive} initialRoomId={meetingInviteId} />}
           {tab === 'agenda' && agendaSubtab === 'availability' && <AvailabilityWorkspace client={client} userId={userId} profile={profile} />}
           {tab === 'agenda' && agendaSubtab === 'calendar' && <TeamCalendar client={client} userId={userId} isAdmin={profile.role === 'admin'} initialDate={calendarFocusDate} initialEventId={pushTarget?.type === 'calendar' ? pushTarget.itemId : undefined} />}
           {tab === 'manual' && (
