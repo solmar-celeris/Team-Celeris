@@ -363,14 +363,15 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
     const value = new URLSearchParams(window.location.search).get('meeting');
     return value && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value) ? value : null;
   });
-  const [tab, setTab] = useState<WorkspaceTab>(() => meetingInviteId ? 'agenda' : tabForPush(pushTarget));
+  const [tab, setTab] = useState<WorkspaceTab>(() => tabForPush(pushTarget));
+  const [meetingsOpen, setMeetingsOpen] = useState(Boolean(meetingInviteId));
   const [chatOpen, setChatOpen] = useState(() => pushTarget?.type === 'chat');
   const [activeChannel, setActiveChannel] = useState<WorkspaceChannel | null>(null);
   const [manualSection, setManualSection] = useState<'normas' | 'funcoes'>('funcoes');
   const [chatTargetUserId, setChatTargetUserId] = useState<string | null>(null);
   const [chatReturnTab] = useState<WorkspaceTab>('home');
   const [chatCreateGroupRequest, setChatCreateGroupRequest] = useState(false);
-  const [agendaSubtab, setAgendaSubtab] = useState<AgendaSubtab>(() => meetingInviteId ? 'meetings' : 'calendar');
+  const [agendaSubtab, setAgendaSubtab] = useState<AgendaSubtab>('calendar');
   const [homeFiltersOpen, setHomeFiltersOpen] = useState(false);
   const [meetingRoomActive, setMeetingRoomActive] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -1127,16 +1128,16 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   }
 
   function navigateToTab(nextTab: WorkspaceTab) {
-    const leavingLiveMeeting = tab === 'agenda' && agendaSubtab === 'meetings' && nextTab !== 'agenda';
+    const leavingLiveMeeting = meetingsOpen;
     if (meetingRoomActive && (nextTab !== tab || leavingLiveMeeting) && !window.confirm('Você está em uma reunião. Sair desta tela desconectará sua chamada. Deseja continuar?')) return;
-    if (meetingRoomActive && (nextTab !== tab || leavingLiveMeeting)) setMeetingRoomActive(false);
+    if (meetingRoomActive && (nextTab !== tab || leavingLiveMeeting)) { setMeetingRoomActive(false); setMeetingsOpen(false); }
     if (nextTab === 'manual') setManualSection('funcoes');
     setTab(nextTab);
   }
 
   function navigateToAgendaSubtab(nextSubtab: AgendaSubtab) {
-    if (meetingRoomActive && nextSubtab !== 'meetings' && !window.confirm('Você está em uma reunião. Sair desta tela desconectará sua chamada. Deseja continuar?')) return;
-    if (meetingRoomActive && nextSubtab !== 'meetings') setMeetingRoomActive(false);
+    if (meetingRoomActive && !window.confirm('Você está em uma reunião. Sair desta tela desconectará sua chamada. Deseja continuar?')) return;
+    if (meetingRoomActive) { setMeetingRoomActive(false); setMeetingsOpen(false); }
     setAgendaSubtab(nextSubtab);
     setTab('agenda');
   }
@@ -1234,8 +1235,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           {tab === 'agenda' && <div className="workspace-module-tabs is-agenda" role="tablist" aria-label="Guias da Agenda">
             <button type="button" role="tab" aria-selected={agendaSubtab === 'calendar'} className={agendaSubtab === 'calendar' ? 'is-active' : ''} onClick={() => navigateToAgendaSubtab('calendar')}><CalendarDays aria-hidden="true" /><span>Calendário</span></button>
             <button type="button" role="tab" aria-selected={agendaSubtab === 'availability'} className={agendaSubtab === 'availability' ? 'is-active' : ''} onClick={() => navigateToAgendaSubtab('availability')}><ClockWithArrowsIcon size={20} /><span>Disponibilidades</span></button>
-            <button type="button" role="tab" aria-selected={agendaSubtab === 'meetings'} className={agendaSubtab === 'meetings' ? 'is-active' : ''} onClick={() => navigateToAgendaSubtab('meetings')}><Video aria-hidden="true" /><span>Reunião</span></button>
-          </div>}
+            </div>}
 
           {(tab === 'activities' || tab === 'home') && <p className="workspace-permission-note">{permissionSummary}</p>}
 
@@ -1402,7 +1402,6 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
                 <p className="workspace-kicker">ATALHOS DE AGENDA</p>
                 <button type="button" onClick={() => navigateToAgendaSubtab('calendar')}><CalendarDays aria-hidden="true" /> Calendário</button>
                 <button type="button" onClick={() => navigateToAgendaSubtab('availability')}><ClockWithArrowsIcon size={16} /> Disponibilidades</button>
-                <button type="button" onClick={() => navigateToAgendaSubtab('meetings')}><Video aria-hidden="true" /> Reunião</button>
                 {weekCalendarEvents.length > 0 && <p className="workspace-feed-events-count">{weekCalendarEvents.length} evento(s) na semana selecionada</p>}
               </section>
             </aside>
@@ -1466,7 +1465,6 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           {tab === 'conversations' && (
             <SharedContentWorkspace client={client} mode="announcements" userId={userId} isAdmin={profile.role === 'admin'} areas={activeAreas} members={members} areaId={null} isGeneralChannel={true} channelId={activeChannel?.id ?? ''} targetAnnouncementId={pushTarget?.type === 'announcement' ? pushTarget.itemId : undefined} />
           )}
-          {tab === 'agenda' && agendaSubtab === 'meetings' && <MeetingsWorkspace client={client} userId={userId} displayName={displayName} onRoomActiveChange={setMeetingRoomActive} initialRoomId={meetingInviteId} />}
           {tab === 'agenda' && agendaSubtab === 'availability' && <AvailabilityWorkspace client={client} userId={userId} profile={profile} />}
           {tab === 'agenda' && agendaSubtab === 'calendar' && <TeamCalendar client={client} userId={userId} isAdmin={profile.role === 'admin'} initialDate={calendarFocusDate} initialEventId={pushTarget?.type === 'calendar' ? pushTarget.itemId : undefined} />}
           {tab === 'manual' && (
@@ -1491,9 +1489,26 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
         </main>
       </div>
 
+      <button className="workspace-meetings-launcher workspace-chat-launcher" type="button" aria-label="Abrir Reuniões" title="Reuniões" onClick={() => setMeetingsOpen(true)}>
+        <Video aria-hidden="true" />
+      </button>
       <button className="workspace-chat-launcher workspace-chat-launcher-desktop" type="button" aria-label="Abrir Chat" title="Chat" onClick={() => setChatOpen(true)}>
         <MessageCircle aria-hidden="true" />
       </button>
+
+      {meetingsOpen && (
+        <section className="workspace-meetings-overlay" role="dialog" aria-modal="true" aria-label="Reuniões Team Celeris">
+          <header className="workspace-chat-overlay-header">
+            <div className="workspace-chat-overlay-title"><Video aria-hidden="true" /><strong>Reuniões</strong></div>
+            <div className="workspace-chat-overlay-actions">
+              <button type="button" className="workspace-chat-close" aria-label="Fechar Reuniões" title="Fechar Reuniões" onClick={() => { if (meetingRoomActive && !window.confirm('Fechar esta janela desconectará você da reunião. Deseja continuar?')) return; setMeetingsOpen(false); setMeetingRoomActive(false); }}><X aria-hidden="true" /></button>
+            </div>
+          </header>
+          <div className="workspace-meetings-overlay-body">
+            <MeetingsWorkspace client={client} userId={userId} displayName={displayName} onRoomActiveChange={setMeetingRoomActive} initialRoomId={meetingInviteId} />
+          </div>
+        </section>
+      )}
 
       {chatOpen && (
         <section className="workspace-chat-overlay" role="dialog" aria-modal="true" aria-label="Chat SolMar Celeris">
