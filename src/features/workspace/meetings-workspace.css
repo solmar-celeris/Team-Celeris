@@ -764,3 +764,104 @@
     font-size: 11px !important;
   }
 }
+
+
+/* Controles exclusivos do anfitrião: não dependem do estado/classe do modal. */
+.workspace-meetings-dialog .meetings-call-controls-host {
+  position: absolute !important;
+  z-index: 50 !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: 22px !important;
+  top: auto !important;
+  transform: translateX(-50%) !important;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  width: max-content !important;
+  max-width: calc(100% - 32px) !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 10px 12px !important;
+  border: 1px solid rgba(255,255,255,.16) !important;
+  border-radius: 18px !important;
+  background: rgba(15, 27, 42, .88) !important;
+  box-shadow: 0 12px 34px rgba(0,0,0,.3) !important;
+  backdrop-filter: blur(18px) saturate(150%) !important;
+}
+.workspace-meetings-dialog .meetings-call-controls-host > button.meetings-control {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 9px !important;
+  width: auto !important;
+  min-width: 126px !important;
+  min-height: 48px !important;
+  margin: 0 !important;
+  padding: 0 17px !important;
+  border: 1px solid rgba(255,255,255,.15) !important;
+  border-radius: 12px !important;
+  color: #f8fafc !important;
+  background: rgba(255,255,255,.1) !important;
+  box-shadow: none !important;
+  font: 600 13px/1 Inter, system-ui, sans-serif !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  cursor: pointer !important;
+}
+.workspace-meetings-dialog .meetings-call-controls-host > button.meetings-control:hover {
+  color: #fff !important;
+  background: rgba(255,255,255,.2) !important;
+  border-color: rgba(255,255,255,.3) !important;
+}
+.workspace-meetings-dialog .meetings-call-controls-host > button.meetings-control svg {
+  display: block !important;
+  flex: 0 0 20px !important;
+  width: 20px !important;
+  height: 20px !important;
+}
+.workspace-meetings-dialog .meetings-call-controls-host > button.meetings-control span {
+  display: inline !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: inherit !important;
+  font: inherit !important;
+  white-space: nowrap !important;
+}
+.workspace-meetings-dialog .meetings-call-controls-host > button.meetings-control.is-off,
+.workspace-meetings-dialog .meetings-call-controls-host > button.meetings-control.meetings-control-leave {
+  color: #fff !important;
+  background: #c93645 !important;
+  border-color: #e35a66 !important;
+}
+.workspace-meetings-dialog .meetings-call-controls-host > button.meetings-control.is-active {
+  color: #fff !important;
+  background: #0e74be !important;
+  border-color: #70beff !important;
+}
+@media (max-width: 620px) {
+  .workspace-meetings-dialog .meetings-call-controls-host {
+    left: 50% !important;
+    right: auto !important;
+    bottom: 10px !important;
+    width: calc(100% - 20px) !important;
+    max-width: 460px !important;
+    gap: 5px !important;
+    padding: 7px !important;
+  }
+  .workspace-meetings-dialog .meetings-call-controls-host > button.meetings-control {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    min-height: 44px !important;
+    gap: 5px !important;
+    padding: 0 7px !important;
+    font-size: 11px !important;
+  }
+}
