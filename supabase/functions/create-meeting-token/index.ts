@@ -18,6 +18,8 @@ Deno.serve(async (request) => {
 
   const authorization = request.headers.get('Authorization');
   if (authorization && !authorization.startsWith('Bearer ')) return reply(401, { error: 'unauthorized' });
+  // O cliente Supabase pode enviar a publishable/anon key como bearer padrão;
+  // isso identifica uma visita pública, não uma sessão autenticada.
 
   const projectUrl = Deno.env.get('SUPABASE_URL')?.trim();
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')?.trim();
@@ -48,7 +50,7 @@ Deno.serve(async (request) => {
 
   let userId: string | null = null;
   let profileName = '';
-  if (authorization) {
+  if (authorization && authorization !== `Bearer ${anonKey}`) {
     const { data: { user }, error: authError } = await userClient.auth.getUser();
     if (authError || !user) return reply(401, { error: 'unauthorized' });
     const { data: profile, error: profileError } = await userClient
