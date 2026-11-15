@@ -865,3 +865,56 @@
     font-size: 11px !important;
   }
 }
+
+
+/* Ações do anfitrião: compartilhar convite, sair do lobby e encerrar para todos. */
+.meetings-call-controls-host > button.meetings-control-invite {
+  color: #f8fafc !important;
+  background: rgba(14,116,190,.82) !important;
+  border-color: rgba(112,190,255,.4) !important;
+}
+.meetings-call-controls-host > button.meetings-control-invite:hover {
+  background: #0e74be !important;
+}
+.meetings-call-controls-host > button.meetings-control-leave {
+  color: #f8fafc !important;
+  background: rgba(255,255,255,.1) !important;
+  border-color: rgba(255,255,255,.15) !important;
+}
+.meetings-call-controls-host > button.meetings-control-leave:hover {
+  background: rgba(255,255,255,.2) !important;
+}
+.meetings-call-controls-host > button.meetings-control-end {
+  color: #fff !important;
+  background: #c93645 !important;
+  border-color: #e35a66 !important;
+}
+.meetings-call-controls-host > button.meetings-control-end:hover {
+  background: #ad2636 !important;
+}
+.meetings-call-controls-host > button.meetings-control-end:focus-visible,
+.meetings-call-controls-host > button.meetings-control-invite:focus-visible,
+.meetings-call-controls-host > button.meetings-control-leave:focus-visible {
+  outline: 3px solid rgba(147,197,253,.85) !important;
+  outline-offset: 2px !important;
+}
+@media (max-width: 760px) {
+  .meetings-call-controls-host {
+    width: calc(100% - 16px) !important;
+    max-width: 560px !important;
+    gap: 4px !important;
+    padding: 6px !important;
+  }
+  .meetings-call-controls-host > button.meetings-control {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    min-height: 44px !important;
+    gap: 4px !important;
+    padding: 0 5px !important;
+    font-size: 10px !important;
+  }
+  .meetings-call-controls-host > button.meetings-control svg {
+    width: 17px !important;
+    height: 17px !important;
+  }
+}
