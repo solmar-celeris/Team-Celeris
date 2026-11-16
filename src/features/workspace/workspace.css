@@ -2733,3 +2733,45 @@
     gap: 4px !important;
   }
 }
+
+
+/* Navegação principal: seis guias, sem coluna reservada para a antiga guia Reuniões. */
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav {
+    display: grid !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    grid-auto-flow: column !important;
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    justify-content: stretch !important;
+    justify-items: stretch !important;
+    gap: 4px !important;
+  }
+
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav > button {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    flex: initial !important;
+    justify-content: center !important;
+  }
+}
+
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-screen > .workspace-bottom-nav {
+    display: grid !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    grid-auto-flow: column !important;
+    justify-content: stretch !important;
+    justify-items: stretch !important;
+    gap: 2px !important;
+  }
+
+  .workspace-screen > .workspace-bottom-nav > button {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    justify-self: stretch !important;
+  }
+}
