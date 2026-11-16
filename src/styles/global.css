@@ -324,3 +324,27 @@ body,
   .public-data-card { padding: 15px; }
   .public-portal-footer { padding: 15px; font-size: 8px; }
 }
+
+
+.auth-public-portals {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin-top: 14px;
+  max-width: 620px;
+}
+.auth-public-portals > span {
+  flex-basis: 100%;
+  color: var(--muted, #64748b);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .1em;
+}
+.auth-public-portals a {
+  color: var(--blue, #014b89);
+  font-size: 12px;
+  font-weight: 750;
+  text-decoration: none;
+}
+.auth-public-portals a:hover { text-decoration: underline; }
