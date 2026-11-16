@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useState, type DragEvent, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Filter, Folder, GripVertical, Newspaper, Megaphone, MessageCircle, Moon, Sun, Trash2, X, Paperclip, ExternalLink, Video, Maximize2, Minimize2, ChevronDown, type LucideProps, type LucideIcon } from 'lucide-react';
+import { BookOpen, CalendarDays, Check, ClipboardList, Filter, Folder, GripVertical, Newspaper, Megaphone, MessageCircle, Moon, Sun, Trash2, X, Paperclip, ExternalLink, Video, Maximize2, Minimize2, ChevronDown, type LucideProps, type LucideIcon } from 'lucide-react';
 import {
   activityTypeLabels,
   activityFlowLabels,
@@ -164,12 +164,27 @@ function tabForPush(target: PushDeepLink | null): WorkspaceTab {
 }
 
 function ClockWithArrowsIcon({ size = 20, className }: LucideProps) {
-  const dimension = typeof size === 'number' ? size : 20;
   return (
-    <span className={`workspace-clock-arrows${className ? ` ${className}` : ''}`} style={{ width: size, height: size }} aria-hidden="true">
-      <Clock3 className="workspace-clock-arrows-face" size={dimension} aria-hidden="true" />
-      <ArrowLeftRight className="workspace-clock-arrows-directions" size={Math.max(10, Math.round(dimension * 0.62))} aria-hidden="true" />
-    </span>
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      viewBox="0 0 48 48"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M17.5 8.5H5.5V20.5" stroke="#65108B" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5.5 8.5L12 15" stroke="#F7B82D" strokeWidth="5" strokeLinecap="round" />
+      <path d="M30.5 39.5H42.5V27.5" stroke="#65108B" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M42.5 39.5L36 33" stroke="#F7B82D" strokeWidth="5" strokeLinecap="round" />
+      <circle cx="24" cy="24" r="17" fill="#5478B5" stroke="#65108B" strokeWidth="2.5" />
+      <circle cx="24" cy="24" r="12.2" fill="#F7F5F2" stroke="#65108B" strokeWidth="1.7" />
+      <path d="M24 14.8V17M33.2 24H31M24 33.2V31M14.8 24H17" stroke="#65108B" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="24" cy="24" r="5.2" fill="#75B64A" stroke="#65108B" strokeWidth="1.5" />
+      <path d="M21.3 24.1L23.2 26L27.2 21.8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 
