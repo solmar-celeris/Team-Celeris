@@ -2986,3 +2986,159 @@
     margin: 0 !important;
   }
 }
+
+
+/* Refinamento visual dos controles da visualização pública. */
+.workspace-public-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 18px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: 0 6px 18px rgba(1, 75, 137, .045);
+}
+.workspace-public-toolbar .workspace-search,
+.workspace-public-toolbar .workspace-filter {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--muted);
+  background: var(--bg);
+}
+.workspace-public-toolbar .workspace-search { flex: 1 1 245px; }
+.workspace-public-toolbar .workspace-filter { flex: 0 1 190px; }
+.workspace-public-toolbar input,
+.workspace-public-toolbar select {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  border: 0;
+  outline: 0;
+  color: var(--ink);
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+}
+.workspace-public-toolbar .workspace-primary-button,
+.workspace-public-toolbar > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--ocean);
+  border-radius: 9px;
+  color: #fff;
+  background: var(--ocean);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 750;
+  white-space: nowrap;
+  transition: background .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+.workspace-public-toolbar .workspace-primary-button:hover,
+.workspace-public-toolbar > button:hover {
+  background: var(--blue);
+  box-shadow: 0 5px 14px rgba(1, 75, 137, .18);
+  transform: translateY(-1px);
+}
+.workspace-public-toolbar .workspace-primary-button span,
+.workspace-feed-actions button span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 21px;
+  padding: 0 7px;
+  border-radius: 99px;
+  color: var(--ocean);
+  background: rgba(255,255,255,.92);
+  font-size: 9px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+.workspace-heading-actions .workspace-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--ocean);
+  background: var(--card);
+  font-size: 12px;
+  font-weight: 750;
+  transition: border-color .18s ease, background .18s ease, transform .18s ease;
+}
+.workspace-heading-actions .workspace-refresh:hover:not(:disabled) {
+  border-color: var(--sky);
+  background: var(--surface);
+  transform: translateY(-1px);
+}
+.workspace-feed-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 16px;
+  padding-top: 13px;
+  border-top: 1px solid var(--line);
+}
+.workspace-feed-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--ocean);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 750;
+  transition: border-color .18s ease, background .18s ease, transform .18s ease;
+}
+.workspace-feed-actions button:hover {
+  border-color: var(--sky);
+  background: var(--card);
+  transform: translateY(-1px);
+}
+.workspace-feed-actions button span {
+  min-height: 19px;
+  color: var(--muted);
+  background: var(--card);
+}
+.workspace-feed-activity-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.workspace-feed-activity-meta span { display: grid; gap: 3px; }
+.workspace-feed-activity-meta strong {
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-public-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; padding: 10px; }
+  .workspace-public-toolbar .workspace-search { grid-column: 1 / -1; }
+  .workspace-public-toolbar .workspace-filter { width: 100%; flex: initial; }
+  .workspace-public-toolbar .workspace-primary-button { grid-column: 1 / -1; width: 100%; }
+  .workspace-heading-actions .workspace-refresh { min-height: 36px; padding-inline: 10px; }
+  .workspace-feed-actions button { flex: 1 1 auto; }
+}
