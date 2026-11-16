@@ -1022,3 +1022,186 @@
     height: 42px !important;
   }
 }
+
+
+/* Barra mobile inspirada no Microsoft Teams: ações rápidas + menus inferiores. */
+.meetings-mobile-toolbar,
+.meetings-mobile-sheet-backdrop {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .meetings-call-controls,
+  .workspace-meetings-overlay .meetings-call-controls,
+  .workspace-meetings-dialog .meetings-call-controls-host {
+    position: absolute !important;
+    z-index: 80 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    bottom: 0 !important;
+    transform: none !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .meetings-call-controls > button.meetings-control,
+  .workspace-meetings-overlay .meetings-call-controls > button.meetings-control,
+  .workspace-meetings-dialog .meetings-call-controls-host > button.meetings-control {
+    display: none !important;
+  }
+
+  .meetings-mobile-toolbar {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-around !important;
+    gap: 4px !important;
+    width: 100% !important;
+    min-height: 76px !important;
+    padding: 9px 12px max(9px, env(safe-area-inset-bottom)) !important;
+    box-sizing: border-box !important;
+    background: #292929 !important;
+    border-top: 1px solid rgba(255,255,255,.12) !important;
+  }
+
+  .meetings-mobile-control,
+  .meetings-mobile-leave {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    display: inline-flex !important;
+    flex: 0 1 64px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    min-width: 48px !important;
+    width: 64px !important;
+    height: 58px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 12px !important;
+    color: #fff !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .meetings-mobile-control.is-off {
+    color: #ff8585 !important;
+    background: rgba(255,255,255,.08) !important;
+  }
+
+  .meetings-mobile-leave {
+    flex: 0 0 92px !important;
+    width: 92px !important;
+    gap: 8px !important;
+    background: #a71943 !important;
+    border-radius: 12px !important;
+  }
+
+  .meetings-mobile-control svg,
+  .meetings-mobile-leave svg {
+    display: block !important;
+    flex: 0 0 auto !important;
+  }
+
+  .meetings-mobile-sheet-backdrop {
+    position: fixed !important;
+    z-index: 10000 !important;
+    inset: 0 !important;
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    background: rgba(0,0,0,.58) !important;
+    backdrop-filter: blur(2px) !important;
+  }
+
+  .meetings-mobile-sheet {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
+    max-height: min(76vh, 620px) !important;
+    padding: 10px 28px max(26px, env(safe-area-inset-bottom)) !important;
+    box-sizing: border-box !important;
+    overflow-y: auto !important;
+    border-radius: 24px 24px 0 0 !important;
+    background: #151515 !important;
+    color: #f5f5f5 !important;
+    box-shadow: 0 -12px 36px rgba(0,0,0,.32) !important;
+  }
+
+  .meetings-mobile-sheet-handle {
+    align-self: center !important;
+    width: 64px !important;
+    height: 5px !important;
+    margin: 4px 0 18px !important;
+    border-radius: 99px !important;
+    background: #777 !important;
+  }
+
+  .meetings-mobile-sheet h3 {
+    margin: 0 0 4px !important;
+    color: #fff !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+  }
+
+  .meetings-mobile-sheet-action,
+  .meetings-mobile-sheet-cancel {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    width: 100% !important;
+    min-height: 64px !important;
+    margin: 0 !important;
+    padding: 14px 16px !important;
+    border: 1px solid #555 !important;
+    border-radius: 13px !important;
+    color: #aaa5ff !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    font: 600 16px/1.25 Inter, system-ui, sans-serif !important;
+    text-align: center !important;
+    white-space: normal !important;
+  }
+
+  .meetings-mobile-sheet-action svg {
+    flex: 0 0 22px !important;
+  }
+
+  .meetings-mobile-sheet-action.is-danger {
+    border-color: #a71943 !important;
+    color: #fff !important;
+    background: #a71943 !important;
+  }
+
+  .meetings-mobile-sheet-action.is-outline-danger {
+    border: 2px solid #7770e8 !important;
+    color: #aaa5ff !important;
+  }
+
+  .meetings-mobile-sheet-action.is-recording {
+    color: #ff8d8d !important;
+    border-color: rgba(220,60,60,.7) !important;
+  }
+
+  .meetings-mobile-sheet-cancel {
+    min-height: 48px !important;
+    border-color: transparent !important;
+    color: #bbb !important;
+    font-size: 14px !important;
+  }
+}
