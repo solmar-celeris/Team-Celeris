@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { CalendarDays, Clock3, Pencil, Plus, RefreshCw, Save, Trash2, Users, X } from 'lucide-react';
+import { CalendarDays, Clock3, FileSpreadsheet, Pencil, Plus, RefreshCw, Save, Trash2, Users, X } from 'lucide-react';
 import type { MemberProfile } from './domain';
 import './availability-workspace.css';
 
@@ -223,6 +223,21 @@ export default function AvailabilityWorkspace({ client, userId, profile }: Avail
   const assignedHours = useMemo(() => shifts.reduce((total, shift) => total + durationHours(shift.start_time, shift.end_time), 0), [shifts]);
   const sortedShifts = useMemo(() => [...shifts].sort((a, b) => a.shift_date.localeCompare(b.shift_date) || a.start_time.localeCompare(b.start_time)), [shifts]);
 
+  const exportAvailabilityToExcel = () => {
+    const esc = (value: unknown) => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const availabilityRows = members.flatMap((member) => {
+      const personSlots = slots.filter((slot) => slot.user_id === member.user_id);
+      return weekdays.flatMap((day) => personSlots.filter((slot) => slot.weekday === day.id).map((slot) => timeToMinutes(slot.hour_start)).sort((x, y) => x - y).map((start) => [member.full_name || 'Integrante sem nome', day.label, timeLabel(start), timeLabel(start + 30), '0,5']));
+    });
+    const shiftRows = sortedShifts.map((shift) => [shift.title, prettyDate(shift.shift_date), normalizedTime(shift.start_time), normalizedTime(shift.end_time), memberNames.get(shift.assigned_user_id ?? '') ?? 'Sem atribuição', shift.notes]);
+    const makeTable = (headers: string[], rows: unknown[][]) => '<table border="1"><thead><tr>' + headers.map((x) => '<th>' + esc(x) + '</th>').join('') + '</tr></thead><tbody>' + rows.map((row) => '<tr>' + row.map((x) => '<td>' + esc(x) + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
+    const html = '<html><head><meta charset="UTF-8"></head><body><h2>Disponibilidades da equipe</h2>' + makeTable(['Integrante','Dia','Início','Fim','Horas'], availabilityRows) + '<h2>Escalas do time</h2>' + makeTable(['Escala','Data','Início','Fim','Pessoa atribuída','Observações'], shiftRows) + '</body></html>';
+    const blob = new Blob(['\uFEFF', html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a'); link.href = url; link.download = 'disponibilidades-equipe-' + new Date().toISOString().slice(0, 10) + '.xls';
+    document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
+  };
+
   const toggleSlot = (weekday: number, hour: number) => {
     setOwnKeys((current) => {
       const next = new Set(current);
@@ -367,6 +382,7 @@ export default function AvailabilityWorkspace({ client, userId, profile }: Avail
           <p className="workspace-subtitle">Horários recorrentes em horário de Brasília, de segunda a sexta, entre 07:00 e 21:00.</p>
         </div>
         <div className="availability-heading-actions">
+          <button className="availability-refresh" type="button" onClick={exportAvailabilityToExcel} disabled={loading || refreshing}><FileSpreadsheet size={15} aria-hidden="true" /> Exportar Excel</button>
           <button className="availability-refresh" type="button" onClick={() => void loadData(false)} disabled={loading || refreshing}>
             <RefreshCw size={15} aria-hidden="true" /> {refreshing ? 'Atualizando…' : 'Atualizar'}
           </button>
