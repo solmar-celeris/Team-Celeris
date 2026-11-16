@@ -2915,3 +2915,14 @@
 .workspace-module-tabs.is-agenda {
   display: none !important;
 }
+
+
+/* Ajuste solicitado: espaço de 2,5 px entre ícones e rótulos. */
+.workspace-nav button,
+.workspace-module-tabs button { gap: 2.5px !important; }
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav > button { gap: 2.5px !important; }
+}
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-screen > .workspace-bottom-nav > button { gap: 2.5px !important; }
+}
