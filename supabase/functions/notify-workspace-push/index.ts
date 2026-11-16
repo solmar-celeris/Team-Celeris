@@ -151,6 +151,7 @@ async function sendOneSignalPush(
   const pushType = isAnnouncement ? 'announcement' : 'activity';
   const targetUrl = new URL('/', publicAppOrigin());
   targetUrl.searchParams.set('push', pushType);
+  targetUrl.searchParams.set('tab', isAnnouncement ? 'announcements' : 'activities');
   targetUrl.searchParams.set('item_id', entityId);
   const activityDetails = `Atividade: ${(activityName || 'Atividade da equipe').trim().slice(0, 110)}. Prazo: ${displayDueDate(dueDate)}. Entrega esperada: ${(expectedDeliverable || 'não especificada').trim().slice(0, 140)}${expectedDeliverable && expectedDeliverable.length > 140 ? '…' : ''}.`;
   const englishActivityDetails = `Activity: ${(activityName || 'Team activity').trim().slice(0, 110)}. Due: ${displayDueDate(dueDate)}. Expected deliverable: ${(expectedDeliverable || 'not specified').trim().slice(0, 140)}${expectedDeliverable && expectedDeliverable.length > 140 ? '…' : ''}.`;

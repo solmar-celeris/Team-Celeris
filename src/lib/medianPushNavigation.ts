@@ -81,6 +81,7 @@ function destinationFromPayload(payload: PushPayload, currentHref: string): URL 
   destination.searchParams.set('push', route);
 
   if (route === 'chat') {
+    destination.searchParams.set('tab', 'feed');
     const messageId = readString(payload, 'message_id');
     const conversationType = readString(payload, 'conversation_type');
     const conversationId = readString(payload, 'conversation_id');
@@ -95,6 +96,7 @@ function destinationFromPayload(payload: PushPayload, currentHref: string): URL 
   const itemId = readString(payload, 'item_id');
   if (!itemId) return null;
   destination.searchParams.set('item_id', itemId);
+  destination.searchParams.set('tab', route === 'calendar' ? 'calendar' : route === 'activity' ? 'activities' : 'announcements');
   if (route === 'calendar') {
     const date = readString(payload, 'event_date', 'date');
     if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) destination.searchParams.set('date', date);

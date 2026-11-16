@@ -163,6 +163,46 @@ function tabForPush(target: PushDeepLink | null): WorkspaceTab {
   return 'agenda';
 }
 
+function workspaceRouteFromUrl(): { tab: WorkspaceTab; agendaSubtab: AgendaSubtab } {
+  const params = new URLSearchParams(window.location.search);
+  const pushTarget = parsePushDeepLink();
+  const route = params.get('tab');
+  let tab: WorkspaceTab;
+  if (pushTarget) tab = tabForPush(pushTarget);
+  else if (route === 'activities') tab = 'activities';
+  else if (route === 'calendar' || route === 'availability' || route === 'meetings') tab = 'agenda';
+  else if (route === 'announcements') tab = 'conversations';
+  else if (route === 'files') tab = 'files';
+  else if (route === 'norms') tab = 'manual';
+  else if (route === 'chat') tab = 'membersChat';
+  else tab = 'home';
+  const agendaSubtab: AgendaSubtab = route === 'availability'
+    ? 'availability'
+    : route === 'meetings' ? 'meetings' : 'calendar';
+  return { tab, agendaSubtab };
+}
+
+function workspaceRouteKey(tab: WorkspaceTab, agendaSubtab: AgendaSubtab): string {
+  if (tab === 'home' || tab === 'membersChat') return 'feed';
+  if (tab === 'agenda') return agendaSubtab;
+  if (tab === 'activities') return 'activities';
+  if (tab === 'conversations') return 'announcements';
+  if (tab === 'files') return 'files';
+  return 'norms';
+}
+
+function writeWorkspaceRoute(tab: WorkspaceTab, agendaSubtab: AgendaSubtab, replace = false): void {
+  const url = new URL(window.location.href);
+  url.searchParams.delete('public');
+  url.searchParams.set('tab', workspaceRouteKey(tab, agendaSubtab));
+  for (const key of ['push', 'item_id', 'message_id', 'conversation_id', 'conversation_type', 'date']) {
+    url.searchParams.delete(key);
+  }
+  const href = `${url.pathname}${url.search}${url.hash}`;
+  if (replace) window.history.replaceState(window.history.state, '', href);
+  else window.history.pushState({ ...window.history.state, workspaceTab: true }, '', href);
+}
+
 function ClockWithArrowsIcon({ size = 20, className }: LucideProps) {
   return (
     <svg
@@ -376,7 +416,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
     const value = new URLSearchParams(window.location.search).get('meeting');
     return value && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value) ? value : null;
   });
-  const [tab, setTab] = useState<WorkspaceTab>(() => tabForPush(pushTarget));
+  const [tab, setTab] = useState<WorkspaceTab>(() => workspaceRouteFromUrl().tab);
   const [meetingsOpen, setMeetingsOpen] = useState(Boolean(meetingInviteId));
   const [meetingsFullscreen, setMeetingsFullscreen] = useState(false);
   const [chatOpen, setChatOpen] = useState(() => pushTarget?.type === 'chat');
@@ -385,7 +425,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   const [chatTargetUserId, setChatTargetUserId] = useState<string | null>(null);
   const [chatReturnTab] = useState<WorkspaceTab>('home');
   const [chatCreateGroupRequest, setChatCreateGroupRequest] = useState(false);
-  const [agendaSubtab, setAgendaSubtab] = useState<AgendaSubtab>('calendar');
+  const [agendaSubtab, setAgendaSubtab] = useState<AgendaSubtab>(() => workspaceRouteFromUrl().agendaSubtab);
   const [homeFiltersOpen, setHomeFiltersOpen] = useState(false);
   const [meetingRoomActive, setMeetingRoomActive] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -532,11 +572,15 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   }, [client, pushTarget]);
 
   useEffect(() => {
-    if (!pushTarget) return;
-    const url = new URL(window.location.href);
-    for (const key of ['push', 'item_id', 'message_id', 'conversation_id', 'conversation_type', 'date']) url.searchParams.delete(key);
-    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
-  }, [pushTarget]);
+    writeWorkspaceRoute(tab, agendaSubtab, true);
+    const handlePopState = () => {
+      const route = workspaceRouteFromUrl();
+      setTab(route.tab);
+      setAgendaSubtab(route.agendaSubtab);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const loadData = useCallback(async (quiet = false) => {
     if (quiet) setRefreshing(true);
@@ -1169,6 +1213,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
     if (meetingRoomActive && (nextTab !== tab || leavingLiveMeeting)) { setMeetingRoomActive(false); setMeetingsOpen(false); }
     if (nextTab === 'manual') setManualSection('funcoes');
     setTab(nextTab);
+    writeWorkspaceRoute(nextTab, agendaSubtab);
   }
 
   function navigateToAgendaSubtab(nextSubtab: AgendaSubtab) {
@@ -1176,6 +1221,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
     if (meetingRoomActive) { setMeetingRoomActive(false); setMeetingsOpen(false); }
     setAgendaSubtab(nextSubtab);
     setTab('agenda');
+    writeWorkspaceRoute('agenda', nextSubtab);
   }
 
   function handleProfileLogout() {
@@ -1278,7 +1324,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
               {publicSection && <button className="workspace-refresh workspace-share-button" type="button" onClick={() => void shareCurrentSection()} aria-live="polite">
                 {shareCopied ? <><Check size={15} color="#16a34a" /> Link copiado</> : <><Share2 size={15} /> Compartilhar</>}
               </button>}
-              {tab === 'membersChat' && <button className="workspace-refresh" type="button" onClick={() => setTab(chatReturnTab)}><ArrowLeftRight size={14} /> Voltar ao workspace</button>}
+              {tab === 'membersChat' && <button className="workspace-refresh" type="button" onClick={() => navigateToTab(chatReturnTab)}><ArrowLeftRight size={14} /> Voltar ao workspace</button>}
               {(tab === 'activities' || tab === 'home') && <span className="workspace-cycle-chip">PERÍODO · {formatFullDate(cycleStart)} – {formatFullDate(cycleEnd)} · {cycleWeeksCount} SEMANAS</span>}
               {(tab === 'activities' || tab === 'home') && profile.role === 'admin' && <button className="workspace-refresh workspace-period-button" type="button" onClick={() => { setPeriodError(''); setPeriodDialogOpen(true); }}>Editar período</button>}
               {(tab === 'activities' || tab === 'home') && <button className="workspace-refresh" type="button" onClick={() => void loadData(true)} disabled={loading || refreshing}>

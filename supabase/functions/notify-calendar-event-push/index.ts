@@ -63,6 +63,7 @@ async function updateEvent(admin: SupabaseClient, eventId: string, status: 'sent
 async function sendPush(appId: string, apiKey: string, recipients: string[], event: CalendarEvent): Promise<boolean> {
   const targetUrl = new URL('/', publicAppOrigin());
   targetUrl.searchParams.set('push', 'calendar');
+  targetUrl.searchParams.set('tab', 'calendar');
   targetUrl.searchParams.set('item_id', event.id);
   targetUrl.searchParams.set('date', event.event_date);
   const response = await fetch('https://api.onesignal.com/notifications', {
