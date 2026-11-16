@@ -175,10 +175,8 @@ function ClockWithArrowsIcon({ size = 20, className }: LucideProps) {
       aria-hidden="true"
       focusable="false"
     >
-      <path d="M17.5 8.5H5.5V20.5" stroke="#65108B" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M5.5 8.5L12 15" stroke="#F7B82D" strokeWidth="5" strokeLinecap="round" />
-      <path d="M30.5 39.5H42.5V27.5" stroke="#65108B" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M42.5 39.5L36 33" stroke="#F7B82D" strokeWidth="5" strokeLinecap="round" />
+      <path d="M2.5 11.5L10 4L10 8H19V13H10V18L2.5 11.5Z" fill="#FFC447" stroke="#65108B" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M45.5 36.5L38 44V40H29V35H38V30L45.5 36.5Z" fill="#FFC447" stroke="#65108B" strokeWidth="1.8" strokeLinejoin="round" />
       <circle cx="24" cy="24" r="17" fill="#5478B5" stroke="#65108B" strokeWidth="2.5" />
       <circle cx="24" cy="24" r="12.2" fill="#F7F5F2" stroke="#65108B" strokeWidth="1.7" />
       <path d="M24 14.8V17M33.2 24H31M24 33.2V31M14.8 24H17" stroke="#65108B" strokeWidth="1.5" strokeLinecap="round" />
