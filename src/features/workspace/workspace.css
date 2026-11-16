@@ -3389,3 +3389,11 @@
     transform: none !important;
   }
 }
+
+
+/* Disponibilidades: aumentar somente a distância entre o ícone e o rótulo. */
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .workspace-screen[aria-label="Espaço público Team Celeris"] > .workspace-topbar > .workspace-desktop-nav > button[aria-label="Disponibilidades"] {
+    gap: 13px !important;
+  }
+}
