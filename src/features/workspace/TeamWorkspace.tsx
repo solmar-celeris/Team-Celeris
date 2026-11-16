@@ -1,6 +1,6 @@
-import { Fragment, useCallback, useEffect, useMemo, useState, type ComponentType, type DragEvent, type FormEvent } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState, type DragEvent, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Filter, Folder, GripVertical, Newspaper, Megaphone, MessageCircle, Moon, Sun, Trash2, X, Paperclip, ExternalLink, Video, Maximize2, Minimize2, ChevronDown, type LucideProps } from 'lucide-react';
+import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Filter, Folder, GripVertical, Newspaper, Megaphone, MessageCircle, Moon, Sun, Trash2, X, Paperclip, ExternalLink, Video, Maximize2, Minimize2, ChevronDown, type LucideProps, type LucideIcon } from 'lucide-react';
 import {
   activityTypeLabels,
   activityFlowLabels,
@@ -101,7 +101,7 @@ type AttachmentSubmission = { files: File[]; driveName: string; driveUrl: string
 type WeeklyDraft = WeeklyReportDraft;
 type WorkspaceTab = 'home' | 'activities' | 'agenda' | 'conversations' | 'membersChat' | 'files' | 'manual';
 type AgendaSubtab = 'calendar' | 'availability' | 'meetings';
-type WorkspaceTabIcon = ComponentType<LucideProps>;
+type WorkspaceTabIcon = LucideIcon;
 type PushDeepLink =
   | { type: 'chat'; messageId: string; conversationId: string | null; conversationType: 'team' | 'group' | 'direct' }
   | { type: 'announcement' | 'activity'; itemId: string }
@@ -1207,7 +1207,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
                     <span className="workspace-nav-label">Calendário</span>
                   </button>
                   <button type="button" title="Disponibilidades" aria-label="Disponibilidades" className={tab === 'agenda' && agendaSubtab === 'availability' ? 'is-active' : ''} onClick={() => navigateToAgendaSubtab('availability')} aria-current={tab === 'agenda' && agendaSubtab === 'availability' ? 'page' : undefined}>
-                    <span className="workspace-nav-icon"><Clock3 aria-hidden="true" /></span>
+                    <span className="workspace-nav-icon"><ClockWithArrowsIcon aria-hidden="true" /></span>
                     <span className="workspace-nav-label">Disponibilidades</span>
                   </button>
                 </>
@@ -1514,9 +1514,6 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
 
       <button className="workspace-meetings-launcher workspace-chat-launcher" type="button" aria-label="Abrir Reuniões" title="Reuniões" onClick={() => setMeetingsOpen(true)}>
         <Video aria-hidden="true" />
-      </button>
-      <button className="workspace-chat-launcher workspace-chat-launcher-mobile-floating" type="button" aria-label="Abrir Chat" title="Chat" onClick={() => setChatOpen(true)}>
-        <MessageCircle aria-hidden="true" />
       </button>
       <button className="workspace-chat-launcher workspace-chat-launcher-desktop" type="button" aria-label="Abrir Chat" title="Chat" onClick={() => setChatOpen(true)}>
         <MessageCircle aria-hidden="true" />
