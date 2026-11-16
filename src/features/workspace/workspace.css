@@ -3397,3 +3397,24 @@
     gap: 13px !important;
   }
 }
+
+
+/* Navegação desktop: distância uniforme entre todos os ícones e seus rótulos. */
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav > button {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav .workspace-nav-icon {
+    flex: 0 0 32px !important;
+    width: 32px !important;
+    margin: 0 !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav .workspace-nav-label {
+    flex: 0 0 auto !important;
+    margin: 0 !important;
+  }
+}
