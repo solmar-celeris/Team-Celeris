@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Activity, CalendarDays, Clock3, Megaphone, BookOpen, Newspaper, LogIn, ArrowLeft, LoaderCircle, Share2, Check, type LucideIcon } from 'lucide-react';
+import { Activity, CalendarDays, Clock3, Megaphone, BookOpen, Newspaper, type LucideIcon } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 type PublicTab = 'feed' | 'activities' | 'calendar' | 'availability' | 'announcements' | 'norms';
@@ -32,7 +32,6 @@ export default function PublicWorkspace() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [shareCopied, setShareCopied] = useState(false);
   const [data, setData] = useState<Record<PublicTab | 'weekly', Row[]>>({
     feed: [], activities: [], calendar: [], availability: [], announcements: [], norms: [], weekly: [],
   });
@@ -85,55 +84,59 @@ export default function PublicWorkspace() {
 
   const login = () => { window.location.href = window.location.pathname; };
 
-  async function shareCurrentTab() {
-    const url = new URL(window.location.origin);
+  function selectTab(nextTab: PublicTab) {
+    setTab(nextTab);
+    const url = new URL(window.location.href);
     url.searchParams.set('public', '1');
-    url.searchParams.set('tab', tab);
-    try {
-      await navigator.clipboard.writeText(url.toString());
-      setShareCopied(true);
-      window.setTimeout(() => setShareCopied(false), 1000);
-    } catch {
-      setError('Não foi possível copiar o link. Verifique a permissão da área de transferência.');
-    }
+    url.searchParams.set('tab', nextTab);
+    window.history.replaceState({}, '', url);
   }
 
   return (
-    <div className="public-portal">
-      <header className="public-portal-header">
-        <a className="public-portal-brand" href="/?public=1">
+    <section className="workspace-screen" aria-label="Espaço público Team Celeris">
+      <header className="workspace-topbar">
+        <a className="workspace-brand" href="/?public=1" aria-label="Team Celeris">
           <img src="/assets/solmar-celeris-site-logo.png" alt="SolMar Celeris" />
-          <span><strong>Team Celeris</strong><small>Portal público · consulta</small></span>
         </a>
-        <div className="public-header-actions">
-          <button className="public-login-button public-share-button" onClick={() => void shareCurrentTab()} type="button" aria-live="polite">
-            {shareCopied ? <><Check size={17} color="#16a34a" /> Link copiado</> : <><Share2 size={17} /> Compartilhar</>}
-          </button>
-          <button className="public-login-button" onClick={login} type="button"><LogIn size={17} /> Entrar na equipe</button>
+        <div className="workspace-top-actions">
+          <span className="workspace-cycle-chip">VISITANTE · SOMENTE LEITURA</span>
+          <a className="workspace-refresh" href={window.location.pathname}>Entrar na equipe</a>
         </div>
-      </header>
-
-      <main className="public-portal-main">
-        <section className="public-portal-intro">
-          <span className="public-portal-eyebrow">SOLMAR CELERIS · UFCI/RJ</span>
-          <h1>Conheça o trabalho da equipe.</h1>
-          <p>Consulte as atividades, os registros, o calendário, as disponibilidades, os comunicados e as normas do projeto.</p>
-          <span className="public-readonly-note">Acesso público somente para leitura</span>
-        </section>
-
-        <nav className="public-portal-tabs" aria-label="Áreas públicas">
+        <nav className="workspace-nav workspace-desktop-nav" aria-label="Navegação principal">
           {publicPortalTabs.map(({ id, label, icon: Icon }) => (
-            <button key={id} className={tab === id ? 'is-active' : ''} onClick={() => { setTab(id); const url = new URL(window.location.href); url.searchParams.set('public', '1'); url.searchParams.set('tab', id); window.history.replaceState({}, '', url); }} type="button">
-              <Icon size={17} strokeWidth={2} /><span>{label}</span>
+            <button key={id} type="button" title={label} aria-label={label} className={tab === id ? 'is-active' : ''} onClick={() => selectTab(id)} aria-current={tab === id ? 'page' : undefined}>
+              <span className="workspace-nav-icon"><Icon aria-hidden="true" /></span>
+              <span className="workspace-nav-label">{label}</span>
             </button>
           ))}
         </nav>
-
-        <section className="public-portal-content" aria-live="polite">
+      </header>
+      <nav className="workspace-nav workspace-bottom-nav" aria-label="Navegação principal">
+        {publicPortalTabs.map(({ id, label, icon: Icon }) => (
+          <button key={id} type="button" title={label} aria-label={label} className={tab === id ? 'is-active' : ''} onClick={() => selectTab(id)} aria-current={tab === id ? 'page' : undefined}>
+            <span className="workspace-nav-icon"><Icon aria-hidden="true" /></span>
+            <span className="workspace-nav-label">{label}</span>
+          </button>
+        ))}
+      </nav>
+      <div className="workspace-frame">
+        <main className="workspace-main is-home-page" id="workspace">
+          <div className="workspace-page-heading">
+            <div>
+              <p className="workspace-kicker">SOLMAR CELERIS · UFCI/RJ · ACESSO PÚBLICO</p>
+              <h1>{publicPortalTabs.find((item) => item.id === tab)?.label ?? 'Feed'}</h1>
+              <p className="workspace-subtitle">Consulta pública dos registros do Team Celeris. As informações estão disponíveis somente para leitura.</p>
+            </div>
+            <div className="workspace-heading-actions">
+              <span className="workspace-cycle-chip">SOMENTE LEITURA</span>
+              <button className="workspace-refresh" type="button" onClick={() => window.location.reload()} disabled={loading}>↻ Atualizar</button>
+            </div>
+          </div>
+        <section className="workspace-public-content" aria-live="polite">
           {loading ? (
-            <div className="public-loading"><LoaderCircle size={22} className="public-spinner" /> Carregando informações públicas…</div>
+            <div className="workspace-loading" role="status"><span />Carregando informações públicas…</div>
           ) : error ? (
-            <div className="public-empty" role="alert">{error}</div>
+            <div className="workspace-alert workspace-alert-error" role="alert"><strong>Não foi possível carregar as informações públicas.</strong><p>{error}</p></div>
           ) : (
             <>
               {tab === 'feed' && (
@@ -236,13 +239,13 @@ export default function PublicWorkspace() {
             </>
           )}
         </section>
-      </main>
-
-      <footer className="public-portal-footer">
-        <span>TEAM CELERIS · SOLMAR CELERIS</span>
-        <button onClick={login} type="button"><ArrowLeft size={15} /> Acesso da equipe</button>
-      </footer>
-    </div>
+          <footer className="workspace-footer" aria-label="Identidade do projeto">
+            <img src="/assets/teamceleris-app-mark.png" alt="Símbolo do app Team Celeris" />
+            <strong>TEAM CELERIS</strong><i /><span>UFCI/RJ</span><small>· ACESSO PÚBLICO</small>
+          </footer>
+        </main>
+      </div>
+    </section>
   );
 }
 
