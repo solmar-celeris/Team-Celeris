@@ -2775,3 +2775,41 @@
     justify-self: stretch !important;
   }
 }
+
+
+/* Ajustes finais das guias: Agenda tem apenas duas opções; aproximar ícone e texto. */
+.workspace-module-tabs.is-agenda {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.workspace-nav button {
+  gap: 3px !important;
+}
+
+.workspace-module-tabs button {
+  gap: 3px !important;
+}
+
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav {
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    grid-auto-flow: column !important;
+    gap: 0 !important;
+    margin-inline: 0 !important;
+  }
+
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav > button {
+    gap: 3px !important;
+  }
+}
+
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-screen > .workspace-bottom-nav {
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    gap: 0 !important;
+  }
+
+  .workspace-screen > .workspace-bottom-nav > button {
+    gap: 3px !important;
+  }
+}
