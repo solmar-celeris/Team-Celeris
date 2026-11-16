@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Activity, CalendarDays, Clock3, Megaphone, BookOpen, Newspaper, LogIn, ArrowLeft, LoaderCircle } from 'lucide-react';
+import { Activity, CalendarDays, Clock3, Megaphone, BookOpen, Newspaper, LogIn, ArrowLeft, LoaderCircle, type LucideIcon } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 type PublicTab = 'feed' | 'activities' | 'calendar' | 'availability' | 'announcements' | 'norms';
 type Row = Record<string, any>;
 
-const tabs: { id: PublicTab; label: string; icon: typeof Newspaper }[] = [
+const tabs: { id: PublicTab; label: string; icon: LucideIcon }[] = [
   { id: 'feed', label: 'Feed', icon: Newspaper },
   { id: 'activities', label: 'Atividades', icon: Activity },
   { id: 'calendar', label: 'Calendário', icon: CalendarDays },
