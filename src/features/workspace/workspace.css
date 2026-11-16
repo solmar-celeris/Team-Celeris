@@ -2724,3 +2724,12 @@
   .workspace-meetings-overlay-body .meetings-live-header { align-items:flex-start; }
   .workspace-meetings-overlay-body .meetings-livekit-room { min-height:0; }
 }
+
+
+/* Desktop: aproximar os rótulos dos ícones sem alterar a navegação mobile. */
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav > button {
+    column-gap: 4px !important;
+    gap: 4px !important;
+  }
+}
