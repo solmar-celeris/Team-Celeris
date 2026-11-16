@@ -75,6 +75,7 @@ export function MeetingVideoLayout() {
 export function MeetingControls({ onLeave, onShareInvite, onEndMeeting, onStartRecording, onStopRecording, onDownloadRecording, canEndMeeting = false, inviteCopied = false, isRecording = false, recordingBusy = false, recordingReady = false, variant = 'host' }: { onLeave: () => void; onShareInvite?: () => void; onEndMeeting?: () => void; onStartRecording?: () => void; onStopRecording?: () => void; onDownloadRecording?: () => void; canEndMeeting?: boolean; inviteCopied?: boolean; isRecording?: boolean; recordingBusy?: boolean; recordingReady?: boolean; variant?: 'host' | 'guest' }) {
   const { localParticipant, isMicrophoneEnabled, isCameraEnabled, isScreenShareEnabled } = useLocalParticipant();
   const [screenShareBusy, setScreenShareBusy] = useState(false);
+  const [mobileMenu, setMobileMenu] = useState<'more' | 'leave' | null>(null);
   const screenShareLock = useRef(false);
   const toggleScreenShare = async () => {
     if (screenShareLock.current) return;
@@ -82,6 +83,7 @@ export function MeetingControls({ onLeave, onShareInvite, onEndMeeting, onStartR
     setScreenShareBusy(true);
     try {
       await localParticipant.setScreenShareEnabled(!isScreenShareEnabled);
+      setMobileMenu(null);
     } catch (error) {
       console.error('Não foi possível alternar o compartilhamento de tela.', error);
     } finally {
@@ -104,14 +106,13 @@ export function MeetingControls({ onLeave, onShareInvite, onEndMeeting, onStartR
       </button>
       <button type="button" className={isScreenShareEnabled ? 'meetings-control is-active' : 'meetings-control'} aria-label={isScreenShareEnabled ? 'Parar compartilhamento' : 'Compartilhar tela'} aria-pressed={isScreenShareEnabled} disabled={screenShareBusy}
         onClick={() => void toggleScreenShare()}>
-        <MonitorUp size={22} strokeWidth={1.9} />
-        <span>{isScreenShareEnabled ? 'Parar tela' : 'Compartilhar'}</span>
+        <MonitorUp size={22} strokeWidth={1.9} /><span>{isScreenShareEnabled ? 'Parar tela' : 'Compartilhar'}</span>
       </button>
       {onShareInvite && <button type="button" className={inviteCopied ? "meetings-control meetings-control-invite is-copied" : "meetings-control meetings-control-invite"} aria-label={inviteCopied ? "Link copiado" : "Compartilhar convite"} onClick={onShareInvite}>
         {inviteCopied ? <Check className="meetings-copy-success-icon" size={22} strokeWidth={2.5} /> : <Share2 size={22} strokeWidth={1.9} />}<span>{inviteCopied ? "Link copiado" : "Compartilhar convite"}</span>
       </button>}
-      <button type="button" className="meetings-control meetings-control-leave" aria-label="Sair do lobby" onClick={onLeave}>
-        <X size={22} strokeWidth={1.9} /><span>Sair do lobby</span>
+      <button type="button" className="meetings-control meetings-control-leave" aria-label="Sair da reunião" onClick={onLeave}>
+        <X size={22} strokeWidth={1.9} /><span>Sair</span>
       </button>
       {canEndMeeting && onStartRecording && !isRecording && !recordingReady && <button type="button" className="meetings-control meetings-control-record" disabled={recordingBusy} onClick={onStartRecording}><Radio size={22} /><span>{recordingBusy ? 'Preparando…' : 'Gravar reunião'}</span></button>}
       {canEndMeeting && onStopRecording && isRecording && <button type="button" className="meetings-control meetings-control-record is-recording" disabled={recordingBusy} onClick={onStopRecording}><Radio size={22} /><span>{recordingBusy ? 'Salvando…' : 'Parar gravação'}</span></button>}
@@ -119,10 +120,56 @@ export function MeetingControls({ onLeave, onShareInvite, onEndMeeting, onStartR
       {canEndMeeting && onEndMeeting && <button type="button" className="meetings-control meetings-control-end" aria-label="Encerrar reunião para todos" onClick={onEndMeeting}>
         <PhoneOff size={22} strokeWidth={1.9} /><span>Encerrar reunião</span>
       </button>}
+
+      <div className="meetings-mobile-toolbar" aria-label="Controles rápidos">
+        <button type="button" className={isCameraEnabled ? "meetings-mobile-control" : "meetings-mobile-control is-off"} aria-label={isCameraEnabled ? "Desligar câmera" : "Ligar câmera"} onClick={() => void localParticipant.setCameraEnabled(!isCameraEnabled)}>
+          {isCameraEnabled ? <Video size={27} /> : <VideoOff size={27} />}
+        </button>
+        <button type="button" className={isMicrophoneEnabled ? "meetings-mobile-control" : "meetings-mobile-control is-off"} aria-label={isMicrophoneEnabled ? "Desligar microfone" : "Ligar microfone"} onClick={() => void localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled)}>
+          {isMicrophoneEnabled ? <Mic size={27} /> : <MicOff size={27} />}
+        </button>
+        <button type="button" className="meetings-mobile-control" aria-label="Mais opções" aria-expanded={mobileMenu === "more"} onClick={() => setMobileMenu(mobileMenu === "more" ? null : "more")}>
+          <MoreHorizontal size={29} />
+        </button>
+        <button type="button" className="meetings-mobile-leave" aria-label="Opções para sair da reunião" aria-expanded={mobileMenu === "leave"} onClick={() => setMobileMenu(mobileMenu === "leave" ? null : "leave")}>
+          <Phone size={25} /><ChevronUp size={17} />
+        </button>
+      </div>
+
+      {mobileMenu && <div className="meetings-mobile-sheet-backdrop" onClick={() => setMobileMenu(null)}>
+        <section className="meetings-mobile-sheet" role="dialog" aria-modal="true" aria-label={mobileMenu === "more" ? "Mais opções da reunião" : "Sair da reunião"} onClick={(event) => event.stopPropagation()}>
+          <div className="meetings-mobile-sheet-handle" />
+          {mobileMenu === "more" ? <>
+            <h3>Mais opções</h3>
+            <button type="button" className="meetings-mobile-sheet-action" disabled={screenShareBusy} onClick={() => void toggleScreenShare()}>
+              <MonitorUp size={22} /><span>{isScreenShareEnabled ? "Parar compartilhamento de tela" : "Compartilhar tela"}</span>
+            </button>
+            {onShareInvite && <button type="button" className="meetings-mobile-sheet-action" onClick={() => { onShareInvite(); setMobileMenu(null); }}>
+              <Share2 size={22} /><span>{inviteCopied ? "Link copiado" : "Compartilhar convite"}</span>
+            </button>}
+            {canEndMeeting && !isRecording && !recordingReady && onStartRecording && <button type="button" className="meetings-mobile-sheet-action" disabled={recordingBusy} onClick={() => { onStartRecording(); setMobileMenu(null); }}>
+              <Radio size={22} /><span>{recordingBusy ? "Preparando gravação…" : "Gravar reunião"}</span>
+            </button>}
+            {canEndMeeting && isRecording && onStopRecording && <button type="button" className="meetings-mobile-sheet-action is-recording" disabled={recordingBusy} onClick={() => { onStopRecording(); setMobileMenu(null); }}>
+              <Radio size={22} /><span>{recordingBusy ? "Salvando gravação…" : "Parar gravação"}</span>
+            </button>}
+            {canEndMeeting && recordingReady && onDownloadRecording && <button type="button" className="meetings-mobile-sheet-action" disabled={recordingBusy} onClick={() => { onDownloadRecording(); setMobileMenu(null); }}>
+              <Video size={22} /><span>Baixar gravação</span>
+            </button>}
+            <button type="button" className="meetings-mobile-sheet-cancel" onClick={() => setMobileMenu(null)}>Fechar</button>
+          </> : <>
+            <button type="button" className="meetings-mobile-sheet-action is-danger" onClick={() => { setMobileMenu(null); onLeave(); }}>
+              <Phone size={22} /><span>Sair</span>
+            </button>
+            {canEndMeeting && onEndMeeting && <button type="button" className="meetings-mobile-sheet-action is-outline-danger" onClick={() => { setMobileMenu(null); onEndMeeting(); }}>
+              <PhoneOff size={22} /><span>Encerrar a reunião para todos</span>
+            </button>}
+          </>}
+        </section>
+      </div>}
     </nav>
   );
 }
-
 export default function MeetingsWorkspace({ client, userId, displayName, onRoomActiveChange, initialRoomId }: MeetingsWorkspaceProps) {
   const [rooms, setRooms] = useState<MeetingRoom[]>([]);
   const [title, setTitle] = useState('');
