@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Activity, CalendarDays, Clock3, Megaphone, BookOpen, Newspaper, LogIn, ArrowLeft, LoaderCircle, type LucideIcon } from 'lucide-react';
+import { Activity, CalendarDays, Clock3, Megaphone, BookOpen, Newspaper, LogIn, ArrowLeft, LoaderCircle, Share2, Check, type LucideIcon } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 type PublicTab = 'feed' | 'activities' | 'calendar' | 'availability' | 'announcements' | 'norms';
@@ -32,6 +32,7 @@ export default function PublicWorkspace() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [shareCopied, setShareCopied] = useState(false);
   const [data, setData] = useState<Record<PublicTab | 'weekly', Row[]>>({
     feed: [], activities: [], calendar: [], availability: [], announcements: [], norms: [], weekly: [],
   });
@@ -84,6 +85,19 @@ export default function PublicWorkspace() {
 
   const login = () => { window.location.href = window.location.pathname; };
 
+  async function shareCurrentTab() {
+    const url = new URL(window.location.origin);
+    url.searchParams.set('public', '1');
+    url.searchParams.set('tab', tab);
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      setShareCopied(true);
+      window.setTimeout(() => setShareCopied(false), 1000);
+    } catch {
+      setError('Não foi possível copiar o link. Verifique a permissão da área de transferência.');
+    }
+  }
+
   return (
     <div className="public-portal">
       <header className="public-portal-header">
@@ -91,7 +105,12 @@ export default function PublicWorkspace() {
           <img src="/assets/solmar-celeris-site-logo.png" alt="SolMar Celeris" />
           <span><strong>Team Celeris</strong><small>Portal público · consulta</small></span>
         </a>
-        <button className="public-login-button" onClick={login} type="button"><LogIn size={17} /> Entrar na equipe</button>
+        <div className="public-header-actions">
+          <button className="public-login-button public-share-button" onClick={() => void shareCurrentTab()} type="button" aria-live="polite">
+            {shareCopied ? <><Check size={17} color="#16a34a" /> Link copiado</> : <><Share2 size={17} /> Compartilhar</>}
+          </button>
+          <button className="public-login-button" onClick={login} type="button"><LogIn size={17} /> Entrar na equipe</button>
+        </div>
       </header>
 
       <main className="public-portal-main">

@@ -249,6 +249,7 @@ body,
   min-height: 76px; padding: 10px clamp(18px, 5vw, 72px);
   color: #fff; background: #014b89; border-bottom: 4px solid #e06916;
 }
+.public-header-actions { display: flex; align-items: center; gap: 8px; }
 .public-portal-brand { display: inline-flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; }
 .public-portal-brand img { width: auto; height: 54px; max-width: 110px; object-fit: contain; }
 .public-portal-brand span { display: grid; gap: 3px; }
@@ -311,6 +312,7 @@ body,
   .public-portal-brand img { height: 45px; max-width: 75px; }
   .public-portal-brand strong { font-size: 13px; }
   .public-portal-brand small { font-size: 8px; }
+  .public-header-actions { gap: 5px; }
   .public-login-button { min-height: 36px; padding: 0 10px; font-size: 10px; }
   .public-portal-main { width: min(100% - 26px, 600px); padding-top: 25px; }
   .public-portal-intro { padding-top: 5px; }

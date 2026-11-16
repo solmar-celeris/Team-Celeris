@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useState, type DragEvent, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Filter, Folder, GripVertical, Newspaper, Megaphone, MessageCircle, Moon, Sun, Trash2, X, Paperclip, ExternalLink, Video, Maximize2, Minimize2, ChevronDown, type LucideProps, type LucideIcon } from 'lucide-react';
+import { ArrowLeftRight, Share2, BookOpen, CalendarDays, Check, ClipboardList, Filter, Folder, GripVertical, Newspaper, Megaphone, MessageCircle, Moon, Sun, Trash2, X, Paperclip, ExternalLink, Video, Maximize2, Minimize2, ChevronDown, type LucideProps, type LucideIcon } from 'lucide-react';
 import {
   activityTypeLabels,
   activityFlowLabels,
@@ -430,8 +430,30 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   const [draftWeekStart, setDraftWeekStart] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [feedback, setFeedback] = useState('');
+  const [shareCopied, setShareCopied] = useState(false);
   const [pushTargetNotice, setPushTargetNotice] = useState('');
   const [dialogError, setDialogError] = useState('');
+
+  const publicSection = tab === 'home' ? 'feed'
+    : tab === 'activities' ? 'activities'
+    : tab === 'agenda' ? agendaSubtab
+    : tab === 'conversations' ? 'announcements'
+    : tab === 'manual' ? 'norms'
+    : null;
+
+  async function shareCurrentSection() {
+    if (!publicSection) return;
+    const url = new URL(window.location.origin);
+    url.searchParams.set('public', '1');
+    url.searchParams.set('tab', publicSection);
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      setShareCopied(true);
+      window.setTimeout(() => setShareCopied(false), 1000);
+    } catch {
+      setFeedback('Não foi possível copiar automaticamente. Verifique a permissão da área de transferência.');
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -1253,6 +1275,9 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
               <p className="workspace-subtitle">{contextualPageHeading.subtitle}</p>
             </div>
             <div className="workspace-heading-actions">
+              {publicSection && <button className="workspace-refresh workspace-share-button" type="button" onClick={() => void shareCurrentSection()} aria-live="polite">
+                {shareCopied ? <><Check size={15} color="#16a34a" /> Link copiado</> : <><Share2 size={15} /> Compartilhar</>}
+              </button>}
               {tab === 'membersChat' && <button className="workspace-refresh" type="button" onClick={() => setTab(chatReturnTab)}><ArrowLeftRight size={14} /> Voltar ao workspace</button>}
               {(tab === 'activities' || tab === 'home') && <span className="workspace-cycle-chip">PERÍODO · {formatFullDate(cycleStart)} – {formatFullDate(cycleEnd)} · {cycleWeeksCount} SEMANAS</span>}
               {(tab === 'activities' || tab === 'home') && profile.role === 'admin' && <button className="workspace-refresh workspace-period-button" type="button" onClick={() => { setPeriodError(''); setPeriodDialogOpen(true); }}>Editar período</button>}
