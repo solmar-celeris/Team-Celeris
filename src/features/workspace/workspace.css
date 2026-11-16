@@ -2813,3 +2813,98 @@
     gap: 3px !important;
   }
 }
+
+
+/* Navegação refinada: 2 px entre ícones e rótulos. */
+.workspace-nav button,
+.workspace-module-tabs button {
+  gap: 2px !important;
+}
+.workspace-module-tabs.is-agenda {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+/* Seletor Agenda no cabeçalho mobile. */
+.workspace-mobile-agenda-select {
+  display: none;
+}
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-mobile-agenda-select {
+    position: relative !important;
+    display: inline-flex !important;
+    flex: 0 0 auto !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    min-width: 76px !important;
+    height: 38px !important;
+    padding: 0 8px !important;
+    border: 1px solid rgba(255,255,255,.28) !important;
+    border-radius: 10px !important;
+    color: #fff !important;
+    background: rgba(255,255,255,.1) !important;
+    font-size: 12px !important;
+    font-weight: 750 !important;
+    white-space: nowrap !important;
+  }
+  .workspace-mobile-agenda-select > svg {
+    width: 14px !important;
+    height: 14px !important;
+    pointer-events: none !important;
+  }
+  .workspace-mobile-agenda-select select {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    opacity: 0 !important;
+    cursor: pointer !important;
+  }
+  .workspace-module-tabs.is-agenda {
+    display: none !important;
+  }
+  .workspace-screen > .workspace-bottom-nav {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 0 !important;
+  }
+  .workspace-screen > .workspace-bottom-nav > button {
+    gap: 2px !important;
+  }
+  .workspace-chat-launcher-mobile-floating {
+    display: grid !important;
+    position: fixed !important;
+    z-index: 96 !important;
+    right: 16px !important;
+    bottom: 88px !important;
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 50% !important;
+    box-shadow: 0 8px 24px rgba(0,30,60,.28) !important;
+  }
+  .workspace-chat-launcher-mobile-floating svg {
+    width: 23px !important;
+    height: 23px !important;
+  }
+  .workspace-meetings-launcher {
+    bottom: 146px !important;
+  }
+  .workspace-chat-launcher-desktop {
+    display: none !important;
+  }
+}
+
+/* Desktop: Agenda volta a ter duas entradas independentes no menu principal. */
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav {
+    display: grid !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    grid-auto-flow: column !important;
+    gap: 0 !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav > button {
+    gap: 2px !important;
+  }
+  .workspace-mobile-agenda-select {
+    display: none !important;
+  }
+}
