@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import AuthPanel from './features/auth/AuthPanel';
 import { installMedianPushNavigation } from './lib/medianPushNavigation';
 import PublicMeetingEntry from './features/workspace/PublicMeetingEntry';
+import PublicWorkspace from './features/public/PublicWorkspace';
 import { supabaseConfigured } from './lib/supabase';
 
 installMedianPushNavigation();
@@ -13,6 +14,7 @@ const DashboardPreview = import.meta.env.DEV
 export default function App() {
   const publicMeetingId = new URLSearchParams(window.location.search).get('meeting');
   if (publicMeetingId && supabaseConfigured) return <PublicMeetingEntry roomId={publicMeetingId} />;
+  if (new URLSearchParams(window.location.search).get('public') === '1' && supabaseConfigured) return <PublicWorkspace />;
   return <AuthenticatedApp />;
 }
 
@@ -51,7 +53,7 @@ function AuthenticatedApp() {
           <span className="brand-name">Team Celeris</span>
         </a>
         <div className="top-actions">
-          <span className="connection-pill"><i /> ACESSO RESTRITO</span>
+          <a className="connection-pill public-entry-link" href="/?public=1"><i /> ACESSO PÚBLICO</a>
           <button
             className="theme-toggle"
             onClick={() => setTheme((current) => current === 'light' ? 'dark' : 'light')}
@@ -69,6 +71,7 @@ function AuthenticatedApp() {
           <img className="auth-app-wordmark" src="/assets/teamceleris-app-wordmark.png" alt="Team Celeris" />
           <h1>O próximo marco começa <em>aqui.</em></h1>
           <p className="intro-copy">Um espaço compartilhado para acompanhar as entregas, as semanas e o avanço do barco solar.</p>
+          <a className="auth-public-link" href="/?public=1">Conhecer o Team Celeris sem entrar <span aria-hidden="true">→</span></a>
         </section>
 
         <section className="auth-panel" aria-labelledby="auth-title">
