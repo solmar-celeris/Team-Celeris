@@ -182,7 +182,7 @@ export default function PublicWorkspace() {
                     const slots = data.availability.filter((slot) => Number(slot.weekday) === index);
                     return slots.length ? <article className="public-data-card" key={day}>
                       <h2>{day}</h2><div className="public-availability-list">
-                        {slots.map((slot, i) => <div key={`${slot.user_id}-${slot.hour_start}-${i}`}><strong>{slot.full_name}</strong><span>{timeLabel(slot.hour_start)}</span><small>{slot.area_name || 'Equipe'}</small></div>)}
+                        {slots.map((slot, i) => <div key={`${slot.full_name}-${slot.hour_start}-${i}`}><strong>{slot.full_name}</strong><span>{timeLabel(slot.hour_start)}</span><small>{slot.area_name || 'Equipe'}</small></div>)}
                       </div>
                     </article> : null;
                   }) : <Empty text="Ainda não há disponibilidades registradas." />}
