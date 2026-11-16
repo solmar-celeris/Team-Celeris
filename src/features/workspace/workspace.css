@@ -3330,3 +3330,23 @@
     border-color: #e06916 !important;
   }
 }
+
+
+/* Menu público: usar as seis guias reais e distribuir o espaço até o lado direito. */
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .workspace-screen[aria-label="Espaço público Team Celeris"] > .workspace-topbar > .workspace-desktop-nav {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: clamp(8px, 1vw, 16px) !important;
+  }
+  .workspace-screen[aria-label="Espaço público Team Celeris"] > .workspace-topbar > .workspace-desktop-nav > button {
+    flex: 0 1 auto !important;
+    width: auto !important;
+    min-width: max-content !important;
+    justify-content: center !important;
+    padding-inline: clamp(4px, .55vw, 9px) !important;
+  }
+}
