@@ -10,7 +10,7 @@ const MAX_EVENT_AGE_MS = 15 * 60 * 1000;
 const ONESIGNAL_MAX_ALIASES = 20_000;
 
 function publicAppOrigin(): string {
-  const value = Deno.env.get('APP_LOGIN_URL')?.trim();
+  const value = Deno.env.get('APP_LOGIN_URL')?.trim() || 'https://teamceleris.pages.dev/';
   if (!value) throw new Error('app_login_url_not_configured');
   let parsed: URL;
   try { parsed = new URL(value); } catch { throw new Error('app_login_url_invalid'); }
