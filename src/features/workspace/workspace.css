@@ -3142,3 +3142,91 @@
   .workspace-heading-actions .workspace-refresh { min-height: 36px; padding-inline: 10px; }
   .workspace-feed-actions button { flex: 1 1 auto; }
 }
+
+
+/* Feed público: cartões no formato editorial do portal original. */
+.public-portal .workspace-feed-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.public-portal .workspace-feed-card {
+  width: 100%;
+  padding: 18px 20px;
+  border: 1px solid #d7e1eb;
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(10, 55, 91, .045);
+}
+.public-portal .workspace-feed-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-bottom: 5px;
+  color: #53677c;
+  font-size: 11px;
+  letter-spacing: .035em;
+}
+.public-portal .workspace-feed-type {
+  color: #53677c;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .045em;
+}
+.public-portal .workspace-feed-card h2 {
+  margin: 0 0 10px;
+  color: #132d48;
+  font-size: 15px;
+  font-weight: 750;
+  line-height: 1.4;
+}
+.public-portal .workspace-feed-card .workspace-feed-body {
+  margin: 14px 0 0;
+  color: #263e57;
+  font-size: 13px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.public-portal .workspace-feed-card .activity-status-badge {
+  display: inline-flex;
+  margin-top: 2px;
+  padding: 4px 9px;
+  border: 1px solid #dbe7f2;
+  border-radius: 99px;
+  color: #14558a;
+  background: #f0f6fb;
+  font-size: 10px;
+  font-weight: 750;
+}
+.public-portal .workspace-feed-activity-meta {
+  margin-top: 13px;
+  padding-top: 11px;
+  border-top: 1px solid #edf1f5;
+}
+.public-portal .workspace-feed-activity-meta strong {
+  color: #718196;
+}
+.public-portal .workspace-feed-actions {
+  margin-top: 15px;
+  padding-top: 12px;
+  border-top: 1px solid #edf1f5;
+}
+.public-portal .workspace-feed-actions button {
+  min-height: 35px;
+  padding: 0 11px;
+  border-color: #dce5ee;
+  border-radius: 8px;
+  color: #164f7e;
+  background: #f7fafd;
+  font-size: 11px;
+}
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .public-portal .workspace-feed-card { padding: 15px; border-radius: 12px; }
+  .public-portal .workspace-feed-card .workspace-feed-body { font-size: 12px; line-height: 1.6; }
+  .public-portal .workspace-feed-actions { gap: 7px; }
+  .public-portal .workspace-feed-actions button { flex: 0 1 auto; }
+}
