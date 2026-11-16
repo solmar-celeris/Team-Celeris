@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ComponentType, type DragEvent, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Filter, Folder, GripVertical, Newspaper, Megaphone, MessageCircle, Moon, Sun, Trash2, X, Paperclip, ExternalLink, Video, Maximize2, Minimize2, type LucideProps } from 'lucide-react';
+import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Filter, Folder, GripVertical, Newspaper, Megaphone, MessageCircle, Moon, Sun, Trash2, X, Paperclip, ExternalLink, Video, Maximize2, Minimize2, ChevronDown, type LucideProps } from 'lucide-react';
 import {
   activityTypeLabels,
   activityFlowLabels,
@@ -1188,11 +1188,24 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             onOpenDeveloperStudio={() => setVisualEditorOpen(true)}
             onLogout={handleProfileLogout}
           />
-          <button className="workspace-chat-launcher workspace-chat-launcher-mobile" type="button" aria-label="Abrir Chat" title="Chat" onClick={() => setChatOpen(true)}><MessageCircle aria-hidden="true" /></button>
+          <label className="workspace-mobile-agenda-select">
+            <span>Agenda</span><ChevronDown aria-hidden="true" />
+            <select aria-label="Selecionar seção da Agenda" value={tab === 'agenda' ? agendaSubtab : ''} onChange={(event) => navigateToAgendaSubtab(event.target.value as AgendaSubtab)}>
+              <option value="" disabled>Agenda</option>
+              <option value="calendar">Calendário</option>
+              <option value="availability">Disponibilidades</option>
+            </select>
+          </label>
         </div>
         <nav className="workspace-nav workspace-desktop-nav" aria-label="Navegação principal">
-          {workspaceTabs.map(({ id, label, icon: Icon }) => (
-            <button key={id} type="button" title={label} aria-label={label} className={tab === id ? 'is-active' : ''} onClick={() => navigateToTab(id)} aria-current={tab === id ? 'page' : undefined}>
+          {workspaceTabs.flatMap((item) => item.id === 'agenda'
+            ? [
+                { id: 'agenda-calendar', label: 'Calendário', icon: CalendarDays, active: tab === 'agenda' && agendaSubtab === 'calendar', action: () => navigateToAgendaSubtab('calendar') },
+                { id: 'agenda-availability', label: 'Disponibilidades', icon: Clock3, active: tab === 'agenda' && agendaSubtab === 'availability', action: () => navigateToAgendaSubtab('availability') },
+              ]
+            : [{ ...item, active: tab === item.id, action: () => navigateToTab(item.id) }]
+          ).map(({ id, label, icon: Icon, active, action }) => (
+            <button key={id} type="button" title={label} aria-label={label} className={active ? 'is-active' : ''} onClick={action} aria-current={active ? 'page' : undefined}>
               <span className="workspace-nav-icon"><Icon aria-hidden="true" /></span>
               <span className="workspace-nav-label">{label}</span>
             </button>
@@ -1201,7 +1214,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
       </header>
 
       <nav className="workspace-nav workspace-bottom-nav" aria-label="Navegação principal">
-        {workspaceTabs.map(({ id, label, icon: Icon }) => (
+        {workspaceTabs.filter(({ id }) => id !== 'agenda').map(({ id, label, icon: Icon }) => (
           <button key={id} type="button" title={label} aria-label={label} className={tab === id ? 'is-active' : ''} onClick={() => navigateToTab(id)} aria-current={tab === id ? 'page' : undefined}>
             <span className="workspace-nav-icon"><Icon aria-hidden="true" /></span>
             <span className="workspace-nav-label">{label}</span>
@@ -1492,6 +1505,9 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
 
       <button className="workspace-meetings-launcher workspace-chat-launcher" type="button" aria-label="Abrir Reuniões" title="Reuniões" onClick={() => setMeetingsOpen(true)}>
         <Video aria-hidden="true" />
+      </button>
+      <button className="workspace-chat-launcher workspace-chat-launcher-mobile-floating" type="button" aria-label="Abrir Chat" title="Chat" onClick={() => setChatOpen(true)}>
+        <MessageCircle aria-hidden="true" />
       </button>
       <button className="workspace-chat-launcher workspace-chat-launcher-desktop" type="button" aria-label="Abrir Chat" title="Chat" onClick={() => setChatOpen(true)}>
         <MessageCircle aria-hidden="true" />
