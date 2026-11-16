@@ -215,13 +215,11 @@ function ClockWithArrowsIcon({ size = 20, className }: LucideProps) {
       aria-hidden="true"
       focusable="false"
     >
-      <path d="M2.5 11.5L10 4L10 8H19V13H10V18L2.5 11.5Z" fill="#FFC447" stroke="#65108B" strokeWidth="1.8" strokeLinejoin="round" />
-      <path d="M45.5 36.5L38 44V40H29V35H38V30L45.5 36.5Z" fill="#FFC447" stroke="#65108B" strokeWidth="1.8" strokeLinejoin="round" />
-      <circle cx="24" cy="24" r="17" fill="#5478B5" stroke="#65108B" strokeWidth="2.5" />
-      <circle cx="24" cy="24" r="12.2" fill="#F7F5F2" stroke="#65108B" strokeWidth="1.7" />
-      <path d="M24 14.8V17M33.2 24H31M24 33.2V31M14.8 24H17" stroke="#65108B" strokeWidth="1.5" strokeLinecap="round" />
-      <circle cx="24" cy="24" r="5.2" fill="#75B64A" stroke="#65108B" strokeWidth="1.5" />
-      <path d="M21.3 24.1L23.2 26L27.2 21.8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M3.5 12.5L11 5M3.5 12.5H17.5V8M3.5 12.5V19" stroke="#0877C9" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M44.5 35.5L37 43M44.5 35.5H30.5V40M44.5 35.5V29" stroke="#0877C9" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="24" cy="24" r="16.5" fill="#EAF5FF" stroke="#0877C9" strokeWidth="3" />
+      <path d="M24 13.5V24L31 28" stroke="#0877C9" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="24" cy="24" r="2.2" fill="#0877C9" />
     </svg>
   );
 }
