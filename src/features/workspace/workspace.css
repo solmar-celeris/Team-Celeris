@@ -3250,3 +3250,83 @@
     min-width: 0 !important;
   }
 }
+
+
+/* Cabeçalho da visualização pública: menu sem sobreposição e acesso com aparência de botão. */
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .public-portal .workspace-screen > .workspace-topbar,
+  .workspace-screen[aria-label="Espaço público Team Celeris"] > .workspace-topbar {
+    display: grid !important;
+    grid-template-columns: 82px minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    column-gap: clamp(10px, 1.2vw, 18px) !important;
+    padding-inline: clamp(12px, 1.6vw, 24px) !important;
+  }
+  .workspace-screen[aria-label="Espaço público Team Celeris"] > .workspace-topbar > .workspace-brand {
+    grid-column: 1 !important;
+    width: 82px !important;
+    min-width: 0 !important;
+    justify-self: start !important;
+  }
+  .workspace-screen[aria-label="Espaço público Team Celeris"] > .workspace-topbar > .workspace-brand img {
+    max-width: 76px !important;
+  }
+  .workspace-screen[aria-label="Espaço público Team Celeris"] > .workspace-topbar > .workspace-desktop-nav {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    display: grid !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    align-items: center !important;
+    justify-content: stretch !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    gap: clamp(5px, .7vw, 10px) !important;
+    margin: 0 !important;
+  }
+  .workspace-screen[aria-label="Espaço público Team Celeris"] > .workspace-topbar > .workspace-desktop-nav > button {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+    padding-inline: clamp(3px, .45vw, 7px) !important;
+    gap: 6px !important;
+    white-space: nowrap !important;
+  }
+  .workspace-screen[aria-label="Espaço público Team Celeris"] > .workspace-topbar > .workspace-desktop-nav .workspace-nav-label {
+    min-width: 0 !important;
+    font-size: clamp(10px, .78vw, 12px) !important;
+  }
+  .workspace-screen[aria-label="Espaço público Team Celeris"] > .workspace-topbar > .workspace-top-actions {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    min-width: max-content !important;
+    margin: 0 !important;
+  }
+  .workspace-screen[aria-label="Espaço público Team Celeris"] > .workspace-topbar > .workspace-top-actions > .workspace-refresh {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 7px !important;
+    min-height: 38px !important;
+    padding: 0 15px !important;
+    border: 1px solid rgba(255,255,255,.75) !important;
+    border-radius: 10px !important;
+    color: #014b89 !important;
+    background: #fff !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+    box-shadow: 0 2px 7px rgba(0,25,55,.12) !important;
+  }
+  .workspace-screen[aria-label="Espaço público Team Celeris"] > .workspace-topbar > .workspace-top-actions > .workspace-refresh:hover {
+    color: #fff !important;
+    background: #e06916 !important;
+    border-color: #e06916 !important;
+  }
+}
