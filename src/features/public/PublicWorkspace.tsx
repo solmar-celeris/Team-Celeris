@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase';
 type PublicTab = 'feed' | 'activities' | 'calendar' | 'availability' | 'announcements' | 'norms';
 type Row = Record<string, any>;
 
-const tabs: { id: PublicTab; label: string; icon: LucideIcon }[] = [
+export const publicPortalTabs: { id: PublicTab; label: string; icon: LucideIcon }[] = [
   { id: 'feed', label: 'Feed', icon: Newspaper },
   { id: 'activities', label: 'Atividades', icon: Activity },
   { id: 'calendar', label: 'Calendário', icon: CalendarDays },
@@ -26,7 +26,10 @@ const statusLabel = (value?: string | null) => ({
 } as Record<string, string>)[value ?? ''] ?? value ?? 'Sem registro';
 
 export default function PublicWorkspace() {
-  const [tab, setTab] = useState<PublicTab>('feed');
+  const [tab, setTab] = useState<PublicTab>(() => {
+    const requested = new URLSearchParams(window.location.search).get('tab');
+    return publicPortalTabs.some((item) => item.id === requested) ? requested as PublicTab : 'feed';
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [data, setData] = useState<Record<PublicTab | 'weekly', Row[]>>({
@@ -100,8 +103,8 @@ export default function PublicWorkspace() {
         </section>
 
         <nav className="public-portal-tabs" aria-label="Áreas públicas">
-          {tabs.map(({ id, label, icon: Icon }) => (
-            <button key={id} className={tab === id ? 'is-active' : ''} onClick={() => setTab(id)} type="button">
+          {publicPortalTabs.map(({ id, label, icon: Icon }) => (
+            <button key={id} className={tab === id ? 'is-active' : ''} onClick={() => { setTab(id); const url = new URL(window.location.href); url.searchParams.set('public', '1'); url.searchParams.set('tab', id); window.history.replaceState({}, '', url); }} type="button">
               <Icon size={17} strokeWidth={2} /><span>{label}</span>
             </button>
           ))}
