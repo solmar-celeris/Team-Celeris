@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ComponentType, type DragEvent, type FormEvent } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState, type ComponentType, type DragEvent, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ArrowLeftRight, BookOpen, CalendarDays, Check, ClipboardList, Clock3, Filter, Folder, GripVertical, Newspaper, Megaphone, MessageCircle, Moon, Sun, Trash2, X, Paperclip, ExternalLink, Video, Maximize2, Minimize2, ChevronDown, type LucideProps } from 'lucide-react';
 import {
@@ -1198,17 +1198,26 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           </label>
         </div>
         <nav className="workspace-nav workspace-desktop-nav" aria-label="Navegação principal">
-          {workspaceTabs.flatMap((item) => item.id === 'agenda'
-            ? [
-                { id: 'agenda-calendar', label: 'Calendário', icon: CalendarDays, active: tab === 'agenda' && agendaSubtab === 'calendar', action: () => navigateToAgendaSubtab('calendar') },
-                { id: 'agenda-availability', label: 'Disponibilidades', icon: Clock3, active: tab === 'agenda' && agendaSubtab === 'availability', action: () => navigateToAgendaSubtab('availability') },
-              ]
-            : [{ ...item, active: tab === item.id, action: () => navigateToTab(item.id) }]
-          ).map(({ id, label, icon: Icon, active, action }) => (
-            <button key={id} type="button" title={label} aria-label={label} className={active ? 'is-active' : ''} onClick={action} aria-current={active ? 'page' : undefined}>
-              <span className="workspace-nav-icon"><Icon aria-hidden="true" /></span>
-              <span className="workspace-nav-label">{label}</span>
-            </button>
+          {workspaceTabs.map((item) => (
+            <Fragment key={item.id}>
+              {item.id === 'agenda' ? (
+                <>
+                  <button type="button" title="Calendário" aria-label="Calendário" className={tab === 'agenda' && agendaSubtab === 'calendar' ? 'is-active' : ''} onClick={() => navigateToAgendaSubtab('calendar')} aria-current={tab === 'agenda' && agendaSubtab === 'calendar' ? 'page' : undefined}>
+                    <span className="workspace-nav-icon"><CalendarDays aria-hidden="true" /></span>
+                    <span className="workspace-nav-label">Calendário</span>
+                  </button>
+                  <button type="button" title="Disponibilidades" aria-label="Disponibilidades" className={tab === 'agenda' && agendaSubtab === 'availability' ? 'is-active' : ''} onClick={() => navigateToAgendaSubtab('availability')} aria-current={tab === 'agenda' && agendaSubtab === 'availability' ? 'page' : undefined}>
+                    <span className="workspace-nav-icon"><Clock3 aria-hidden="true" /></span>
+                    <span className="workspace-nav-label">Disponibilidades</span>
+                  </button>
+                </>
+              ) : (
+                <button type="button" title={item.label} aria-label={item.label} className={tab === item.id ? 'is-active' : ''} onClick={() => navigateToTab(item.id)} aria-current={tab === item.id ? 'page' : undefined}>
+                  <span className="workspace-nav-icon"><item.icon aria-hidden="true" /></span>
+                  <span className="workspace-nav-label">{item.label}</span>
+                </button>
+              )}
+            </Fragment>
           ))}
         </nav>
       </header>
