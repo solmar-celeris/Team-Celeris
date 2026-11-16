@@ -2945,3 +2945,44 @@
     gap: 2.5px !important;
   }
 }
+
+
+/* Cabeçalho desktop: marca, navegação e ações em colunas dedicadas.
+   A navegação usa toda a faixa central livre, sem comprimir o grupo de perfil. */
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .workspace-screen > .workspace-topbar {
+    display: grid !important;
+    grid-template-columns: minmax(112px, 0.75fr) minmax(0, 4fr) auto !important;
+    align-items: center !important;
+    column-gap: clamp(12px, 1.6vw, 26px) !important;
+    padding-inline: clamp(14px, 2vw, 30px) !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-brand {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    min-width: 0 !important;
+    justify-self: start !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    justify-content: space-between !important;
+    gap: clamp(5px, 0.8vw, 14px) !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav > button {
+    flex: 1 1 0 !important;
+    min-width: max-content !important;
+    padding-inline: clamp(5px, 0.65vw, 12px) !important;
+    gap: 2.5px !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-top-actions {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    justify-self: end !important;
+    min-width: max-content !important;
+    margin: 0 !important;
+  }
+}
