@@ -3230,3 +3230,23 @@
   .public-portal .workspace-feed-actions { gap: 7px; }
   .public-portal .workspace-feed-actions button { flex: 0 1 auto; }
 }
+
+
+/* Cabeçalho desktop: reduzir o espaço reservado à marca e aproximar a navegação. */
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .workspace-screen > .workspace-topbar {
+    grid-template-columns: 88px minmax(0, 1fr) auto !important;
+    column-gap: clamp(10px, 1.1vw, 16px) !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-brand {
+    width: 88px !important;
+    justify-self: start !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-brand img {
+    max-width: 76px !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav {
+    margin: 0 !important;
+    min-width: 0 !important;
+  }
+}
