@@ -82,8 +82,6 @@ export default function PublicWorkspace() {
     return grouped;
   }, [data.weekly]);
 
-  const login = () => { window.location.href = window.location.pathname; };
-
   function selectTab(nextTab: PublicTab) {
     setTab(nextTab);
     const url = new URL(window.location.href);
