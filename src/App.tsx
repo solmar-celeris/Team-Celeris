@@ -72,6 +72,15 @@ function AuthenticatedApp() {
           <h1>O próximo marco começa <em>aqui.</em></h1>
           <p className="intro-copy">Um espaço compartilhado para acompanhar as entregas, as semanas e o avanço do barco solar.</p>
           <a className="auth-public-link" href="/?public=1">Conhecer o Team Celeris sem entrar <span aria-hidden="true">→</span></a>
+          <nav className="auth-public-portals" aria-label="Acesso direto aos portais públicos">
+            <span>ACESSO DIRETO</span>
+            <a href="/?public=1&tab=feed">Feed</a>
+            <a href="/?public=1&tab=activities">Atividades</a>
+            <a href="/?public=1&tab=calendar">Calendário</a>
+            <a href="/?public=1&tab=availability">Disponibilidades</a>
+            <a href="/?public=1&tab=announcements">Comunicados</a>
+            <a href="/?public=1&tab=norms">Normas</a>
+          </nav>
         </section>
 
         <section className="auth-panel" aria-labelledby="auth-title">
