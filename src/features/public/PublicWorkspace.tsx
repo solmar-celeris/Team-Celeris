@@ -183,13 +183,19 @@ export default function PublicWorkspace() {
             {loading ? <div className="workspace-loading" role="status"><span />Carregando informações públicas…</div> :
               error ? <div className="workspace-alert workspace-alert-error" role="alert"><strong>Não foi possível carregar as informações públicas.</strong><p>{error}</p></div> : <>
                 {tab === 'feed' && <div className="workspace-feed-list">
-                  {data.feed.length ? data.feed.map((item) => <article className="workspace-feed-card" key={item.id}>
-                    <div className="workspace-feed-card-header"><span className="workspace-feed-type">{item.item_type === 'activity' ? 'ATIVIDADE' : 'ATUALIZAÇÃO'}</span><time>{dateLabel(item.created_at)}</time></div>
-                    <h2>{item.title}</h2>{item.status && <span className={`activity-status-badge status-${item.status}`}>{statusLabel(item.status)}</span>}
-                    {item.body && <p className="workspace-feed-body">{item.body}</p>}
-                    {item.related_name && <small>Responsável: {item.related_name}</small>}
+                  {data.activities.length ? [...data.activities]
+                    .sort((a, b) => String(b.updated_at || b.created_at || b.due_date || '').localeCompare(String(a.updated_at || a.created_at || a.due_date || '')))
+                    .map((item) => <article className="workspace-feed-card" key={item.id}>
+                    <div className="workspace-feed-card-header"><span className="workspace-feed-type">ATIVIDADE</span><time>{item.updated_at || item.created_at ? dateLabel(item.updated_at || item.created_at) : item.due_date ? `Prazo: ${dateLabel(item.due_date)}` : 'Em andamento'}</time></div>
+                    <h2>{item.name}</h2>
+                    <span className={`activity-status-badge status-${item.flow_status || 'pending'}`}>{statusLabel(item.flow_status)}</span>
+                    {item.description && <p className="workspace-feed-body">{item.description}</p>}
+                    <div className="workspace-feed-activity-meta">
+                      <span><strong>Área</strong>{item.area_name || 'Não definida'}</span>
+                      <span><strong>Responsável</strong>{item.responsible_name || 'A definir'}</span>
+                    </div>
                     <div className="workspace-feed-actions"><button type="button" onClick={requireLogin}><Heart size={15} /> Reagir <span>Entrar</span></button><button type="button" onClick={requireLogin}><MessageCircle size={15} /> Comentar <span>Entrar</span></button></div>
-                  </article>) : <div className="workspace-empty"><strong>O feed está vazio</strong><p>As atualizações publicadas pela equipe aparecerão aqui.</p></div>}
+                  </article>) : <div className="workspace-empty"><strong>Nenhuma atividade publicada</strong><p>As atividades cadastradas pela equipe aparecerão aqui.</p></div>}
                 </div>}
 
                 {tab === 'activities' && <div className="activity-board">
