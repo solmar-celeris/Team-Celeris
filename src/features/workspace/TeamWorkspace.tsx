@@ -1275,7 +1275,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           />
         </div>
         <nav className="workspace-nav workspace-desktop-nav" aria-label="Navegação principal">
-          {workspaceTabs.map((item) => (
+          {workspaceTabs.filter((item) => item.id !== 'files').map((item) => (
             <Fragment key={item.id}>
               {item.id === 'agenda' ? (
                 <>
@@ -1317,9 +1317,6 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
         </button>
         <button type="button" title="Normas" aria-label="Normas" className={tab === 'manual' ? 'is-active' : ''} onClick={() => navigateToTab('manual')} aria-current={tab === 'manual' ? 'page' : undefined}>
           <span className="workspace-nav-icon"><BookOpen aria-hidden="true" /></span><span className="workspace-nav-label">Normas</span>
-        </button>
-        <button type="button" title="Arquivos" aria-label="Arquivos" className={tab === 'files' ? 'is-active' : ''} onClick={() => navigateToTab('files')} aria-current={tab === 'files' ? 'page' : undefined}>
-          <span className="workspace-nav-icon"><Folder aria-hidden="true" /></span><span className="workspace-nav-label">Arquivos</span>
         </button>
         <button type="button" title="Inventário" aria-label="Inventário" className={tab === 'inventory' ? 'is-active' : ''} onClick={() => navigateToTab('inventory')} aria-current={tab === 'inventory' ? 'page' : undefined}>
           <span className="workspace-nav-icon"><Package aria-hidden="true" /></span><span className="workspace-nav-label">Inventário</span>

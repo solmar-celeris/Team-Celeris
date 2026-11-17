@@ -4175,3 +4175,118 @@
     height: 18px !important;
   }
 }
+
+
+/* Refinamento visual do menu principal: navegação leve, compacta e com destaque claro. */
+.workspace-screen > .workspace-topbar > .workspace-desktop-nav {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  padding: 5px 10px !important;
+}
+.workspace-screen > .workspace-topbar > .workspace-desktop-nav > button {
+  position: relative !important;
+  min-width: 62px !important;
+  min-height: 52px !important;
+  padding: 6px 9px !important;
+  gap: 4px !important;
+  border: 1px solid transparent !important;
+  border-radius: 12px !important;
+  color: rgba(255,255,255,.78) !important;
+  transition: background .18s ease, color .18s ease, transform .18s ease !important;
+}
+.workspace-screen > .workspace-topbar > .workspace-desktop-nav > button:hover {
+  color: #fff !important;
+  background: rgba(255,255,255,.11) !important;
+  transform: translateY(-1px) !important;
+}
+.workspace-screen > .workspace-topbar > .workspace-desktop-nav > button.is-active {
+  color: #fff !important;
+  border-color: rgba(255,255,255,.17) !important;
+  background: rgba(255,255,255,.14) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 4px 12px rgba(0,25,55,.12) !important;
+}
+.workspace-screen > .workspace-topbar > .workspace-desktop-nav > button.is-active::after {
+  right: 14px !important;
+  left: 14px !important;
+  bottom: -5px !important;
+  height: 3px !important;
+  background: #f28a32 !important;
+}
+.workspace-screen > .workspace-topbar > .workspace-desktop-nav .workspace-nav-icon {
+  width: 21px !important;
+  height: 21px !important;
+}
+.workspace-screen > .workspace-topbar > .workspace-desktop-nav .workspace-nav-icon svg {
+  width: 17px !important;
+  height: 17px !important;
+  stroke-width: 1.9 !important;
+}
+.workspace-screen > .workspace-topbar > .workspace-desktop-nav .workspace-nav-label {
+  font-size: 9px !important;
+  font-weight: 600 !important;
+  letter-spacing: .01em !important;
+}
+.workspace-screen > .workspace-bottom-nav {
+  padding: 5px 7px calc(5px + env(safe-area-inset-bottom, 0px)) !important;
+  background: rgba(255,255,255,.96) !important;
+  border-top: 1px solid rgba(1,75,137,.12) !important;
+  box-shadow: 0 -6px 22px rgba(1,35,60,.10) !important;
+  backdrop-filter: blur(14px) !important;
+}
+.workspace-screen > .workspace-bottom-nav > button {
+  position: relative !important;
+  min-height: 47px !important;
+  border-radius: 10px !important;
+  color: #64748b !important;
+  transition: color .18s ease, background .18s ease !important;
+}
+.workspace-screen > .workspace-bottom-nav > button.is-active {
+  color: #014b89 !important;
+  background: rgba(1,75,137,.08) !important;
+}
+.workspace-screen > .workspace-bottom-nav > button.is-active::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 2px !important;
+  left: 50% !important;
+  width: 18px !important;
+  height: 3px !important;
+  border-radius: 0 0 4px 4px !important;
+  background: #e87924 !important;
+  transform: translateX(-50%) !important;
+}
+.workspace-screen > .workspace-bottom-nav .workspace-nav-icon svg {
+  stroke-width: 1.9 !important;
+}
+.workspace-screen > .workspace-bottom-nav .workspace-nav-label {
+  font-weight: 600 !important;
+}
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-screen > .workspace-bottom-nav {
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    height: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
+    min-height: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-top: 5px !important;
+  }
+  .workspace-screen > .workspace-bottom-nav > button {
+    min-height: 48px !important;
+    gap: 3px !important;
+  }
+  .workspace-screen > .workspace-bottom-nav .workspace-nav-icon {
+    width: 19px !important;
+    height: 19px !important;
+    flex-basis: 19px !important;
+  }
+  .workspace-screen > .workspace-bottom-nav .workspace-nav-icon svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  .workspace-screen > .workspace-bottom-nav .workspace-nav-label {
+    font-size: clamp(7px, 1.8vw, 8.5px) !important;
+  }
+  .workspace-screen > .workspace-frame {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
