@@ -3673,3 +3673,61 @@
 @media (min-width: 761px) and (hover: hover) and (pointer: fine) {
   .workspace-files-floater { display: none !important; }
 }
+
+
+/* Refinos exclusivos do cabeçalho e atalhos na versão mobile. */
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  /* A guia Agenda deixa de ocupar espaço no cabeçalho; Perfil ganha destaque. */
+  .workspace-mobile-agenda-select { display: none !important; }
+  .workspace-topbar {
+    grid-template-columns: 48px minmax(0, 1fr) 48px !important;
+    grid-template-areas: "brand navigation actions" !important;
+  }
+  .workspace-top-actions {
+    grid-area: actions !important;
+    display: flex !important;
+    justify-self: end !important;
+    align-items: center !important;
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    gap: 0 !important;
+  }
+  .workspace-top-actions .workspace-role,
+  .workspace-top-actions .workspace-theme-toggle { display: none !important; }
+  .workspace-top-actions .profile-menu {
+    display: block !important;
+    width: 46px !important;
+    min-width: 46px !important;
+    height: 46px !important;
+  }
+  .workspace-top-actions .profile-menu-trigger {
+    display: grid !important;
+    width: 46px !important;
+    min-width: 46px !important;
+    max-width: 46px !important;
+    height: 46px !important;
+    min-height: 46px !important;
+    padding: 2px !important;
+    place-items: center !important;
+  }
+  .workspace-top-actions .profile-menu-trigger-avatar {
+    width: 40px !important;
+    height: 40px !important;
+    flex: 0 0 40px !important;
+  }
+
+  /* Arquivos fica imediatamente acima do botão flutuante de Reuniões. */
+  .workspace-files-floater {
+    right: max(16px, env(safe-area-inset-right)) !important;
+    bottom: calc(148px + env(safe-area-inset-bottom)) !important;
+    color: #fff !important;
+    background: #e87924 !important;
+    border-color: rgba(255,255,255,.95) !important;
+    box-shadow: 0 4px 15px rgba(120,62,12,.3) !important;
+  }
+  .workspace-files-floater:hover,
+  .workspace-files-floater:active {
+    background: #cf6417 !important;
+  }
+}
