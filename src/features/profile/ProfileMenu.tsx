@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { LogOut } from 'lucide-react';
+import { ChevronDown, LogOut } from 'lucide-react';
 import {
   disableDesktopNotifications,
   enableDesktopNotifications,
@@ -270,7 +270,8 @@ export default function ProfileMenu({ client, userId, fallbackName, photoUrl, on
         <span className="profile-avatar profile-menu-trigger-avatar" aria-hidden="true">
           {shownPhoto ? <img src={shownPhoto} alt="" /> : <span>{initialFrom(shownName)}</span>}
         </span>
-        <span className="profile-menu-trigger-name">Eu</span>
+        <span className="profile-menu-trigger-name">{shownName}</span>
+        <ChevronDown className="profile-menu-trigger-chevron" aria-hidden="true" />
       </button>
 
       {open && (
