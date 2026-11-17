@@ -5049,3 +5049,41 @@
     min-height: 58px !important;
   }
 }
+
+/* Aba Atividades: cabeçalho minimalista, apenas título e fechar. */
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading.is-activities-heading {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading.is-activities-heading > div:first-child {
+  display: flex !important;
+  align-items: center !important;
+  min-width: 0 !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading.is-activities-heading .workspace-kicker,
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading.is-activities-heading .workspace-subtitle {
+  display: none !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading.is-activities-heading h1 {
+  display: block !important;
+  margin: 0 !important;
+  color: #fff !important;
+  font-size: 21px !important;
+  line-height: 1.2 !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading.is-activities-heading .workspace-heading-actions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  margin-left: auto !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading.is-activities-heading .workspace-heading-actions > :not(.workspace-popup-close) {
+  display: none !important;
+}
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-frame.is-popup > .workspace-main > .workspace-page-heading.is-activities-heading h1 {
+    font-size: 18px !important;
+  }
+}
