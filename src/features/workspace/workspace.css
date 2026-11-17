@@ -4533,3 +4533,38 @@
     pointer-events: none !important;
   }
 }
+
+/* Padroniza visualmente os atalhos flutuantes no mobile:
+   círculos idênticos e símbolos com a mesma caixa e dimensão. */
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-screen .workspace-files-floater,
+  .workspace-screen .workspace-meetings-launcher,
+  .workspace-screen .workspace-chat-launcher-mobile-floating {
+    box-sizing: border-box !important;
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    max-width: 48px !important;
+    max-height: 48px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 48px !important;
+  }
+  .workspace-screen .workspace-files-floater svg,
+  .workspace-screen .workspace-meetings-launcher svg,
+  .workspace-screen .workspace-chat-launcher-mobile-floating svg {
+    display: block !important;
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    min-height: 22px !important;
+    max-width: 22px !important;
+    max-height: 22px !important;
+    flex: 0 0 22px !important;
+    stroke-width: 2 !important;
+  }
+}
