@@ -57,7 +57,7 @@ create or replace function public.inventory_validate_item_category()
 returns trigger
 language plpgsql
 set search_path = ''
-as $
+as $inventory$
 begin
   if not exists (
     select 1 from public.inventory_categories c
@@ -73,7 +73,7 @@ begin
   new.updated_at := now();
   return new;
 end;
-$;
+$inventory$;
 drop trigger if exists inventory_items_validate_category on public.inventory_items;
 create trigger inventory_items_validate_category
   before insert or update on public.inventory_items
