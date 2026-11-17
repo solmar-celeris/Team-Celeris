@@ -4290,3 +4290,30 @@
     padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
+
+/* Padroniza o atalho flutuante de Arquivos com o de Reuniões. */
+.workspace-screen > .workspace-files-floater {
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  min-height: 48px !important;
+  display: grid !important;
+  place-items: center !important;
+}
+.workspace-screen > .workspace-files-floater svg {
+  width: 21px !important;
+  height: 21px !important;
+}
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-screen > .workspace-files-floater {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    right: 16px !important;
+  }
+  .workspace-screen > .workspace-files-floater svg {
+    width: 21px !important;
+    height: 21px !important;
+  }
+}
