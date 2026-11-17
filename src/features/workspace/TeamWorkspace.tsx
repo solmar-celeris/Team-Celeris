@@ -419,6 +419,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
     return value && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value) ? value : null;
   });
   const [tab, setTab] = useState<WorkspaceTab>(() => workspaceRouteFromUrl().tab);
+  const [workspacePopupOpen, setWorkspacePopupOpen] = useState(() => workspaceRouteFromUrl().tab !== 'home');
   const [meetingsOpen, setMeetingsOpen] = useState(() => Boolean(meetingInviteId) || new URLSearchParams(window.location.search).get('tab') === 'meetings');
   const [meetingsFullscreen, setMeetingsFullscreen] = useState(false);
   const [chatOpen, setChatOpen] = useState(() => pushTarget?.type === 'chat' || new URLSearchParams(window.location.search).get('tab') === 'chat');
@@ -1215,6 +1216,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
     if (meetingRoomActive && (nextTab !== tab || leavingLiveMeeting)) { setMeetingRoomActive(false); setMeetingsOpen(false); }
     if (nextTab === 'manual') setManualSection('funcoes');
     setTab(nextTab);
+    setWorkspacePopupOpen(nextTab !== 'home');
     writeWorkspaceRoute(nextTab, agendaSubtab);
   }
 
@@ -1223,6 +1225,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
     if (meetingRoomActive) { setMeetingRoomActive(false); setMeetingsOpen(false); }
     setAgendaSubtab(nextSubtab);
     setTab('agenda');
+    setWorkspacePopupOpen(true);
     writeWorkspaceRoute('agenda', nextSubtab);
   }
 
@@ -1234,7 +1237,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   const pageHeading = tab === 'home'
     ? { kicker: 'FEED DA EQUIPE', title: 'Início', subtitle: selectedWeek ? `Acompanhe as atividades da semana ${selectedWeek.number} e os próximos compromissos da equipe.` : 'Acompanhe as atividades e os próximos compromissos da equipe.' }
     : tab === 'agenda'
-      ? { kicker: 'AGENDA DA EQUIPE', title: 'Agenda', subtitle: 'Organize reuniões, treinamentos, eventos e compromissos da equipe.' }
+      ? { kicker: 'AGENDA DA EQUIPE', title: agendaSubtab === 'calendar' ? 'Calendário' : 'Disponibilidades', subtitle: agendaSubtab === 'calendar' ? 'Consulte e organize os eventos e compromissos da equipe.' : 'Consulte e atualize a disponibilidade dos integrantes da equipe.' }
       : tab === 'activities'
       ? { kicker: 'CADASTRO DA EQUIPE', title: 'Atividades da equipe.', subtitle: 'Consulte, filtre e mantenha as atividades do ciclo atualizadas.' }
       : tab === 'files'
@@ -1326,7 +1329,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
         <Folder aria-hidden="true" />
       </button>
 
-      <div className="workspace-frame">
+      <div className={`workspace-frame${workspacePopupOpen ? ' is-popup' : ''}`} role={workspacePopupOpen ? 'dialog' : undefined} aria-modal={workspacePopupOpen || undefined} aria-label={workspacePopupOpen ? contextualPageHeading.title : undefined}>
         <main className={`workspace-main${tab === 'membersChat' ? ' is-chat-page' : ''}${tab === 'home' ? ' is-home-page' : ' is-fullscreen-page'}`} id="workspace">
           <div className="workspace-page-heading">
             <div>
@@ -1335,6 +1338,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
               <p className="workspace-subtitle">{contextualPageHeading.subtitle}</p>
             </div>
             <div className="workspace-heading-actions">
+              {workspacePopupOpen && <button className="workspace-popup-close" type="button" aria-label="Fechar guia" title="Fechar" onClick={() => { setWorkspacePopupOpen(false); navigateToTab('home'); }}><X aria-hidden="true" /></button>}
               {publicSection && <button className="workspace-refresh workspace-share-button" type="button" onClick={() => void shareCurrentSection()} aria-live="polite">
                 {shareCopied ? <><Check size={15} color="#16a34a" /> Link copiado</> : <><Share2 size={15} /> Compartilhar</>}
               </button>}

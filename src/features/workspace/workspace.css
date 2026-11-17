@@ -4654,3 +4654,104 @@
     pointer-events: auto !important;
   }
 }
+
+/* Guias do workspace em janela de tela cheia, com fechamento no cabeçalho. */
+.workspace-frame.is-popup {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 260 !important;
+  display: flex !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: var(--page, var(--background, #f3f7fb)) !important;
+  box-shadow: 0 18px 70px rgba(0,0,0,.28) !important;
+}
+.workspace-frame.is-popup > .workspace-main {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: auto !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 5 !important;
+  flex: 0 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  min-height: 68px !important;
+  margin: 0 !important;
+  padding: 12px clamp(16px, 2.5vw, 36px) !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--line) !important;
+  border-radius: 0 !important;
+  background: var(--card) !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06) !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading h1 {
+  margin: 0 !important;
+  font-size: clamp(19px, 2vw, 25px) !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-kicker,
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-subtitle {
+  display: none !important;
+}
+.workspace-popup-close {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 42px !important;
+  width: 42px !important;
+  height: 42px !important;
+  padding: 0 !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+  color: var(--ink) !important;
+  background: var(--card) !important;
+  cursor: pointer !important;
+}
+.workspace-popup-close svg { width: 21px !important; height: 21px !important; }
+.workspace-frame.is-popup > .workspace-main > .workspace-module-tabs {
+  flex: 0 0 auto !important;
+  margin: 0 !important;
+  padding: 10px clamp(16px, 2.5vw, 36px) !important;
+}
+.workspace-frame.is-popup > .workspace-main > :not(.workspace-page-heading):not(.workspace-module-tabs) {
+  min-width: 0;
+}
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-frame.is-popup {
+    z-index: 10020 !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  }
+  .workspace-frame.is-popup > .workspace-main > .workspace-page-heading {
+    min-height: 58px !important;
+    padding: 8px 12px !important;
+  }
+  .workspace-frame.is-popup > .workspace-main > .workspace-page-heading h1 {
+    font-size: 18px !important;
+  }
+  .workspace-popup-close {
+    flex-basis: 38px !important;
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 10px !important;
+  }
+}
