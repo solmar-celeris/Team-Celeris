@@ -4639,3 +4639,18 @@
     flex: 0 0 22px !important;
   }
 }
+
+/* Desktop: mantém apenas o atalho principal de Chat (abaixo de Reuniões).
+   O atalho auxiliar destinado ao mobile não deve aparecer no desktop. */
+@media (min-width: 761px) {
+  .workspace-screen .workspace-chat-launcher-mobile-floating {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+  .workspace-screen .workspace-chat-launcher-desktop {
+    display: flex !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+}
