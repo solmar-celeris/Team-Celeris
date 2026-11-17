@@ -1302,13 +1302,28 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
       </header>
 
       <nav className="workspace-nav workspace-bottom-nav" aria-label="Navegação principal">
-        {workspaceTabs.filter(({ id }) => id !== 'agenda').map(({ id, label, icon: Icon }) => (
-          <button key={id} type="button" title={label} aria-label={label} className={tab === id ? 'is-active' : ''} onClick={() => navigateToTab(id)} aria-current={tab === id ? 'page' : undefined}>
-            <span className="workspace-nav-icon"><Icon aria-hidden="true" /></span>
-            <span className="workspace-nav-label">{label}</span>
-          </button>
-        ))}
+        <button type="button" title="Feed" aria-label="Feed" className={tab === 'home' ? 'is-active' : ''} onClick={() => navigateToTab('home')} aria-current={tab === 'home' ? 'page' : undefined}>
+          <span className="workspace-nav-icon"><Newspaper aria-hidden="true" /></span><span className="workspace-nav-label">Feed</span>
+        </button>
+        <button type="button" title="Atividades" aria-label="Atividades" className={tab === 'activities' ? 'is-active' : ''} onClick={() => navigateToTab('activities')} aria-current={tab === 'activities' ? 'page' : undefined}>
+          <span className="workspace-nav-icon"><ClipboardList aria-hidden="true" /></span><span className="workspace-nav-label">Atividades</span>
+        </button>
+        <button type="button" title="Calendário" aria-label="Calendário" className={tab === 'agenda' && agendaSubtab === 'calendar' ? 'is-active' : ''} onClick={() => navigateToAgendaSubtab('calendar')} aria-current={tab === 'agenda' && agendaSubtab === 'calendar' ? 'page' : undefined}>
+          <span className="workspace-nav-icon"><CalendarDays aria-hidden="true" /></span><span className="workspace-nav-label">Calendário</span>
+        </button>
+        <button type="button" title="Disponibilidades" aria-label="Disponibilidades" className={tab === 'agenda' && agendaSubtab === 'availability' ? 'is-active' : ''} onClick={() => navigateToAgendaSubtab('availability')} aria-current={tab === 'agenda' && agendaSubtab === 'availability' ? 'page' : undefined}>
+          <span className="workspace-nav-icon"><ClockWithArrowsIcon aria-hidden="true" /></span><span className="workspace-nav-label">Disponibilidades</span>
+        </button>
+        <button type="button" title="Comunicados" aria-label="Comunicados" className={tab === 'conversations' ? 'is-active' : ''} onClick={() => navigateToTab('conversations')} aria-current={tab === 'conversations' ? 'page' : undefined}>
+          <span className="workspace-nav-icon"><Megaphone aria-hidden="true" /></span><span className="workspace-nav-label">Comunicados</span>
+        </button>
+        <button type="button" title="Normas" aria-label="Normas" className={tab === 'manual' ? 'is-active' : ''} onClick={() => navigateToTab('manual')} aria-current={tab === 'manual' ? 'page' : undefined}>
+          <span className="workspace-nav-icon"><BookOpen aria-hidden="true" /></span><span className="workspace-nav-label">Normas</span>
+        </button>
       </nav>
+      <button type="button" className="workspace-files-floater" onClick={() => navigateToTab('files')} aria-label="Abrir Arquivos" title="Arquivos">
+        <Folder aria-hidden="true" />
+      </button>
 
       <div className="workspace-frame">
         <main className={`workspace-main${tab === 'membersChat' ? ' is-chat-page' : ''}${tab === 'home' ? ' is-home-page' : ''}`} id="workspace">
