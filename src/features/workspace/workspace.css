@@ -5005,3 +5005,47 @@
     padding: 0 12px !important;
   }
 }
+
+/* Cabeçalho realmente fixo na viewport: não acompanha a rolagem do conteúdo. */
+.workspace-frame.is-popup > .workspace-main {
+  position: relative !important;
+  box-sizing: border-box !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  padding-top: 70px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading {
+  position: fixed !important;
+  inset: 0 0 auto 0 !important;
+  z-index: 10050 !important;
+  box-sizing: border-box !important;
+  width: 100vw !important;
+  height: 70px !important;
+  min-height: 70px !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  transform: none !important;
+  background: #08477f !important;
+  box-shadow: none !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading.is-calendar-heading > div:first-child {
+  display: flex !important;
+  align-items: center !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading.is-calendar-heading h1 {
+  display: block !important;
+  color: #fff !important;
+}
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-frame.is-popup > .workspace-main {
+    padding-top: 58px !important;
+  }
+  .workspace-frame.is-popup > .workspace-main > .workspace-page-heading {
+    height: 58px !important;
+    min-height: 58px !important;
+  }
+}
