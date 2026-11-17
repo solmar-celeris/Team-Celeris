@@ -4136,3 +4136,42 @@
   }
   .workspace-screen > .workspace-files-floater svg { width: 17px !important; height: 17px !important; }
 }
+
+
+/* Arquivos flutuante acima do atalho de Reuniões em desktop e mobile. */
+.workspace-screen > .workspace-files-floater {
+  position: fixed !important;
+  z-index: 97 !important;
+  display: grid !important;
+  right: 24px !important;
+  bottom: 146px !important;
+  width: 48px !important;
+  height: 48px !important;
+  place-items: center !important;
+  border: 1px solid rgba(255,255,255,.95) !important;
+  border-radius: 50% !important;
+  color: #fff !important;
+  background: #e87924 !important;
+  box-shadow: 0 6px 18px rgba(120,62,12,.28) !important;
+}
+.workspace-screen > .workspace-files-floater svg {
+  width: 21px !important;
+  height: 21px !important;
+  stroke-width: 2 !important;
+}
+.workspace-screen > .workspace-files-floater:hover,
+.workspace-screen > .workspace-files-floater:active {
+  background: #cf6417 !important;
+}
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-screen > .workspace-files-floater {
+    right: 16px !important;
+    bottom: calc(204px + env(safe-area-inset-bottom, 0px)) !important;
+    width: 42px !important;
+    height: 42px !important;
+  }
+  .workspace-screen > .workspace-files-floater svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+}
