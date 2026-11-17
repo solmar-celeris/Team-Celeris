@@ -39,6 +39,7 @@ import ManualFunctions from './ManualFunctions';
 import AvailabilityWorkspace from './AvailabilityWorkspace';
 import MeetingsWorkspace from './MeetingsWorkspace';
 import WeeklyActivityCard, { type WeeklyReportDraft } from './WeeklyActivityCard';
+import PerformancePanel from '../dashboard/PerformancePanel';
 import { flushPendingWorkspacePushEvents, notifyActivityChange, notifyWorkspacePush } from '../../lib/notifications';
 import './workspace.css';
 
@@ -1405,6 +1406,27 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             <button className="workspace-clear-filters" type="button" onClick={() => setFilters(defaultFilters)}>Limpar filtros</button>
           </div>}
 
+          {tab === 'home' && <PerformancePanel
+            periodLabel={selectedWeek ? `Semana ${selectedWeek.number} · ${formatWeekRange(selectedWeek)}` : 'Indicadores do ciclo atual'}
+            items={expectedActivities.map((activity) => {
+              const weeklyStatus = updatesForWeek.get(activity.id)?.status;
+              const generalStatus = generalStatusById.get(activity.id);
+              const status = weeklyStatus === 'completed' ? 'completed'
+                : activity.flow_status === 'blocked' ? 'blocked'
+                : generalStatus === 'overdue' ? 'overdue'
+                : weeklyStatus === 'in_progress' ? 'in_progress'
+                : 'pending';
+              return {
+                id: activity.id,
+                code: activity.code,
+                name: activity.name,
+                area: areasById.get(activity.area_id)?.name ?? 'Sem área',
+                responsible: activity.responsible_name,
+                dueDate: activity.due_date,
+                status,
+              };
+            })}
+          />}
           {tab === 'home' && (
             <div className="workspace-feed-layout">
             <section className="workspace-week-section workspace-feed-main" aria-labelledby="selected-week-title">
