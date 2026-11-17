@@ -4802,3 +4802,50 @@
   position: sticky !important;
   top: 0 !important;
 }
+
+/* Desktop: uma única rolagem para todas as guias abertas em tela expandida.
+   O documento externo fica travado; somente o conteúdo da guia rola. */
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  html,
+  body,
+  #root {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .workspace-screen {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .workspace-frame.is-popup {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .workspace-frame.is-popup > .workspace-main {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    scrollbar-gutter: stable !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
