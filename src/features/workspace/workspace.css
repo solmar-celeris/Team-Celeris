@@ -3479,3 +3479,42 @@
   background: var(--surface) !important;
   transform: translateY(-1px);
 }
+
+
+/* Navegação desktop autenticada: cada guia mantém ícone e nome juntos, sem distribuir o espaço dentro do botão. */
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .workspace-screen:not([aria-label="Espaço público Team Celeris"]) > .workspace-topbar > .workspace-desktop-nav {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: clamp(5px, .65vw, 10px) !important;
+    margin-inline: clamp(6px, .8vw, 12px) !important;
+  }
+  .workspace-screen:not([aria-label="Espaço público Team Celeris"]) > .workspace-topbar > .workspace-desktop-nav > button {
+    display: inline-flex !important;
+    flex: 0 1 auto !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: auto !important;
+    min-width: max-content !important;
+    padding: 0 clamp(5px, .55vw, 9px) !important;
+    gap: 8px !important;
+    white-space: nowrap !important;
+  }
+  .workspace-screen:not([aria-label="Espaço público Team Celeris"]) > .workspace-topbar > .workspace-desktop-nav .workspace-nav-icon {
+    flex: 0 0 32px !important;
+    width: 32px !important;
+    height: 32px !important;
+    margin: 0 !important;
+  }
+  .workspace-screen:not([aria-label="Espaço público Team Celeris"]) > .workspace-topbar > .workspace-desktop-nav .workspace-nav-label {
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+  }
+}
