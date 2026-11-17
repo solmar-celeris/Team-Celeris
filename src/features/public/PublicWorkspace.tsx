@@ -35,7 +35,7 @@ const dateLabel = (value?: string | null) => value
   : 'Data não informada';
 const timeLabel = (value?: string | null) => value ? value.slice(0, 5) : '';
 const statusLabel = (value?: string | null) => statusLabels[value ?? ''] ?? value ?? 'Sem registro';
-const loginHref = '/';
+const loginHref = (tab: PublicTab) => `/?tab=${encodeURIComponent(tab)}`;
 
 export default function PublicWorkspace() {
   const [tab, setTab] = useState<PublicTab>(() => {
@@ -59,7 +59,7 @@ export default function PublicWorkspace() {
     feed: [], activities: [], calendar: [], availability: [], announcements: [], norms: [], weekly: [],
   });
 
-  const requireLogin = () => { window.location.assign(loginHref); };
+  const requireLogin = () => { window.location.assign(loginHref(tab)); };
   useEffect(() => {
     let active = true;
     if (!supabase) {
@@ -156,7 +156,7 @@ export default function PublicWorkspace() {
         <a className="workspace-brand" href="/?public=1" aria-label="Team Celeris"><img src="/assets/solmar-celeris-site-logo.png" alt="SolMar Celeris" /></a>
         <div className="workspace-top-actions">
           <span className="workspace-cycle-chip">VISITANTE · SOMENTE LEITURA</span>
-          <a className="workspace-refresh" href={loginHref}><LogIn size={15} aria-hidden="true" /> Entrar na equipe</a>
+          <a className="workspace-refresh" href={loginHref(tab)}><LogIn size={15} aria-hidden="true" /> Entrar na equipe</a>
         </div>
         <nav className="workspace-nav workspace-desktop-nav" aria-label="Navegação principal">
           {publicPortalTabs.map(({ id, label, icon: Icon }) => <button key={id} type="button" title={label} aria-label={label} className={tab === id ? 'is-active' : ''} onClick={() => selectTab(id)} aria-current={tab === id ? 'page' : undefined}><span className="workspace-nav-icon"><Icon aria-hidden="true" /></span><span className="workspace-nav-label">{label}</span></button>)}
