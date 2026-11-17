@@ -2167,6 +2167,7 @@
 .workspace-chat-launcher svg { width: 25px; height: 25px; stroke-width: 2.2; }
 .workspace-chat-launcher:hover { background: #06396b; transform: translateY(-1px); }
 .workspace-chat-launcher-desktop { position: fixed; z-index: 95; right: 24px; bottom: 24px; }
+.workspace-chat-launcher-mobile-floating { display: none; }
 .workspace-chat-launcher-mobile { display: none; width: 39px; height: 39px; flex: 0 0 39px; border-radius: 11px; box-shadow: none; }
 .workspace-chat-launcher-mobile svg { width: 20px; height: 20px; }
 .workspace-chat-overlay {
