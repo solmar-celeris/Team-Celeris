@@ -4603,3 +4603,39 @@
     flex: 0 0 22px !important;
   }
 }
+
+/* Desktop: restaura o Chat logo abaixo de Reuniões, no mesmo eixo e tamanho. */
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .workspace-screen .workspace-meetings-launcher {
+    right: 24px !important;
+    bottom: 82px !important;
+  }
+  .workspace-screen .workspace-chat-launcher-desktop {
+    display: flex !important;
+    position: fixed !important;
+    z-index: 95 !important;
+    right: 24px !important;
+    bottom: 24px !important;
+    box-sizing: border-box !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    max-width: 48px !important;
+    max-height: 48px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+  }
+  .workspace-screen .workspace-chat-launcher-desktop svg {
+    display: block !important;
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    min-height: 22px !important;
+    max-width: 22px !important;
+    max-height: 22px !important;
+    flex: 0 0 22px !important;
+  }
+}
