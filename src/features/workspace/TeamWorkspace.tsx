@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useState, type DragEvent, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowLeftRight, Share2, BookOpen, CalendarDays, Check, ClipboardList, Filter, Folder, GripVertical, Newspaper, Megaphone, MessageCircle, Moon, Sun, Trash2, X, Paperclip, ExternalLink, Video, Maximize2, Minimize2, type LucideProps, type LucideIcon } from 'lucide-react';
+import { ArrowLeftRight, Share2, BookOpen, CalendarDays, Check, ClipboardList, Filter, Folder, Package, Monitor, GripVertical, Newspaper, Megaphone, MessageCircle, Moon, Sun, Trash2, X, Paperclip, ExternalLink, Video, Maximize2, Minimize2, type LucideProps, type LucideIcon } from 'lucide-react';
 import {
   activityTypeLabels,
   activityFlowLabels,
@@ -100,7 +100,7 @@ type ActivityFormState = {
 };
 type AttachmentSubmission = { files: File[]; driveName: string; driveUrl: string };
 type WeeklyDraft = WeeklyReportDraft;
-type WorkspaceTab = 'home' | 'activities' | 'agenda' | 'conversations' | 'membersChat' | 'files' | 'manual';
+type WorkspaceTab = 'home' | 'activities' | 'agenda' | 'conversations' | 'membersChat' | 'files' | 'manual' | 'inventory';
 type AgendaSubtab = 'calendar' | 'availability' | 'meetings';
 type WorkspaceTabIcon = LucideIcon;
 type PushDeepLink =
@@ -123,6 +123,7 @@ const workspaceTabs: { id: WorkspaceTab; label: string; icon: WorkspaceTabIcon }
   { id: 'conversations', label: 'Comunicados', icon: Megaphone },
   { id: 'files', label: 'Arquivos', icon: Folder },
   { id: 'manual', label: 'Normas', icon: BookOpen },
+  { id: 'inventory', label: 'Inventário', icon: Package },
 ];
 
 const defaultFilters: FilterState = {
@@ -175,6 +176,7 @@ function workspaceRouteFromUrl(): { tab: WorkspaceTab; agendaSubtab: AgendaSubta
   else if (route === 'announcements') tab = 'conversations';
   else if (route === 'files') tab = 'files';
   else if (route === 'norms') tab = 'manual';
+  else if (route === 'inventory') tab = 'inventory';
   else if (route === 'chat') tab = 'membersChat';
   else tab = 'home';
   const agendaSubtab: AgendaSubtab = route === 'availability'
@@ -189,6 +191,7 @@ function workspaceRouteKey(tab: WorkspaceTab, agendaSubtab: AgendaSubtab): strin
   if (tab === 'activities') return 'activities';
   if (tab === 'conversations') return 'announcements';
   if (tab === 'files') return 'files';
+  if (tab === 'inventory') return 'inventory';
   return 'norms';
 }
 
@@ -1240,7 +1243,9 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           ? { kicker: 'MURAL DA EQUIPE', title: 'Comunicados', subtitle: 'Avisos compartilhados com todos os integrantes da equipe.' }
           : tab === 'membersChat'
             ? { kicker: 'MENSAGENS PRIVADAS', title: 'Chat', subtitle: 'Conversas abertas pelo diretório de membros.' }
-            : { kicker: 'DOCUMENTAÇÃO DA EQUIPE', title: 'Documentação', subtitle: 'Consulte as normas de conduta e os manuais de funções de todas as áreas em um único lugar.' };
+            : tab === 'inventory'
+              ? { kicker: 'ADMINISTRAÇÃO E PATRIMÔNIO', title: 'Inventário', subtitle: 'Controle de equipamentos permanentes e materiais de consumo.' }
+              : { kicker: 'DOCUMENTAÇÃO DA EQUIPE', title: 'Documentação', subtitle: 'Consulte as normas de conduta e os manuais de funções de todas as áreas em um único lugar.' };
 
   const contextualPageHeading = tab === 'manual'
     ? { ...pageHeading, kicker: 'NORMAS E REFERÊNCIAS', title: 'Normas', subtitle: 'Normas de conduta e manuais de funções reunidos em um único lugar.' }
@@ -1325,7 +1330,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
       </button>
 
       <div className="workspace-frame">
-        <main className={`workspace-main${tab === 'membersChat' ? ' is-chat-page' : ''}${tab === 'home' ? ' is-home-page' : ''}`} id="workspace">
+        <main className={`workspace-main${tab === 'membersChat' ? ' is-chat-page' : ''}${tab === 'home' ? ' is-home-page' : ' is-fullscreen-page'}`} id="workspace">
           <div className="workspace-page-heading">
             <div>
               <p className="workspace-kicker">{contextualPageHeading.kicker}</p>
@@ -1599,6 +1604,13 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             </section>
           )}
 
+          {tab === 'inventory' && (
+            <section className="workspace-inventory-placeholder" aria-label="Módulo Inventário">
+              <div className="workspace-inventory-intro"><Package aria-hidden="true" /><div><p className="workspace-kicker">CONTROLE PATRIMONIAL E DE ESTOQUE</p><h2>Inventário</h2><p>Área destinada ao cadastro e acompanhamento de equipamentos permanentes e materiais de consumo.</p></div></div>
+              <div className="workspace-inventory-types"><article><Monitor aria-hidden="true" /><h3>Equipamentos permanentes</h3><p>Cadastro patrimonial, localização, responsáveis, empréstimos, devoluções e manutenção.</p></article><article><Package aria-hidden="true" /><h3>Materiais de consumo</h3><p>Controle de estoque, entradas, saídas, quantidades mínimas e reposição.</p></article></div>
+              <p className="workspace-inventory-notice">O módulo está sendo estruturado. O cadastro, as movimentações e os relatórios serão conectados ao banco de dados na próxima etapa.</p>
+            </section>
+          )}
           {tab === 'files' && (
             <SharedContentWorkspace client={client} mode="files" userId={userId} isAdmin={profile.role === 'admin'} areas={activeAreas} members={members} areaId={null} isGeneralChannel={true} channelId={activeChannel?.id ?? ''} />
           )}
