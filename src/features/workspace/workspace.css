@@ -4317,3 +4317,41 @@
     height: 21px !important;
   }
 }
+
+/* Alinhamento definitivo dos três atalhos flutuantes: mesma caixa e mesmo eixo. */
+.workspace-screen > .workspace-files-floater,
+.workspace-screen .workspace-meetings-launcher,
+.workspace-screen .workspace-chat-launcher-mobile-floating {
+  box-sizing: border-box !important;
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  min-height: 48px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 50% !important;
+  display: grid !important;
+  place-items: center !important;
+}
+.workspace-screen > .workspace-files-floater svg,
+.workspace-screen .workspace-meetings-launcher svg,
+.workspace-screen .workspace-chat-launcher-mobile-floating svg {
+  width: 21px !important;
+  height: 21px !important;
+  flex: 0 0 21px !important;
+}
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-screen > .workspace-files-floater,
+  .workspace-screen .workspace-meetings-launcher,
+  .workspace-screen .workspace-chat-launcher-mobile-floating {
+    right: max(16px, env(safe-area-inset-right)) !important;
+  }
+  .workspace-screen > .workspace-files-floater { bottom: calc(204px + env(safe-area-inset-bottom, 0px)) !important; }
+  .workspace-screen .workspace-meetings-launcher { bottom: calc(146px + env(safe-area-inset-bottom, 0px)) !important; }
+  .workspace-screen .workspace-chat-launcher-mobile-floating { bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important; }
+  /* Arquivos permanece como atalho flutuante, nunca como item da barra inferior. */
+  .workspace-screen > .workspace-bottom-nav button[title="Arquivos"],
+  .workspace-screen > .workspace-bottom-nav button[aria-label="Arquivos"] {
+    display: none !important;
+  }
+}
