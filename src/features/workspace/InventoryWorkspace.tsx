@@ -139,6 +139,29 @@ export default function InventoryWorkspace({ client, userId, isAdmin }: Props) {
     finally { setSaving(false); }
   }
 
+  async function removeLocation(location: Location) {
+    if (!isAdmin || !window.confirm(`Excluir o local "${location.name}"? Se houver patrimônio, saldo ou histórico vinculado, ele será apenas desativado para preservar os registros.`)) return;
+    setSaving(true); setError(''); setNotice('');
+    try {
+      const checks = await Promise.all([
+        client.from('inventory_assets').select('id').eq('location_id', location.id).limit(1),
+        client.from('inventory_stock_balances').select('id').eq('location_id', location.id).limit(1),
+        client.from('inventory_movements').select('id').or(`source_location_id.eq.${location.id},destination_location_id.eq.${location.id}`).limit(1),
+        client.from('inventory_asset_events').select('id').or(`from_location_id.eq.${location.id},to_location_id.eq.${location.id}`).limit(1),
+      ]);
+      const failed = checks.find((result) => result.error);
+      if (failed?.error) throw failed.error;
+      const hasHistory = checks.some((result) => (result.data ?? []).length > 0);
+      const result = hasHistory
+        ? await client.from('inventory_locations').update({ is_active: false }).eq('id', location.id)
+        : await client.from('inventory_locations').delete().eq('id', location.id);
+      if (result.error) throw result.error;
+      setNotice(hasHistory ? 'Local desativado. Os registros históricos foram preservados.' : 'Local excluído.');
+      await load();
+    } catch (e) { setError(e instanceof Error ? e.message : 'Não foi possível excluir o local.'); }
+    finally { setSaving(false); }
+  }
+
   async function updateAsset(asset: Asset, patch: Partial<Asset>, eventType: string, reason: string) {
     if (!isAdmin) return;
     setSaving(true); setError(''); setNotice('');
@@ -193,7 +216,7 @@ export default function InventoryWorkspace({ client, userId, isAdmin }: Props) {
             <div className="inventory-status-list">{Object.entries(assetStatusLabels).map(([key, label]) => <div key={key}><span>{label}</span><strong>{assets.filter((asset) => asset.status === key).length}</strong></div>)}</div>
           </article>
         </div>
-        <article className="inventory-panel"><div className="inventory-panel-title"><MapPin /><div><h3>Locais de armazenamento</h3><p>Armários e prateleira do Laboratório de automação.</p></div></div><div className="inventory-location-grid">{activeLocations.map((location) => <div key={location.id}><MapPin size={15} /><span><strong>{location.name}</strong><small>{location.location_type === 'central' ? 'Almoxarifado central' : location.area_id ? areaById.get(location.area_id) ?? 'Setor' : 'Local adicional'}</small></span></div>)}</div></article>
+        <article className="inventory-panel"><div className="inventory-panel-title"><MapPin /><div><h3>Locais de armazenamento</h3><p>Armários e prateleira do Laboratório de automação.</p></div></div><div className="inventory-location-grid">{activeLocations.map((location) => <div key={location.id}><MapPin size={15} /><span><strong>{location.name}</strong><small>{'Local de armazenamento'}</small></span></div>)}</div></article>
       </div>}
       {section === 'stock' && <div className="inventory-section"><div className="inventory-section-head"><div><h3>Estoque de materiais</h3><p>Acompanhe o saldo por material e local de armazenamento.</p></div>{isAdmin && <button className="inventory-primary" onClick={() => openItem('consumable')}><Plus size={16} /> Cadastrar material</button>}</div>
         <SearchBar value={search} onChange={setSearch} placeholder="Buscar material ou código…" />
@@ -208,7 +231,7 @@ export default function InventoryWorkspace({ client, userId, isAdmin }: Props) {
       </div>}
       {section === 'registers' && <div className="inventory-section"><div className="inventory-section-head"><div><h3>Cadastros básicos</h3><p>Organize as categorias e os locais antes de registrar materiais e patrimônio.</p></div></div>
         <div className="inventory-register-grid"><article className="inventory-panel"><div className="inventory-panel-title"><Tag /><div><h3>Categorias</h3><p>Classifique equipamentos e materiais.</p></div></div><div className="inventory-register-list">{categories.map((category) => <div key={category.id}><span><strong>{category.name}</strong><small>{category.item_type === 'asset' ? 'Patrimônio' : 'Material de consumo'}{!category.is_active ? ' · Inativa' : ''}</small></span>{isAdmin && category.is_active && <button onClick={async () => { const { error } = await client.from('inventory_categories').update({ is_active: false }).eq('id', category.id); if (error) setError(error.message); else void load(); }}>Desativar</button>}</div>)}</div>{isAdmin && <button className="inventory-secondary" onClick={() => { setCategoryForm({ item_type: 'consumable', name: '', description: '' }); setDialog('category'); }}><Plus size={15} /> Nova categoria</button>}</article>
-        <article className="inventory-panel"><div className="inventory-panel-title"><MapPin /><div><h3>Locais</h3><p>Almoxarifado, setores e outros espaços.</p></div></div><div className="inventory-register-list">{locations.map((location) => <div key={location.id}><span><strong>{location.name}</strong><small>{location.location_type === 'central' ? 'Central' : location.area_id ? areaById.get(location.area_id) ?? 'Setor' : 'Adicional'}</small></span></div>)}</div>{isAdmin && <button className="inventory-secondary" onClick={() => { setLocationForm({ name: '', description: '' }); setDialog('location'); }}><Plus size={15} /> Novo local adicional</button>}</article></div>
+        <article className="inventory-panel"><div className="inventory-panel-title"><MapPin /><div><h3>Locais de armazenamento</h3><p>Locais físicos. Setores são apenas a área de atuação dos membros, não locais de guarda.</p></div></div><div className="inventory-register-list">{locations.filter((location) => location.is_active).map((location) => <div key={location.id}><span><strong>{location.name}</strong><small>Local de armazenamento</small></span>{isAdmin && <button type="button" className="inventory-text-action" onClick={() => void removeLocation(location)}>Excluir</button>}</div>)}</div>{isAdmin && <button className="inventory-secondary" onClick={() => { setLocationForm({ name: '', description: '' }); setDialog('location'); }}><Plus size={15} /> Adicionar local</button>}</article></div>
       </div>}
     </>}
     {dialog && <div className="inventory-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) setDialog(null); }}><section className="inventory-modal" role="dialog" aria-modal="true" aria-labelledby="inventory-modal-title"><header><div><span className="inventory-eyebrow">CADASTRO DO INVENTÁRIO</span><h3 id="inventory-modal-title">{dialog === 'item' ? itemType === 'asset' ? 'Novo tipo de equipamento' : 'Novo material de consumo' : dialog === 'asset' ? 'Novo patrimônio' : dialog === 'category' ? 'Nova categoria' : dialog === 'location' ? 'Novo local' : 'Registrar movimentação'}</h3></div><button type="button" aria-label="Fechar" onClick={() => !saving && setDialog(null)}><X /></button></header>
