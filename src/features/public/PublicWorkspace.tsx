@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Activity, CalendarDays, Clock3, Megaphone, BookOpen, Newspaper, Search, Filter,
-  Plus, Pencil, MessageCircle, Heart, ChevronLeft, ChevronRight, LogIn, RefreshCw,
+  Plus, Pencil, MessageCircle, Video, Heart, ChevronLeft, ChevronRight, LogIn, RefreshCw,
   type LucideIcon,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -165,6 +165,10 @@ export default function PublicWorkspace() {
       <nav className="workspace-nav workspace-bottom-nav" aria-label="Navegação principal">
         {publicPortalTabs.map(({ id, label, icon: Icon }) => <button key={id} type="button" title={label} aria-label={label} className={tab === id ? 'is-active' : ''} onClick={() => selectTab(id)} aria-current={tab === id ? 'page' : undefined}><span className="workspace-nav-icon"><Icon aria-hidden="true" /></span><span className="workspace-nav-label">{label}</span></button>)}
       </nav>
+      <div className="workspace-public-floaters" aria-label="Acesso à equipe">
+        <a className="workspace-public-floater is-meetings" href="/?tab=meetings" aria-label="Entrar para acessar Reuniões" title="Reuniões"><Video aria-hidden="true" /></a>
+        <a className="workspace-public-floater is-chat" href="/?tab=chat" aria-label="Entrar para acessar o Chat" title="Chat"><MessageCircle aria-hidden="true" /></a>
+      </div>
       <div className="workspace-frame">
         <main className="workspace-main is-home-page" id="workspace">
           <div className="workspace-page-heading">
