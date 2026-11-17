@@ -5,6 +5,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import PerformancePanel from '../dashboard/PerformancePanel';
 
 type PublicTab = 'feed' | 'activities' | 'calendar' | 'availability' | 'announcements' | 'norms';
 type Row = Record<string, any>;
@@ -186,6 +187,19 @@ export default function PublicWorkspace() {
           <section className="workspace-public-content" aria-live="polite">
             {loading ? <div className="workspace-loading" role="status"><span />Carregando informações públicas…</div> :
               error ? <div className="workspace-alert workspace-alert-error" role="alert"><strong>Não foi possível carregar as informações públicas.</strong><p>{error}</p></div> : <>
+                {tab === 'feed' && <PerformancePanel
+                  readOnly
+                  periodLabel="Indicadores gerais das atividades publicadas"
+                  items={data.activities.map((item) => {
+                    const rawStatus = String(item.flow_status || 'pending');
+                    const done = rawStatus === 'done' || rawStatus === 'completed';
+                    const dueDate = item.due_date ? String(item.due_date).slice(0, 10) : null;
+                    const today = new Date();
+                    const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                    const status = done ? 'completed' : rawStatus === 'blocked' ? 'blocked' : dueDate && dueDate < todayKey ? 'overdue' : rawStatus === 'in_progress' ? 'in_progress' : 'pending';
+                    return { id: String(item.id), code: item.code, name: String(item.name || 'Atividade sem título'), area: item.area_name, responsible: item.responsible_name, dueDate, status };
+                  })}
+                />}
                 {tab === 'feed' && <div className="workspace-feed-list">
                   {data.activities.length ? [...data.activities]
                     .sort((a, b) => String(b.updated_at || b.created_at || b.due_date || '').localeCompare(String(a.updated_at || a.created_at || a.due_date || '')))
