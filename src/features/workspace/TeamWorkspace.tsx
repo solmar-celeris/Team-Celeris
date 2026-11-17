@@ -1600,6 +1600,9 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
       <button className="workspace-chat-launcher workspace-chat-launcher-desktop" type="button" aria-label="Abrir Chat" title="Chat" onClick={() => setChatOpen(true)}>
         <MessageCircle aria-hidden="true" />
       </button>
+      <button className="workspace-chat-launcher workspace-chat-launcher-mobile-floating" type="button" aria-label="Abrir Chat" title="Chat" onClick={() => setChatOpen(true)}>
+        <MessageCircle aria-hidden="true" />
+      </button>
 
       {meetingsOpen && (
         <section className={`workspace-meetings-overlay${meetingsFullscreen ? " is-fullscreen" : ""}`} role="dialog" aria-modal="true" aria-label="Reuniões Team Celeris">
