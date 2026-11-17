@@ -5087,3 +5087,33 @@
     font-size: 18px !important;
   }
 }
+
+/* Exceção à regra antiga que ocultava o cabeçalho das páginas expandidas:
+   em Atividades, o título e o X precisam permanecer visíveis no popup. */
+.workspace-screen > .workspace-frame.is-popup > .workspace-main.is-fullscreen-page > .workspace-page-heading.is-activities-heading {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  align-items: center !important;
+  min-height: 70px !important;
+  height: 70px !important;
+}
+.workspace-screen > .workspace-frame.is-popup > .workspace-main.is-fullscreen-page > .workspace-page-heading.is-activities-heading > div:first-child {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  flex: 1 1 auto !important;
+  align-items: center !important;
+}
+.workspace-screen > .workspace-frame.is-popup > .workspace-main.is-fullscreen-page > .workspace-page-heading.is-activities-heading h1 {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  color: #fff !important;
+}
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main.is-fullscreen-page > .workspace-page-heading.is-activities-heading {
+    min-height: 58px !important;
+    height: 58px !important;
+  }
+}
