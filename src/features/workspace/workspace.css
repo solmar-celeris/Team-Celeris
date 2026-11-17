@@ -3630,3 +3630,46 @@
     overflow: hidden !important;
   }
 }
+
+
+/* Ajustes exclusivos para a navegação mobile: Arquivos flutuante e abas compactas. */
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-files-floater {
+    position: fixed;
+    z-index: 9998;
+    right: max(16px, env(safe-area-inset-right));
+    bottom: calc(78px + env(safe-area-inset-bottom));
+    display: grid;
+    width: 48px;
+    height: 48px;
+    place-items: center;
+    border: 1px solid rgba(255,255,255,.9);
+    border-radius: 50%;
+    color: #fff;
+    background: var(--ocean, #014b89);
+    box-shadow: 0 4px 15px rgba(0,35,70,.25);
+    cursor: pointer;
+  }
+  .workspace-files-floater svg { width: 21px; height: 21px; stroke-width: 2; }
+  .workspace-screen > .workspace-bottom-nav > button {
+    gap: 2px !important;
+    padding: 3px 1px !important;
+  }
+  .workspace-screen > .workspace-bottom-nav .workspace-nav-icon {
+    width: 19px !important;
+    height: 19px !important;
+    flex-basis: 19px !important;
+  }
+  .workspace-screen > .workspace-bottom-nav .workspace-nav-icon svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  .workspace-screen > .workspace-bottom-nav .workspace-nav-label {
+    font-size: clamp(7px, 1.85vw, 8.5px) !important;
+    line-height: 1.05 !important;
+    letter-spacing: -.1px;
+  }
+}
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .workspace-files-floater { display: none !important; }
+}
