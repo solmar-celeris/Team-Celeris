@@ -4780,3 +4780,25 @@
 .workspace-frame.is-popup > .workspace-main > * {
   max-height: none !important;
 }
+
+
+/* Popup de guias: uma única barra de rolagem no conteúdo, em todas as guias. */
+.workspace-frame.is-popup {
+  display: block !important;
+  overflow: hidden !important;
+}
+.workspace-frame.is-popup > .workspace-main {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading {
+  position: sticky !important;
+  top: 0 !important;
+}

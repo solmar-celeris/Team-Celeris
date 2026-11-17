@@ -1237,7 +1237,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   const pageHeading = tab === 'home'
     ? { kicker: 'FEED DA EQUIPE', title: 'Início', subtitle: selectedWeek ? `Acompanhe as atividades da semana ${selectedWeek.number} e os próximos compromissos da equipe.` : 'Acompanhe as atividades e os próximos compromissos da equipe.' }
     : tab === 'agenda'
-      ? { kicker: 'AGENDA DA EQUIPE', title: agendaSubtab === 'calendar' ? 'Calendário' : 'Disponibilidades', subtitle: agendaSubtab === 'calendar' ? 'Consulte e organize os eventos e compromissos da equipe.' : 'Consulte e atualize a disponibilidade dos integrantes da equipe.' }
+      ? { kicker: 'CALENDÁRIO E DISPONIBILIDADES', title: agendaSubtab === 'calendar' ? 'Calendário' : 'Disponibilidades', subtitle: agendaSubtab === 'calendar' ? 'Consulte e organize os eventos e compromissos da equipe.' : 'Consulte e atualize a disponibilidade dos integrantes da equipe.' }
       : tab === 'activities'
       ? { kicker: 'CADASTRO DA EQUIPE', title: 'Atividades da equipe.', subtitle: 'Consulte, filtre e mantenha as atividades do ciclo atualizadas.' }
       : tab === 'files'
