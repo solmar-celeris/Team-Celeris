@@ -4849,3 +4849,95 @@
     -webkit-overflow-scrolling: touch;
   }
 }
+
+/* Cabeçalho das guias expandidas: mesmo padrão visual do cabeçalho do Chat.
+   Mantém os controles próprios de cada guia e elimina a faixa branca antiga. */
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading {
+  box-sizing: border-box !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 20 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  width: 100% !important;
+  min-height: 70px !important;
+  margin: 0 !important;
+  padding: 0 24px !important;
+  color: #fff !important;
+  background: #08477f !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading h1 {
+  margin: 0 !important;
+  color: #fff !important;
+  font-size: 21px !important;
+  line-height: 1.2 !important;
+  font-weight: 650 !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-kicker,
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-subtitle {
+  display: none !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-heading-actions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  margin-left: auto !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-refresh,
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-share-button,
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-add-button,
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-popup-close {
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-height: 42px !important;
+  padding: 0 13px !important;
+  color: #fff !important;
+  background: transparent !important;
+  border: 1px solid rgba(255,255,255,.35) !important;
+  border-radius: 9px !important;
+  box-shadow: none !important;
+  font: inherit !important;
+  cursor: pointer !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-popup-close {
+  flex: 0 0 42px !important;
+  width: 42px !important;
+  padding: 0 !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-refresh:hover,
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-share-button:hover,
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-add-button:hover,
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-popup-close:hover {
+  background: rgba(255,255,255,.12) !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-cycle-chip {
+  color: #fff !important;
+}
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-frame.is-popup > .workspace-main > .workspace-page-heading {
+    min-height: 58px !important;
+    padding: 0 14px !important;
+  }
+  .workspace-frame.is-popup > .workspace-main > .workspace-page-heading h1 {
+    font-size: 18px !important;
+  }
+  .workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-heading-actions {
+    gap: 6px !important;
+  }
+  .workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-refresh,
+  .workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-share-button,
+  .workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-add-button {
+    min-height: 38px !important;
+    padding: 0 9px !important;
+  }
+}
