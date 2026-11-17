@@ -119,7 +119,7 @@ type WeekCalendarEvent = {
 const workspaceTabs: { id: WorkspaceTab; label: string; icon: WorkspaceTabIcon }[] = [
   { id: 'home', label: 'Feed', icon: Newspaper },
   { id: 'activities', label: 'Atividades', icon: ClipboardList },
-  { id: 'agenda', label: 'Agenda', icon: CalendarDays },
+  { id: 'agenda', label: 'Calendário', icon: CalendarDays },
   { id: 'conversations', label: 'Comunicados', icon: Megaphone },
   { id: 'files', label: 'Arquivos', icon: Folder },
   { id: 'manual', label: 'Normas', icon: BookOpen },
@@ -1357,7 +1357,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             </div>
           </div>
 
-          {tab === 'agenda' && <div className="workspace-module-tabs is-agenda" role="tablist" aria-label="Guias da Agenda">
+          {tab === 'agenda' && <div className="workspace-module-tabs is-agenda" role="tablist" aria-label="Guias do calendário">
             <button type="button" role="tab" aria-selected={agendaSubtab === 'calendar'} className={agendaSubtab === 'calendar' ? 'is-active' : ''} onClick={() => navigateToAgendaSubtab('calendar')}><CalendarDays aria-hidden="true" /><span>Calendário</span></button>
             <button type="button" role="tab" aria-selected={agendaSubtab === 'availability'} className={agendaSubtab === 'availability' ? 'is-active' : ''} onClick={() => navigateToAgendaSubtab('availability')}><ClockWithArrowsIcon size={20} /><span>Disponibilidades</span></button>
             </div>}
@@ -1514,7 +1514,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
                   {weekCalendarEvents.length > 0 && (
                     <section className="workspace-week-events" aria-labelledby="week-events-title">
                       <div className="workspace-week-events-heading">
-                        <div><p className="workspace-kicker">AGENDA</p><h3 id="week-events-title">Eventos desta semana</h3></div>
+                        <div><p className="workspace-kicker">CALENDÁRIO</p><h3 id="week-events-title">Eventos desta semana</h3></div>
                         <span>{weekCalendarEvents.length} evento(s)</span>
                       </div>
                       <div className="workspace-week-events-list">
@@ -1522,7 +1522,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
                           <article className={`workspace-week-event is-${event.event_scope}`} key={event.id}>
                             <div className="workspace-week-event-date"><CalendarDays aria-hidden="true" /><strong>{formatShortDate(event.event_date)}</strong>{event.start_time && <span>{event.start_time.slice(0, 5)}</span>}</div>
                             <div className="workspace-week-event-details"><span>{event.event_scope === 'internal' ? 'EVENTO INTERNO' : 'EVENTO EXTERNO'}</span><h4>{event.title}</h4>{event.location && <p>{event.location}</p>}</div>
-                            <button type="button" onClick={() => { setCalendarFocusDate(event.event_date); navigateToAgendaSubtab('calendar'); }}>Ver na Agenda</button>
+                            <button type="button" onClick={() => { setCalendarFocusDate(event.event_date); navigateToAgendaSubtab('calendar'); }}>Ver no calendário</button>
                           </article>
                         ))}
                       </div>
@@ -1545,7 +1545,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
                 <p className="workspace-week-indicator-note">Atrasadas usa a situação geral; bloqueadas, o fluxo Kanban. Os filtros ajustam os totais.</p>
               </section>
               <section className="workspace-feed-card workspace-feed-shortcuts">
-                <p className="workspace-kicker">ATALHOS DE AGENDA</p>
+                <p className="workspace-kicker">ATALHOS DO CALENDÁRIO</p>
                 <button type="button" onClick={() => navigateToAgendaSubtab('calendar')}><CalendarDays aria-hidden="true" /> Calendário</button>
                 <button type="button" onClick={() => navigateToAgendaSubtab('availability')}><ClockWithArrowsIcon size={16} /> Disponibilidades</button>
                 {weekCalendarEvents.length > 0 && <p className="workspace-feed-events-count">{weekCalendarEvents.length} evento(s) na semana selecionada</p>}
