@@ -3418,3 +3418,64 @@
     margin: 0 !important;
   }
 }
+
+
+/* Refinamento dos botões do workspace autenticado (não altera o portal público). */
+.workspace-screen:not([aria-label="Espaço público Team Celeris"]) .workspace-heading-actions .workspace-refresh,
+.workspace-screen:not([aria-label="Espaço público Team Celeris"]) .workspace-heading-actions .workspace-add-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-height: 40px !important;
+  padding: 0 15px !important;
+  border: 1px solid rgba(1, 75, 137, .2) !important;
+  border-radius: 10px !important;
+  color: var(--ocean) !important;
+  background: var(--card) !important;
+  box-shadow: 0 2px 7px rgba(1, 45, 80, .07) !important;
+  font-size: 12px !important;
+  font-weight: 750 !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
+  transition: border-color .18s ease, background .18s ease, box-shadow .18s ease, transform .18s ease !important;
+}
+.workspace-screen:not([aria-label="Espaço público Team Celeris"]) .workspace-heading-actions .workspace-add-button {
+  border-color: var(--ocean) !important;
+  color: #fff !important;
+  background: var(--ocean) !important;
+}
+.workspace-screen:not([aria-label="Espaço público Team Celeris"]) .workspace-heading-actions .workspace-refresh:hover:not(:disabled),
+.workspace-screen:not([aria-label="Espaço público Team Celeris"]) .workspace-heading-actions .workspace-add-button:hover:not(:disabled) {
+  border-color: var(--blue) !important;
+  background: var(--blue) !important;
+  box-shadow: 0 5px 13px rgba(1, 75, 137, .16) !important;
+  transform: translateY(-1px);
+}
+.workspace-screen:not([aria-label="Espaço público Team Celeris"]) .workspace-heading-actions .workspace-add-button > span {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: var(--ocean);
+  background: #fff;
+  font-size: 16px;
+  line-height: 1;
+}
+.workspace-screen:not([aria-label="Espaço público Team Celeris"]) .workspace-feed-actions button {
+  min-height: 38px !important;
+  padding: 0 13px !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 10px !important;
+  color: var(--ocean) !important;
+  background: var(--card) !important;
+  font-size: 11px !important;
+  font-weight: 750 !important;
+  box-shadow: 0 1px 4px rgba(1, 45, 80, .05) !important;
+}
+.workspace-screen:not([aria-label="Espaço público Team Celeris"]) .workspace-feed-actions button:hover {
+  border-color: var(--sky) !important;
+  background: var(--surface) !important;
+  transform: translateY(-1px);
+}
