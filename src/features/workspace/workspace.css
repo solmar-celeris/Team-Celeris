@@ -5227,3 +5227,73 @@
     font-size: 10px !important;
   }
 }
+
+/* FIX DEFINITIVO DO POPUP: somente .workspace-main rola.
+   O cabeçalho fica fixo na viewport, fora do fluxo de rolagem. */
+html:has(.workspace-frame.is-popup),
+body:has(.workspace-frame.is-popup),
+#root:has(.workspace-frame.is-popup),
+.workspace-screen:has(.workspace-frame.is-popup) {
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+.workspace-screen > .workspace-frame.is-popup {
+  position: fixed !important;
+  inset: 0 !important;
+  display: block !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  transform: none !important;
+}
+.workspace-screen > .workspace-frame.is-popup > .workspace-main {
+  position: absolute !important;
+  inset: 0 !important;
+  display: block !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+  padding: 86px 0 28px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch !important;
+  transform: none !important;
+}
+.workspace-screen > .workspace-frame.is-popup > .workspace-main > .workspace-page-heading {
+  position: fixed !important;
+  inset: 0 0 auto 0 !important;
+  display: flex !important;
+  box-sizing: border-box !important;
+  width: 100vw !important;
+  height: 78px !important;
+  min-height: 78px !important;
+  max-height: 78px !important;
+  margin: 0 !important;
+  padding: 10px 24px !important;
+  z-index: 2147483000 !important;
+  transform: none !important;
+  background: #08477f !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,.14) !important;
+}
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main {
+    padding-top: 66px !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main > .workspace-page-heading {
+    height: 58px !important;
+    min-height: 58px !important;
+    max-height: 58px !important;
+    padding: 7px 12px !important;
+  }
+}
