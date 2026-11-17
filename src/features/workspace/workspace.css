@@ -3570,25 +3570,50 @@
 }
 
 
-.workspace-chat-public-link {
-  display: inline-flex;
+
+
+/* Atalhos flutuantes do portal público para Chat e Reuniões. */
+.workspace-public-floaters {
+  position: fixed;
+  z-index: 120;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(22px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 7px;
-  min-height: 36px;
-  padding: 0 12px;
-  border: 1px solid rgba(255,255,255,.35);
-  border-radius: 9px;
+  gap: 12px;
+}
+.workspace-public-floater {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border: 2px solid rgba(255,255,255,.85);
+  border-radius: 50%;
   color: #fff;
-  background: rgba(255,255,255,.12);
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
+  background: var(--ocean, #014b89);
+  box-shadow: 0 5px 18px rgba(0,35,70,.28);
+  text-decoration: none;
+  transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
 }
-.workspace-chat-public-link:hover {
-  background: rgba(255,255,255,.22);
+.workspace-public-floater:hover {
+  transform: translateY(-2px);
+  background: var(--blue, #0877c9);
+  box-shadow: 0 8px 22px rgba(0,35,70,.34);
 }
-.workspace-chat-public-link svg {
-  width: 15px;
-  height: 15px;
+.workspace-public-floater svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 2.2;
+}
+@media (max-width: 760px) {
+  .workspace-public-floaters {
+    right: max(14px, env(safe-area-inset-right));
+    bottom: calc(82px + env(safe-area-inset-bottom));
+    gap: 10px;
+  }
+  .workspace-public-floater {
+    width: 50px;
+    height: 50px;
+  }
 }
