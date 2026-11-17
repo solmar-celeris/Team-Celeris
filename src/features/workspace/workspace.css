@@ -5117,3 +5117,113 @@
     height: 58px !important;
   }
 }
+
+/* Cabeçalho unificado das guias expandidas: ícone, título e descrição
+   ficam na faixa azul; o conteúdo da guia começa logo abaixo. */
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10050 !important;
+  display: flex !important;
+  box-sizing: border-box !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+  width: 100% !important;
+  min-height: 78px !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 10px 24px !important;
+  color: #fff !important;
+  background: #08477f !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-heading-identity {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  align-items: center !important;
+  min-width: 0 !important;
+  gap: 14px !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-heading-icon {
+  display: inline-flex !important;
+  flex: 0 0 38px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 38px !important;
+  height: 38px !important;
+  color: #fff !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-heading-icon svg {
+  width: 34px !important;
+  height: 34px !important;
+  stroke-width: 2 !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-heading-copy {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-kicker {
+  display: none !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading h1 {
+  display: block !important;
+  margin: 0 !important;
+  color: #fff !important;
+  font-size: clamp(19px, 2vw, 25px) !important;
+  font-weight: 700 !important;
+  line-height: 1.15 !important;
+  letter-spacing: 0 !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-subtitle {
+  display: block !important;
+  margin: 4px 0 0 !important;
+  color: rgba(255,255,255,.82) !important;
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-heading-actions {
+  display: flex !important;
+  flex: 0 0 auto !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  margin-left: auto !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading.is-activities-heading > .workspace-heading-identity {
+  display: flex !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading.is-activities-heading .workspace-heading-actions > :not(.workspace-popup-close) {
+  display: none !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-inventory-placeholder {
+  padding-top: 24px !important;
+}
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-frame.is-popup > .workspace-main > .workspace-page-heading {
+    min-height: 64px !important;
+    padding: 8px 13px !important;
+    gap: 9px !important;
+  }
+  .workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-heading-identity {
+    gap: 9px !important;
+  }
+  .workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-heading-icon {
+    flex-basis: 30px !important;
+    width: 30px !important;
+    height: 30px !important;
+  }
+  .workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-heading-icon svg {
+    width: 27px !important;
+    height: 27px !important;
+  }
+  .workspace-frame.is-popup > .workspace-main > .workspace-page-heading h1 {
+    font-size: 18px !important;
+  }
+  .workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-subtitle {
+    font-size: 10px !important;
+  }
+}
