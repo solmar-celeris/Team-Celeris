@@ -178,7 +178,7 @@ async function sendOneSignalPush(
   const notificationText = messageText.slice(0, 2_000);
   const targetUrl = new URL('/', publicAppOrigin());
   targetUrl.searchParams.set('push', 'chat');
-  targetUrl.searchParams.set('tab', 'feed');
+  targetUrl.searchParams.set('tab', 'chat');
   targetUrl.searchParams.set('message_id', message.id);
   const conversationType = message.dm_conversation_id ? 'direct' : message.group_id ? 'group' : 'team';
   const conversationId = message.dm_conversation_id ?? message.group_id;
