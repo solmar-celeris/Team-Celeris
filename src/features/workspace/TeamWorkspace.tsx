@@ -1331,7 +1331,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
 
       <div className={`workspace-frame${workspacePopupOpen ? ' is-popup' : ''}`} role={workspacePopupOpen ? 'dialog' : undefined} aria-modal={workspacePopupOpen || undefined} aria-label={workspacePopupOpen ? contextualPageHeading.title : undefined}>
         <main className={`workspace-main${tab === 'membersChat' ? ' is-chat-page' : ''}${tab === 'home' ? ' is-home-page' : ' is-fullscreen-page'}`} id="workspace">
-          <div className="workspace-page-heading">
+          <div className={`workspace-page-heading${tab === 'agenda' ? ' is-calendar-heading' : ''}`}>
             <div>
               <p className="workspace-kicker">{contextualPageHeading.kicker}</p>
               <h1>{contextualPageHeading.title}</h1>
