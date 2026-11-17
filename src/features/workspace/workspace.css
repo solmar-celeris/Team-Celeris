@@ -4568,3 +4568,38 @@
     stroke-width: 2 !important;
   }
 }
+
+/* Desktop: remove o atalho solto de Chat e padroniza o botão de Reuniões. */
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .workspace-screen .workspace-chat-launcher-desktop {
+    display: none !important;
+  }
+  .workspace-screen .workspace-meetings-launcher {
+    position: fixed !important;
+    right: 24px !important;
+    bottom: 24px !important;
+    z-index: 96 !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    max-width: 48px !important;
+    max-height: 48px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+  }
+  .workspace-screen .workspace-meetings-launcher svg {
+    display: block !important;
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    min-height: 22px !important;
+    max-width: 22px !important;
+    max-height: 22px !important;
+    flex: 0 0 22px !important;
+  }
+}
