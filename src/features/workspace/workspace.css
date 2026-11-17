@@ -4941,3 +4941,67 @@
     padding: 0 9px !important;
   }
 }
+
+/* Correção final: no popup do Calendário, remover o título legado "Agenda"
+   e prender a faixa de ações ao topo da janela, sem margens ou flutuação. */
+.workspace-frame.is-popup {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+.workspace-frame.is-popup > .workspace-main {
+  width: 100% !important;
+  min-height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading {
+  position: sticky !important;
+  inset-block-start: 0 !important;
+  z-index: 100 !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  width: 100% !important;
+  min-height: 70px !important;
+  margin: 0 !important;
+  padding: 0 24px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #08477f !important;
+  box-shadow: none !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading.is-calendar-heading > div:first-child {
+  display: none !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading.is-calendar-heading .workspace-heading-actions {
+  width: 100% !important;
+  margin: 0 !important;
+  justify-content: flex-end !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-popup-close,
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-share-button {
+  min-height: 42px !important;
+  color: #fff !important;
+  background: transparent !important;
+  border: 1px solid rgba(255,255,255,.38) !important;
+  border-radius: 9px !important;
+  box-shadow: none !important;
+}
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-popup-close:hover,
+.workspace-frame.is-popup > .workspace-main > .workspace-page-heading .workspace-share-button:hover {
+  background: rgba(255,255,255,.12) !important;
+}
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-frame.is-popup > .workspace-main > .workspace-page-heading {
+    min-height: 58px !important;
+    padding: 0 12px !important;
+  }
+}
