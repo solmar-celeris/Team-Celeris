@@ -415,7 +415,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
     return value && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value) ? value : null;
   });
   const [tab, setTab] = useState<WorkspaceTab>(() => workspaceRouteFromUrl().tab);
-  const [meetingsOpen, setMeetingsOpen] = useState(Boolean(meetingInviteId));
+  const [meetingsOpen, setMeetingsOpen] = useState(() => Boolean(meetingInviteId) || new URLSearchParams(window.location.search).get('tab') === 'meetings');
   const [meetingsFullscreen, setMeetingsFullscreen] = useState(false);
   const [chatOpen, setChatOpen] = useState(() => pushTarget?.type === 'chat' || new URLSearchParams(window.location.search).get('tab') === 'chat');
   const [activeChannel, setActiveChannel] = useState<WorkspaceChannel | null>(null);
@@ -469,7 +469,6 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   const [errorMessage, setErrorMessage] = useState('');
   const [feedback, setFeedback] = useState('');
   const [shareCopied, setShareCopied] = useState(false);
-  const [chatLinkCopied, setChatLinkCopied] = useState(false);
   const [pushTargetNotice, setPushTargetNotice] = useState('');
   const [dialogError, setDialogError] = useState('');
 
@@ -491,19 +490,6 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
       window.setTimeout(() => setShareCopied(false), 1000);
     } catch {
       setFeedback('Não foi possível copiar automaticamente. Verifique a permissão da área de transferência.');
-    }
-  }
-
-  async function shareChatLoginLink() {
-    const url = new URL(window.location.origin);
-    url.searchParams.set('public', '1');
-    url.searchParams.set('tab', 'chat');
-    try {
-      await navigator.clipboard.writeText(url.toString());
-      setChatLinkCopied(true);
-      window.setTimeout(() => setChatLinkCopied(false), 1200);
-    } catch {
-      setFeedback('Não foi possível copiar o link do Chat. Verifique a permissão da área de transferência.');
     }
   }
 
@@ -1642,9 +1628,6 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           <header className="workspace-chat-overlay-header">
             <div className="workspace-chat-overlay-title"><MessageCircle aria-hidden="true" /><strong>Chat</strong></div>
             <div className="workspace-chat-overlay-actions">
-              <button type="button" className="workspace-chat-public-link" onClick={() => void shareChatLoginLink()} aria-live="polite" title="Copiar link público de acesso ao Chat">
-                {chatLinkCopied ? <><Check aria-hidden="true" /> Link copiado</> : <><Share2 aria-hidden="true" /> Link público</>}
-              </button>
               <button type="button" className="workspace-chat-close" aria-label="Fechar Chat" title="Fechar Chat" onClick={() => setChatOpen(false)}><X aria-hidden="true" /></button>
             </div>
           </header>
