@@ -48,15 +48,36 @@ create table if not exists public.inventory_items (
   updated_by uuid not null references auth.users(id) on delete restrict,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint inventory_item_category_type check (
-    exists (
-      select 1 from public.inventory_categories c
-      where c.id = category_id and c.item_type = item_type
-    )
-  )
 );
 create index if not exists inventory_items_type_name_idx
   on public.inventory_items(item_type, name) where is_active;
+
+
+create or replace function public.inventory_validate_item_category()
+returns trigger
+language plpgsql
+set search_path = ''
+as $
+begin
+  if not exists (
+    select 1 from public.inventory_categories c
+    where c.id = new.category_id and c.item_type = new.item_type and c.is_active
+  ) then
+    raise exception 'A categoria selecionada não corresponde ao tipo do item ou está inativa.'
+      using errcode = '23514';
+  end if;
+  if tg_op = 'INSERT' then
+    new.created_by := coalesce(new.created_by, auth.uid());
+  end if;
+  new.updated_by := auth.uid();
+  new.updated_at := now();
+  return new;
+end;
+$;
+drop trigger if exists inventory_items_validate_category on public.inventory_items;
+create trigger inventory_items_validate_category
+  before insert or update on public.inventory_items
+  for each row execute function public.inventory_validate_item_category();
 
 create table if not exists public.inventory_assets (
   id uuid primary key default gen_random_uuid(),
@@ -149,6 +170,12 @@ create index if not exists inventory_asset_events_asset_idx
 -- Saldo inicial sempre parte de zero; movimentações futuras são a fonte de alteração.
 insert into public.inventory_locations(name, location_type, description)
 values ('Almoxarifado Central', 'central', 'Local central de armazenamento da equipe.')
+on conflict do nothing;
+
+insert into public.inventory_locations(name, location_type, area_id, description)
+select 'Setor — ' || a.name, 'sector', a.id, 'Local de guarda vinculado ao setor.'
+from public.areas a
+where a.is_active
 on conflict do nothing;
 
 -- A função registra e aplica uma movimentação em uma única transação.
@@ -320,7 +347,6 @@ create policy inventory_items_read_active on public.inventory_items
 create policy inventory_items_admin_write on public.inventory_items
   for all to authenticated using (
     public.is_active_member() and public.is_team_admin()
-    and created_by = coalesce(created_by, auth.uid())
   )
   with check (
     public.is_active_member() and public.is_team_admin()
