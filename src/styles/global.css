@@ -348,3 +348,33 @@ body,
   text-decoration: none;
 }
 .auth-public-portals a:hover { text-decoration: underline; }
+
+/* Login/cadastro: rolagem própria da página de autenticação.
+   Depois do login, o formulário deixa de existir e o workspace mantém
+   sua rolagem independente, sem reativar a rolagem do documento. */
+html:has(.app-shell .login-form),
+body:has(.app-shell .login-form),
+#root:has(.app-shell .login-form) {
+  height: auto !important;
+  min-height: 100% !important;
+  overflow-x: clip !important;
+  overflow-y: auto !important;
+}
+.app-shell:has(.login-form) {
+  height: auto !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  overflow: visible !important;
+}
+.auth-main:has(.login-form) {
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+}
+.page-footer {
+  flex-shrink: 0;
+}
+@media (max-width: 760px) {
+  .auth-main:has(.login-form) {
+    padding-bottom: 32px;
+  }
+}
