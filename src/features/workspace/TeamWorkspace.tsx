@@ -1267,14 +1267,6 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             onOpenDeveloperStudio={() => setVisualEditorOpen(true)}
             onLogout={handleProfileLogout}
           />
-          <label className="workspace-mobile-agenda-select">
-            <span>Agenda</span><ChevronDown aria-hidden="true" />
-            <select aria-label="Selecionar seção da Agenda" value={tab === 'agenda' ? agendaSubtab : ''} onChange={(event) => navigateToAgendaSubtab(event.target.value as AgendaSubtab)}>
-              <option value="" disabled>Agenda</option>
-              <option value="calendar">Calendário</option>
-              <option value="availability">Disponibilidades</option>
-            </select>
-          </label>
         </div>
         <nav className="workspace-nav workspace-desktop-nav" aria-label="Navegação principal">
           {workspaceTabs.map((item) => (
