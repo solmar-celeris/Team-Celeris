@@ -3680,21 +3680,19 @@
   /* A guia Agenda deixa de ocupar espaço no cabeçalho; Perfil ganha destaque. */
   .workspace-mobile-agenda-select { display: none !important; }
   .workspace-topbar {
-    grid-template-columns: 48px minmax(0, 1fr) 48px !important;
-    grid-template-areas: "brand navigation actions" !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-areas: "brand actions" !important;
   }
   .workspace-top-actions {
     grid-area: actions !important;
     display: flex !important;
     justify-self: end !important;
     align-items: center !important;
-    width: 48px !important;
+    width: auto !important;
     height: 48px !important;
-    min-width: 48px !important;
-    gap: 0 !important;
+    min-width: 0 !important;
+    gap: 5px !important;
   }
-  .workspace-top-actions .workspace-role,
-  .workspace-top-actions .workspace-theme-toggle { display: none !important; }
   .workspace-top-actions .profile-menu {
     display: block !important;
     width: 46px !important;
