@@ -3501,7 +3501,7 @@
     width: auto !important;
     min-width: max-content !important;
     padding: 0 clamp(5px, .55vw, 9px) !important;
-    gap: 8px !important;
+    gap: 6px !important;
     white-space: nowrap !important;
   }
   .workspace-screen:not([aria-label="Espaço público Team Celeris"]) > .workspace-topbar > .workspace-desktop-nav .workspace-nav-icon {
