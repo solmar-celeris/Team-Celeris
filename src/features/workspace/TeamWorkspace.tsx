@@ -41,6 +41,7 @@ import MeetingsWorkspace from './MeetingsWorkspace';
 import WeeklyActivityCard, { type WeeklyReportDraft } from './WeeklyActivityCard';
 import PerformancePanel from '../dashboard/PerformancePanel';
 import { flushPendingWorkspacePushEvents, notifyActivityChange, notifyWorkspacePush } from '../../lib/notifications';
+import InventoryWorkspace from './InventoryWorkspace';
 import './workspace.css';
 
 type TeamWorkspaceProps = {
@@ -1611,10 +1612,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           )}
 
           {tab === 'inventory' && (
-            <section className="workspace-inventory-placeholder" aria-label="Módulo Inventário">
-              <div className="workspace-inventory-types"><article><Monitor aria-hidden="true" /><h3>Equipamentos permanentes</h3><p>Cadastro patrimonial, localização, responsáveis, empréstimos, devoluções e manutenção.</p></article><article><Package aria-hidden="true" /><h3>Materiais de consumo</h3><p>Controle de estoque, entradas, saídas, quantidades mínimas e reposição.</p></article></div>
-              <p className="workspace-inventory-notice">O módulo está sendo estruturado. O cadastro, as movimentações e os relatórios serão conectados ao banco de dados na próxima etapa.</p>
-            </section>
+            <InventoryWorkspace client={client} userId={userId} isAdmin={profile.role === 'admin'} />
           )}
           {tab === 'files' && (
             <SharedContentWorkspace client={client} mode="files" userId={userId} isAdmin={profile.role === 'admin'} areas={activeAreas} members={members} areaId={null} isGeneralChannel={true} channelId={activeChannel?.id ?? ''} />
