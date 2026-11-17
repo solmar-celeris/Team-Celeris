@@ -1332,10 +1332,15 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
       <div className={`workspace-frame${workspacePopupOpen ? ' is-popup' : ''}`} role={workspacePopupOpen ? 'dialog' : undefined} aria-modal={workspacePopupOpen || undefined} aria-label={workspacePopupOpen ? contextualPageHeading.title : undefined}>
         <main className={`workspace-main${tab === 'membersChat' ? ' is-chat-page' : ''}${tab === 'home' ? ' is-home-page' : ' is-fullscreen-page'}`} id="workspace">
           <div className={`workspace-page-heading${tab === 'agenda' ? ' is-calendar-heading' : ''}${tab === 'activities' ? ' is-activities-heading' : ''}`}>
-            <div>
-              <p className="workspace-kicker">{contextualPageHeading.kicker}</p>
-              <h1>{tab === 'agenda' ? (agendaSubtab === 'calendar' ? 'Calendário' : agendaSubtab === 'availability' ? 'Disponibilidades' : 'Reuniões') : contextualPageHeading.title}</h1>
-              <p className="workspace-subtitle">{contextualPageHeading.subtitle}</p>
+            <div className="workspace-heading-identity">
+              <span className="workspace-heading-icon" aria-hidden="true">
+                {tab === 'home' ? <Newspaper /> : tab === 'activities' ? <ClipboardList /> : tab === 'agenda' ? <CalendarDays /> : tab === 'conversations' ? <Megaphone /> : tab === 'membersChat' ? <MessageCircle /> : tab === 'files' ? <Folder /> : tab === 'inventory' ? <Package /> : <BookOpen />}
+              </span>
+              <div className="workspace-heading-copy">
+                <p className="workspace-kicker">{contextualPageHeading.kicker}</p>
+                <h1>{tab === 'agenda' ? (agendaSubtab === 'calendar' ? 'Calendário' : agendaSubtab === 'availability' ? 'Disponibilidades' : 'Reuniões') : contextualPageHeading.title}</h1>
+                <p className="workspace-subtitle">{contextualPageHeading.subtitle}</p>
+              </div>
             </div>
             <div className="workspace-heading-actions">
               {workspacePopupOpen && <button className="workspace-popup-close" type="button" aria-label="Fechar guia" title="Fechar" onClick={() => { setWorkspacePopupOpen(false); navigateToTab('home'); }}><X aria-hidden="true" /></button>}
@@ -1607,7 +1612,6 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
 
           {tab === 'inventory' && (
             <section className="workspace-inventory-placeholder" aria-label="Módulo Inventário">
-              <div className="workspace-inventory-intro"><Package aria-hidden="true" /><div><p className="workspace-kicker">CONTROLE PATRIMONIAL E DE ESTOQUE</p><h2>Inventário</h2><p>Área destinada ao cadastro e acompanhamento de equipamentos permanentes e materiais de consumo.</p></div></div>
               <div className="workspace-inventory-types"><article><Monitor aria-hidden="true" /><h3>Equipamentos permanentes</h3><p>Cadastro patrimonial, localização, responsáveis, empréstimos, devoluções e manutenção.</p></article><article><Package aria-hidden="true" /><h3>Materiais de consumo</h3><p>Controle de estoque, entradas, saídas, quantidades mínimas e reposição.</p></article></div>
               <p className="workspace-inventory-notice">O módulo está sendo estruturado. O cadastro, as movimentações e os relatórios serão conectados ao banco de dados na próxima etapa.</p>
             </section>
