@@ -2,6 +2,8 @@ type PushPayload = Record<string, unknown>;
 
 type PushRoute = 'chat' | 'announcement' | 'activity' | 'calendar';
 
+const workspaceTabRoutes = new Set(['feed', 'activities', 'calendar', 'availability', 'announcements', 'files', 'norms', 'chat', 'meetings']);
+
 const handledPushKey = 'team-celeris:push-open';
 const handledPushTtlMs = 30_000;
 
@@ -41,7 +43,7 @@ function normalizeRoute(value: string | null): PushRoute | null {
 
 function isSupportedRoute(params: URLSearchParams): boolean {
   const route = normalizeRoute(params.get('push'));
-  if (!route) return false;
+  if (!route) return workspaceTabRoutes.has(params.get('tab') ?? '');
   if (route === 'chat') {
     const messageId = params.get('message_id');
     const conversationType = params.get('conversation_type');
@@ -65,9 +67,12 @@ function destinationFromPayload(payload: PushPayload, currentHref: string): URL 
   if (rawTargetUrl) {
     try {
       const candidate = new URL(rawTargetUrl, current.origin);
-      if ((candidate.protocol === 'https:' || candidate.origin === current.origin)
+      const payloadRoute = normalizeRoute(readString(payload, 'push_type', 'push'));
+      const candidateHasPush = Boolean(normalizeRoute(candidate.searchParams.get('push')));
+      if (candidate.origin === current.origin
         && candidate.pathname === '/'
-        && isSupportedRoute(candidate.searchParams)) {
+        && isSupportedRoute(candidate.searchParams)
+        && (candidateHasPush || !payloadRoute)) {
         return candidate;
       }
     } catch {
@@ -76,12 +81,18 @@ function destinationFromPayload(payload: PushPayload, currentHref: string): URL 
   }
 
   const route = normalizeRoute(readString(payload, 'push_type', 'push'));
-  if (!route) return null;
+  if (!route) {
+    const tab = readString(payload, 'tab', 'destination_tab');
+    if (!tab || !workspaceTabRoutes.has(tab)) return null;
+    const directDestination = new URL('/', current.origin);
+    directDestination.searchParams.set('tab', tab);
+    return directDestination;
+  }
   const destination = new URL('/', current.origin);
   destination.searchParams.set('push', route);
 
   if (route === 'chat') {
-    destination.searchParams.set('tab', 'feed');
+    destination.searchParams.set('tab', 'chat');
     const messageId = readString(payload, 'message_id');
     const conversationType = readString(payload, 'conversation_type');
     const conversationId = readString(payload, 'conversation_id');
