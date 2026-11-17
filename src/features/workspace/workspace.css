@@ -3729,3 +3729,47 @@
     background: #cf6417 !important;
   }
 }
+
+
+/* Perfil mobile em formato de lista suspensa: foto + nome completo. */
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-screen > .workspace-topbar > .workspace-top-actions .profile-menu {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: min(58vw, 290px) !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-top-actions .profile-menu-trigger {
+    display: flex !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: min(58vw, 290px) !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    padding: 4px 10px 4px 5px !important;
+    gap: 8px !important;
+    justify-content: flex-start !important;
+    border-radius: 999px !important;
+    border-color: rgba(255,255,255,.25) !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-top-actions .profile-menu-trigger-avatar {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    flex: 0 0 38px !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-top-actions .profile-menu-trigger-name {
+    display: block !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    font-size: 12px !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-top-actions .profile-menu-trigger-chevron {
+    display: block !important;
+    width: 16px !important;
+    height: 16px !important;
+    flex: 0 0 16px !important;
+  }
+}
