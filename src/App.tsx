@@ -16,7 +16,7 @@ export default function App() {
   if (publicMeetingId && supabaseConfigured) return <PublicMeetingEntry roomId={publicMeetingId} />;
   const initialParams = new URLSearchParams(window.location.search);
   if (initialParams.get('public') === '1' && initialParams.get('tab') === 'chat') {
-    window.location.replace('/?tab=chat');
+    window.location.replace(`/?tab=${initialParams.get('tab')}`);
     return null;
   }
   if (initialParams.get('public') === '1' && supabaseConfigured) return <PublicWorkspace />;
