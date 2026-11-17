@@ -3568,3 +3568,27 @@
     border-radius: 3px 3px 0 0 !important;
   }
 }
+
+
+.workspace-chat-public-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid rgba(255,255,255,.35);
+  border-radius: 9px;
+  color: #fff;
+  background: rgba(255,255,255,.12);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.workspace-chat-public-link:hover {
+  background: rgba(255,255,255,.22);
+}
+.workspace-chat-public-link svg {
+  width: 15px;
+  height: 15px;
+}
