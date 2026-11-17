@@ -195,15 +195,12 @@ create table if not exists public.inventory_asset_events (
 create index if not exists inventory_asset_events_asset_idx
   on public.inventory_asset_events(asset_id, created_at desc);
 
--- Saldo inicial sempre parte de zero; movimentações futuras são a fonte de alteração.
+-- Locais físicos de armazenamento definidos para a equipe.
 insert into public.inventory_locations(name, location_type, description)
-values ('Almoxarifado Central', 'central', 'Local central de armazenamento da equipe.')
-on conflict do nothing;
-
-insert into public.inventory_locations(name, location_type, area_id, description)
-select 'Setor — ' || a.name, 'sector', a.id, 'Local de guarda vinculado ao setor.'
-from public.areas a
-where a.is_active
+values
+  ('Armário 1 - Laboratório de automação', 'other', 'Armário 1 do Laboratório de automação.'),
+  ('Armário 2 - Laboratório de automação', 'other', 'Armário 2 do Laboratório de automação.'),
+  ('Pratileira 1', 'other', 'Pratileira 1 da equipe.')
 on conflict do nothing;
 
 -- A função registra e aplica uma movimentação em uma única transação.
