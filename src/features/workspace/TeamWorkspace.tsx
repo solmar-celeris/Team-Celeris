@@ -1239,7 +1239,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
     : tab === 'agenda'
       ? { kicker: 'CALENDÁRIO E DISPONIBILIDADES', title: agendaSubtab === 'calendar' ? 'Calendário' : 'Disponibilidades', subtitle: agendaSubtab === 'calendar' ? 'Consulte e organize os eventos e compromissos da equipe.' : 'Consulte e atualize a disponibilidade dos integrantes da equipe.' }
       : tab === 'activities'
-      ? { kicker: 'CADASTRO DA EQUIPE', title: 'Atividades da equipe.', subtitle: 'Consulte, filtre e mantenha as atividades do ciclo atualizadas.' }
+      ? { kicker: 'CADASTRO DA EQUIPE', title: 'Atividades', subtitle: 'Consulte, filtre e mantenha as atividades do ciclo atualizadas.' }
       : tab === 'files'
         ? { kicker: 'LINKS COMPARTILHADOS', title: 'Arquivos da equipe.', subtitle: 'Consulte documentos enviados, pastas e atalhos de internet compartilhados.' }
         : tab === 'conversations'
@@ -1331,7 +1331,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
 
       <div className={`workspace-frame${workspacePopupOpen ? ' is-popup' : ''}`} role={workspacePopupOpen ? 'dialog' : undefined} aria-modal={workspacePopupOpen || undefined} aria-label={workspacePopupOpen ? contextualPageHeading.title : undefined}>
         <main className={`workspace-main${tab === 'membersChat' ? ' is-chat-page' : ''}${tab === 'home' ? ' is-home-page' : ' is-fullscreen-page'}`} id="workspace">
-          <div className={`workspace-page-heading${tab === 'agenda' ? ' is-calendar-heading' : ''}`}>
+          <div className={`workspace-page-heading${tab === 'agenda' ? ' is-calendar-heading' : ''}${tab === 'activities' ? ' is-activities-heading' : ''}`}>
             <div>
               <p className="workspace-kicker">{contextualPageHeading.kicker}</p>
               <h1>{tab === 'agenda' ? (agendaSubtab === 'calendar' ? 'Calendário' : agendaSubtab === 'availability' ? 'Disponibilidades' : 'Reuniões') : contextualPageHeading.title}</h1>
