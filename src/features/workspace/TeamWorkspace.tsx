@@ -1334,7 +1334,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           <div className={`workspace-page-heading${tab === 'agenda' ? ' is-calendar-heading' : ''}`}>
             <div>
               <p className="workspace-kicker">{contextualPageHeading.kicker}</p>
-              <h1>{contextualPageHeading.title}</h1>
+              <h1>{tab === 'agenda' ? (agendaSubtab === 'calendar' ? 'Calendário' : agendaSubtab === 'availability' ? 'Disponibilidades' : 'Reuniões') : contextualPageHeading.title}</h1>
               <p className="workspace-subtitle">{contextualPageHeading.subtitle}</p>
             </div>
             <div className="workspace-heading-actions">
