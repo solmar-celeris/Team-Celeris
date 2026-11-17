@@ -4405,3 +4405,68 @@
     text-overflow: clip !important;
   }
 }
+
+/* Mobile: o cabeçalho contém somente perfil, identificação do cargo e tema.
+   A navegação principal existe exclusivamente na barra inferior. */
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-screen > .workspace-topbar {
+    display: flex !important;
+    position: relative !important;
+    grid-template-columns: none !important;
+    grid-template-rows: none !important;
+    grid-template-areas: none !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 66px !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 8px 14px !important;
+    gap: 0 !important;
+    overflow: visible !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-brand {
+    display: none !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-top-actions {
+    display: flex !important;
+    position: relative !important;
+    inset: auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin: 0 0 0 auto !important;
+    padding: 0 !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex: 0 0 auto !important;
+    gap: 12px !important;
+    overflow: visible !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-top-actions .workspace-role {
+    display: inline-flex !important;
+    align-items: center !important;
+    white-space: nowrap !important;
+    font-size: 10px !important;
+    line-height: 1 !important;
+    padding: 6px 8px !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-top-actions .workspace-theme-toggle {
+    display: inline-flex !important;
+    flex: 0 0 46px !important;
+  }
+  .workspace-screen > .workspace-bottom-nav {
+    display: grid !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    position: fixed !important;
+    z-index: 9999 !important;
+    inset: auto 0 0 0 !important;
+  }
+}
