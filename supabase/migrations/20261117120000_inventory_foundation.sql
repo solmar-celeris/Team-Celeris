@@ -103,6 +103,34 @@ create table if not exists public.inventory_assets (
 create index if not exists inventory_assets_item_idx on public.inventory_assets(item_id);
 create index if not exists inventory_assets_area_status_idx on public.inventory_assets(area_id, status);
 
+create or replace function public.inventory_validate_asset_item()
+returns trigger
+language plpgsql
+set search_path = ''
+as $asset$
+declare
+  v_item_type text;
+begin
+  select item_type into v_item_type
+  from public.inventory_items
+  where id = new.item_id and is_active;
+  if v_item_type is distinct from 'asset' then
+    raise exception 'O patrimônio deve estar vinculado a um item cadastrado como equipamento permanente.'
+      using errcode = '23514';
+  end if;
+  if tg_op = 'INSERT' then
+    new.created_by := coalesce(new.created_by, auth.uid());
+  end if;
+  new.updated_by := auth.uid();
+  new.updated_at := now();
+  return new;
+end;
+$asset$;
+drop trigger if exists inventory_assets_validate_item on public.inventory_assets;
+create trigger inventory_assets_validate_item
+  before insert or update on public.inventory_assets
+  for each row execute function public.inventory_validate_asset_item();
+
 create table if not exists public.inventory_stock_balances (
   id uuid primary key default gen_random_uuid(),
   item_id uuid not null references public.inventory_items(id) on delete restrict,
