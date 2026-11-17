@@ -3854,3 +3854,95 @@
   .workspace-inventory-types { grid-template-columns: minmax(0, 1fr); gap: 10px; }
   .workspace-inventory-types article { padding: 15px; }
 }
+
+
+/* Correção definitiva do layout lateral: o conteúdo começa depois da barra,
+   sem depender de margens que podem deslocar/cortar o título das páginas. */
+.workspace-screen {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  max-width: none !important;
+  overflow: hidden !important;
+}
+.workspace-screen > .workspace-topbar {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  flex: 0 0 74px !important;
+}
+.workspace-screen > .workspace-frame {
+  box-sizing: border-box !important;
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: calc(100dvh - 74px) !important;
+  margin: 0 !important;
+  padding: 0 0 0 216px !important;
+  flex: 1 1 auto !important;
+  overflow: hidden !important;
+}
+.workspace-screen > .workspace-frame > .workspace-main {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: none !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+}
+.workspace-screen > .workspace-frame > .workspace-main.is-fullscreen-page {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 16px !important;
+  padding: 22px 26px 24px !important;
+  overflow: auto !important;
+}
+.workspace-screen > .workspace-frame > .workspace-main.is-fullscreen-page > .workspace-page-heading {
+  display: flex !important;
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+}
+.workspace-screen > .workspace-frame > .workspace-main.is-fullscreen-page > .workspace-footer {
+  flex: 0 0 auto !important;
+}
+.workspace-screen > .workspace-frame > .workspace-main.is-fullscreen-page > .workspace-module-tabs {
+  flex: 0 0 auto !important;
+  margin: 0 !important;
+}
+.workspace-screen > .workspace-frame > .workspace-main.is-fullscreen-page > .workspace-documentation,
+.workspace-screen > .workspace-frame > .workspace-main.is-fullscreen-page > .workspace-inventory-placeholder {
+  flex: 1 0 auto !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+}
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-screen > .workspace-topbar {
+    flex-basis: 58px !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+  .workspace-screen > .workspace-frame {
+    width: 100% !important;
+    height: calc(100dvh - 58px) !important;
+    margin: 0 !important;
+    padding-left: 78px !important;
+  }
+  .workspace-screen > .workspace-frame > .workspace-main.is-fullscreen-page {
+    padding: 14px 14px calc(18px + env(safe-area-inset-bottom, 0px)) !important;
+    gap: 12px !important;
+  }
+  .workspace-screen > .workspace-frame > .workspace-main.is-fullscreen-page > .workspace-page-heading {
+    align-items: flex-start !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+  }
+}
