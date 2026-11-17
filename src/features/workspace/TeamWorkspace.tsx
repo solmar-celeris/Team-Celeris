@@ -1325,7 +1325,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           <span className="workspace-nav-icon"><Package aria-hidden="true" /></span><span className="workspace-nav-label">Inventário</span>
         </button>
       </nav>
-      <button type="button" className="workspace-files-floater" onClick={() => navigateToTab('files') aria-label="Abrir Arquivos" title="Arquivos">
+      <button type="button" className="workspace-files-floater" onClick={() => navigateToTab('files')} aria-label="Abrir Arquivos" title="Arquivos">
         <Folder aria-hidden="true" />
       </button>
 
