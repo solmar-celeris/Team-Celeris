@@ -4355,3 +4355,53 @@
     display: none !important;
   }
 }
+
+/* Desktop: cada guia recebe uma célula igual e conteúdo centralizado,
+   aproveitando a largura livre sem deixar ícone e texto separados. */
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav {
+    display: grid !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    grid-auto-flow: row !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    gap: clamp(6px, 0.8vw, 14px) !important;
+    margin: 0 !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav > button {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    min-height: 48px !important;
+    padding: 7px clamp(5px, .8vw, 14px) !important;
+    gap: 9px !important;
+    white-space: nowrap !important;
+    border-radius: 12px !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav .workspace-nav-icon {
+    width: 22px !important;
+    height: 22px !important;
+    flex: 0 0 22px !important;
+    display: grid !important;
+    place-items: center !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav .workspace-nav-icon svg {
+    width: 19px !important;
+    height: 19px !important;
+  }
+  .workspace-screen > .workspace-topbar > .workspace-desktop-nav .workspace-nav-label {
+    display: block !important;
+    min-width: 0 !important;
+    font-size: clamp(11px, .82vw, 13px) !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+}
