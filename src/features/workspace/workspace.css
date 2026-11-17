@@ -3617,3 +3617,16 @@
     height: 50px;
   }
 }
+
+
+/* O Chat aberto é modal: deve ficar acima da navegação inferior do workspace.
+   Isso mantém a caixa de mensagem acessível em telas mobile. */
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-chat-overlay {
+    z-index: 10001 !important;
+  }
+  .workspace-chat-overlay-body {
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+}
