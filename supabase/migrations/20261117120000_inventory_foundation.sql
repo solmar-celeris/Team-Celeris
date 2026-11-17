@@ -47,7 +47,7 @@ create table if not exists public.inventory_items (
   created_by uuid not null references auth.users(id) on delete restrict,
   updated_by uuid not null references auth.users(id) on delete restrict,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 create index if not exists inventory_items_type_name_idx
   on public.inventory_items(item_type, name) where is_active;
