@@ -140,26 +140,26 @@ export default function InventoryWorkspace({ client, userId, isAdmin }: Props) {
   }
 
   async function removeLocation(location: Location) {
-    if (!isAdmin || !window.confirm(`Excluir o local "${location.name}"? Se houver patrimônio, saldo ou histórico vinculado, ele será apenas desativado para preservar os registros.`)) return;
+    if (!isAdmin || !window.confirm(`Excluir o local "${location.name}"? O local deixará de aparecer nos cadastros, mas os registros históricos serão preservados.`)) return;
     setSaving(true); setError(''); setNotice('');
     try {
-      const checks = await Promise.all([
-        client.from('inventory_assets').select('id').eq('location_id', location.id).limit(1),
-        client.from('inventory_stock_balances').select('id').eq('location_id', location.id).limit(1),
-        client.from('inventory_movements').select('id').or(`source_location_id.eq.${location.id},destination_location_id.eq.${location.id}`).limit(1),
-        client.from('inventory_asset_events').select('id').or(`from_location_id.eq.${location.id},to_location_id.eq.${location.id}`).limit(1),
-      ]);
-      const failed = checks.find((result) => result.error);
-      if (failed?.error) throw failed.error;
-      const hasHistory = checks.some((result) => (result.data ?? []).length > 0);
-      const result = hasHistory
-        ? await client.from('inventory_locations').update({ is_active: false }).eq('id', location.id)
-        : await client.from('inventory_locations').delete().eq('id', location.id);
-      if (result.error) throw result.error;
-      setNotice(hasHistory ? 'Local desativado. Os registros históricos foram preservados.' : 'Local excluído.');
+      // Desativação lógica evita falhas de chave estrangeira e preserva todo o histórico.
+      const { data, error: updateError } = await client
+        .from('inventory_locations')
+        .update({ is_active: false })
+        .eq('id', location.id)
+        .eq('is_active', true)
+        .select('id');
+      if (updateError) throw updateError;
+      if (!data?.length) throw new Error('O local não foi alterado. Verifique se sua conta continua com permissão de administrador.');
+      setNotice('Local excluído da lista. O histórico e os vínculos existentes foram preservados.');
       await load();
-    } catch (e) { setError(e instanceof Error ? e.message : 'Não foi possível excluir o local.'); }
-    finally { setSaving(false); }
+    } catch (e) {
+      const message = e && typeof e === 'object' && 'message' in e
+        ? String((e as { message: unknown }).message)
+        : 'Erro desconhecido ao excluir o local.';
+      setError(`Não foi possível excluir o local: ${message}`);
+    } finally { setSaving(false); }
   }
 
   async function updateAsset(asset: Asset, patch: Partial<Asset>, eventType: string, reason: string) {
