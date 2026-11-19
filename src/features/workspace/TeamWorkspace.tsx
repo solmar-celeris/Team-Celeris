@@ -962,7 +962,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
     if (form.effort_points !== '' && (!Number.isInteger(Number(form.effort_points)) || Number(form.effort_points) < 0 || Number(form.effort_points) > 100)) {
       setDialogError('Informe um esforço inteiro entre 0 e 100, ou deixe em branco.'); return;
     }
-    if (!dialogActivity && !(profile.role === 'admin' || (profile.role === 'area_lead' && profile.area_id === form.area_id))) {
+    if (!dialogActivity && !(profile.role === 'developer' || profile.role === 'admin' || (profile.role === 'area_lead' && profile.area_id === form.area_id))) {
       setDialogError('Somente Administrador ou Líder da área selecionada pode criar atividade.'); return;
     }
     const driveUrl = submission.driveUrl.trim() ? safeDriveUrl(submission.driveUrl) : null;
@@ -1353,7 +1353,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
               {(tab === 'activities' || tab === 'home') && <button className="workspace-refresh" type="button" onClick={() => void loadData(true)} disabled={loading || refreshing}>
                 {refreshing ? 'Atualizando…' : '↻ Atualizar'}
               </button>}
-              {tab === 'activities' && (isDeveloper || profile.role === 'admin' || profile.role === 'area_lead') && (
+              {tab === 'activities' && (profile.role === 'developer' || isDeveloper || profile.role === 'admin' || profile.role === 'area_lead') && (
                 <button className="workspace-add-button" type="button" onClick={() => { setDialogError(''); setDialogActivity(null); }}>
                   <span aria-hidden="true">+</span> Nova atividade
                 </button>
