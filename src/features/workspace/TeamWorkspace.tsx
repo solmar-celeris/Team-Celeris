@@ -28,7 +28,6 @@ import {
   type MemberProfile,
   type WeeklyStatus,
   type WeeklyUpdate,
-  weeklyStatusLabels,
 } from './domain';
 import ProfileMenu from '../profile/ProfileMenu';
 import LiveVisualEditor from '../developer/LiveVisualEditor';
@@ -430,7 +429,6 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   const [chatReturnTab] = useState<WorkspaceTab>('home');
   const [chatCreateGroupRequest, setChatCreateGroupRequest] = useState(false);
   const [agendaSubtab, setAgendaSubtab] = useState<AgendaSubtab>(() => workspaceRouteFromUrl().agendaSubtab);
-  const [homeFiltersOpen, setHomeFiltersOpen] = useState(false);
   const [activityFiltersOpen, setActivityFiltersOpen] = useState(false);
   const [meetingRoomActive, setMeetingRoomActive] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
