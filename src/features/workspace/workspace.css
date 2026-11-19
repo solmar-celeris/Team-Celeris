@@ -1394,6 +1394,9 @@
   background: var(--surface, var(--card));
 }
 .workspace-module-tabs.is-agenda { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.workspace-module-tabs.is-activities { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 520px; }
+.workspace-filter-active-dot { width: 7px; height: 7px; margin-left: 3px; border-radius: 50%; background: var(--orange, #e87b27); }
+.workspace-module-tabs.is-activities button { justify-content: center; }
 .workspace-module-tabs.is-conversations { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .workspace-module-tabs button {
   display: flex;
