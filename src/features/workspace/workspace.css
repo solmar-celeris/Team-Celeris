@@ -5300,3 +5300,73 @@ body:has(.workspace-frame.is-popup),
     padding: 7px 12px !important;
   }
 }
+
+
+/* Filtros compactos em formato de tabela, inspirados em marketplaces. */
+.workspace-filter-icon-button {
+  position: relative !important;
+  width: 40px !important;
+  min-width: 40px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 !important;
+  border-radius: 10px !important;
+}
+.workspace-filter-icon-button svg { width: 19px !important; height: 19px !important; }
+.workspace-filter-icon-button.has-active-filters { color: var(--ocean) !important; border-color: color-mix(in srgb, var(--ocean) 40%, var(--line)) !important; }
+.workspace-filter-active-dot { position: absolute; top: 5px; right: 5px; width: 7px; height: 7px; border: 1px solid var(--card); border-radius: 50%; background: var(--orange, #e87b27); }
+.workspace-filter-panel.is-marketplace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  width: min(100%, 760px);
+  margin: 0 0 14px auto;
+  padding: 0 16px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: 0 12px 30px rgba(1, 35, 68, .12);
+}
+.workspace-filter-panel.is-marketplace .workspace-filter-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 13px;
+}
+.workspace-filter-panel.is-marketplace .workspace-filter-panel-heading button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 7px;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+}
+.workspace-filter-panel.is-marketplace label {
+  display: grid;
+  grid-template-columns: minmax(115px, 160px) minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  min-height: 52px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
+}
+.workspace-filter-panel.is-marketplace label > span { color: var(--muted); font-size: 11px; font-weight: 700; }
+.workspace-filter-panel.is-marketplace .workspace-search { grid-column: auto; }
+.workspace-filter-panel.is-marketplace input,
+.workspace-filter-panel.is-marketplace select { min-height: 36px; font-size: 12px; }
+.workspace-filter-panel.is-marketplace .workspace-clear-filters { justify-self: end; min-height: 42px; padding: 0 4px; font-size: 12px; }
+:root[data-theme="dark"] .workspace-filter-panel.is-marketplace { box-shadow: 0 14px 34px rgba(0,0,0,.3); }
+@media (max-width: 560px) {
+  .workspace-filter-panel.is-marketplace { padding: 0 12px; }
+  .workspace-filter-panel.is-marketplace label { grid-template-columns: 1fr; gap: 5px; padding: 9px 0; }
+  .workspace-filter-panel.is-marketplace input,
+  .workspace-filter-panel.is-marketplace select { min-height: 42px; }
+}
