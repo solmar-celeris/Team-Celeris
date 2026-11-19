@@ -38,7 +38,6 @@ import TeamCalendar from './TeamCalendar';
 import ManualFunctions from './ManualFunctions';
 import AvailabilityWorkspace from './AvailabilityWorkspace';
 import MeetingsWorkspace from './MeetingsWorkspace';
-import PERTCPMWorkspace from './PERTCPMWorkspace';
 import WeeklyActivityCard, { type WeeklyReportDraft } from './WeeklyActivityCard';
 import PerformancePanel from '../dashboard/PerformancePanel';
 import { flushPendingWorkspacePushEvents, notifyActivityChange, notifyWorkspacePush } from '../../lib/notifications';
@@ -104,7 +103,6 @@ type AttachmentSubmission = { files: File[]; driveName: string; driveUrl: string
 type WeeklyDraft = WeeklyReportDraft;
 type WorkspaceTab = 'home' | 'activities' | 'agenda' | 'conversations' | 'membersChat' | 'files' | 'manual' | 'inventory';
 type AgendaSubtab = 'calendar' | 'availability' | 'meetings';
-type ActivitySubtab = 'activities' | 'pert';
 type WorkspaceTabIcon = LucideIcon;
 type PushDeepLink =
   | { type: 'chat'; messageId: string; conversationId: string | null; conversationType: 'team' | 'group' | 'direct' }
@@ -434,7 +432,6 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   const [agendaSubtab, setAgendaSubtab] = useState<AgendaSubtab>(() => workspaceRouteFromUrl().agendaSubtab);
   const [homeFiltersOpen, setHomeFiltersOpen] = useState(false);
   const [activityFiltersOpen, setActivityFiltersOpen] = useState(false);
-  const [activitySubtab, setActivitySubtab] = useState<ActivitySubtab>('activities');
   const [meetingRoomActive, setMeetingRoomActive] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [activityAttachments, setActivityAttachments] = useState<ActivityAttachment[]>([]);
@@ -1358,7 +1355,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
               {(tab === 'activities' || tab === 'home') && <button className="workspace-refresh" type="button" onClick={() => void loadData(true)} disabled={loading || refreshing}>
                 {refreshing ? 'Atualizando…' : '↻ Atualizar'}
               </button>}
-              {(tab === 'home' || (tab === 'activities' && activitySubtab === 'activities')) && <button className="workspace-refresh workspace-feed-filter-toggle" type="button" aria-expanded={tab === 'home' ? homeFiltersOpen : activityFiltersOpen} aria-controls="workspace-filter-panel" onClick={() => tab === 'home' ? setHomeFiltersOpen((current) => !current) : setActivityFiltersOpen((current) => !current)}><Filter size={14} aria-hidden="true" /> {(tab === 'home' ? homeFiltersOpen : activityFiltersOpen) ? 'Ocultar filtros' : 'Filtros'}{Object.values(filters).some(Boolean) && <span className="workspace-filter-active-dot" aria-label="Filtros ativos" />}</button>}
+              {(tab === 'home' || tab === 'activities') && <button className={`workspace-refresh workspace-feed-filter-toggle workspace-filter-icon-button${Object.values(filters).some(Boolean) ? ' has-active-filters' : ''}`} type="button" aria-label="Abrir filtros" title="Filtros" aria-expanded={tab === 'home' ? homeFiltersOpen : activityFiltersOpen} aria-controls="workspace-filter-panel" onClick={() => tab === 'home' ? setHomeFiltersOpen((current) => !current) : setActivityFiltersOpen((current) => !current)}><Filter size={19} aria-hidden="true" />{Object.values(filters).some(Boolean) && <span className="workspace-filter-active-dot" aria-label="Filtros ativos" />}</button>}
               {tab === 'activities' && (profile.role === 'admin' || profile.role === 'area_lead') && (
                 <button className="workspace-add-button" type="button" onClick={() => { setDialogError(''); setDialogActivity(null); }}>
                   <span aria-hidden="true">+</span> Nova atividade
@@ -1372,11 +1369,6 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             <button type="button" role="tab" aria-selected={agendaSubtab === 'availability'} className={agendaSubtab === 'availability' ? 'is-active' : ''} onClick={() => navigateToAgendaSubtab('availability')}><ClockWithArrowsIcon size={20} /><span>Disponibilidades</span></button>
             </div>}
 
-          {tab === 'activities' && <div className="workspace-module-tabs is-activities" role="tablist" aria-label="Guias de atividades">
-            <button type="button" role="tab" aria-selected={activitySubtab === 'activities'} className={activitySubtab === 'activities' ? 'is-active' : ''} onClick={() => setActivitySubtab('activities')}><ClipboardList aria-hidden="true" /><span>Atividades</span></button>
-            <button type="button" role="tab" aria-selected={activitySubtab === 'pert'} className={activitySubtab === 'pert' ? 'is-active' : ''} onClick={() => setActivitySubtab('pert')}><Share2 aria-hidden="true" /><span>PERT / CPM</span></button>
-          </div>}
-
           {(tab === 'activities' || tab === 'home') && <p className="workspace-permission-note">{permissionSummary}</p>}
 
           {errorMessage && (
@@ -1389,7 +1381,8 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           {feedback && <p className="workspace-feedback" role="status">{feedback}</p>}
           {pushTargetNotice && <p className="workspace-feedback" role="status">{pushTargetNotice}</p>}
 
-          {((tab === 'home' && homeFiltersOpen) || (tab === 'activities' && activitySubtab === 'activities' && activityFiltersOpen)) && <div className="workspace-filter-panel" id="workspace-filter-panel">
+          {((tab === 'home' && homeFiltersOpen) || (tab === 'activities' && activityFiltersOpen)) && <div className="workspace-filter-panel is-marketplace" id="workspace-filter-panel">
+            <div className="workspace-filter-panel-heading"><strong>Filtrar atividades</strong><button type="button" aria-label="Fechar filtros" onClick={() => tab === 'home' ? setHomeFiltersOpen(false) : setActivityFiltersOpen(false)}><X size={16} /></button></div>
             <label className="workspace-search">
               <span>Buscar</span>
               <input value={filters.search} onChange={(event) => updateFilter('search', event.target.value)} placeholder="Código, nome, descrição…" />
@@ -1569,7 +1562,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             </div>
           )}
 
-          {tab === 'activities' && activitySubtab === 'activities' && (
+          {tab === 'activities' && (
             <section className="workspace-activities-section" aria-labelledby="activity-view-title">
               <div className="workspace-list-heading">
                 <div><p className="workspace-kicker">FLUXO CONTÍNUO · SEM SPRINTS OBRIGATÓRIAS</p><h2 id="activity-view-title">Quadro Kanban de atividades</h2></div>
@@ -1620,9 +1613,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             </section>
           )}
 
-          {tab === 'activities' && activitySubtab === 'pert' && <PERTCPMWorkspace client={client} activities={activities} profile={profile} />}
-
-          {tab === 'inventory' && (
+                    {tab === 'inventory' && (
             <InventoryWorkspace client={client} userId={userId} isAdmin={profile.role === 'admin'} />
           )}
           {tab === 'files' && (
