@@ -1372,6 +1372,11 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             <button type="button" role="tab" aria-selected={agendaSubtab === 'availability'} className={agendaSubtab === 'availability' ? 'is-active' : ''} onClick={() => navigateToAgendaSubtab('availability')}><ClockWithArrowsIcon size={20} /><span>Disponibilidades</span></button>
             </div>}
 
+          {tab === 'activities' && <div className="workspace-module-tabs is-activities" role="tablist" aria-label="Guias de atividades">
+            <button type="button" role="tab" aria-selected={activitySubtab === 'activities'} className={activitySubtab === 'activities' ? 'is-active' : ''} onClick={() => setActivitySubtab('activities')}><ClipboardList aria-hidden="true" /><span>Atividades</span></button>
+            <button type="button" role="tab" aria-selected={activitySubtab === 'pert'} className={activitySubtab === 'pert' ? 'is-active' : ''} onClick={() => setActivitySubtab('pert')}><Share2 aria-hidden="true" /><span>PERT / CPM</span></button>
+          </div>}
+
           {(tab === 'activities' || tab === 'home') && <p className="workspace-permission-note">{permissionSummary}</p>}
 
           {errorMessage && (
@@ -1563,11 +1568,6 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             </aside>
             </div>
           )}
-
-          {tab === 'activities' && <div className="workspace-module-tabs is-activities" role="tablist" aria-label="Guias de atividades">
-            <button type="button" role="tab" aria-selected={activitySubtab === 'activities'} className={activitySubtab === 'activities' ? 'is-active' : ''} onClick={() => setActivitySubtab('activities')}><ClipboardList aria-hidden="true" /><span>Atividades</span></button>
-            <button type="button" role="tab" aria-selected={activitySubtab === 'pert'} className={activitySubtab === 'pert' ? 'is-active' : ''} onClick={() => setActivitySubtab('pert')}><Share2 aria-hidden="true" /><span>PERT / CPM</span></button>
-          </div>}
 
           {tab === 'activities' && activitySubtab === 'activities' && (
             <section className="workspace-activities-section" aria-labelledby="activity-view-title">
