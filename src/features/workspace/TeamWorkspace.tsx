@@ -1355,7 +1355,6 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
               {(tab === 'activities' || tab === 'home') && <button className="workspace-refresh" type="button" onClick={() => void loadData(true)} disabled={loading || refreshing}>
                 {refreshing ? 'Atualizando…' : '↻ Atualizar'}
               </button>}
-              {(tab === 'home' || tab === 'activities') && <button className={`workspace-refresh workspace-feed-filter-toggle workspace-filter-icon-button${Object.values(filters).some(Boolean) ? ' has-active-filters' : ''}`} type="button" aria-label="Abrir filtros" title="Filtros" aria-expanded={tab === 'home' ? homeFiltersOpen : activityFiltersOpen} aria-controls="workspace-filter-panel" onClick={() => tab === 'home' ? setHomeFiltersOpen((current) => !current) : setActivityFiltersOpen((current) => !current)}><Filter size={19} aria-hidden="true" />{Object.values(filters).some(Boolean) && <span className="workspace-filter-active-dot" aria-label="Filtros ativos" />}</button>}
               {tab === 'activities' && (profile.role === 'admin' || profile.role === 'area_lead') && (
                 <button className="workspace-add-button" type="button" onClick={() => { setDialogError(''); setDialogActivity(null); }}>
                   <span aria-hidden="true">+</span> Nova atividade
@@ -1381,50 +1380,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           {feedback && <p className="workspace-feedback" role="status">{feedback}</p>}
           {pushTargetNotice && <p className="workspace-feedback" role="status">{pushTargetNotice}</p>}
 
-          {((tab === 'home' && homeFiltersOpen) || (tab === 'activities' && activityFiltersOpen)) && <div className="workspace-filter-panel is-marketplace" id="workspace-filter-panel">
-            <div className="workspace-filter-panel-heading"><strong>Filtrar atividades</strong><button type="button" aria-label="Fechar filtros" onClick={() => tab === 'home' ? setHomeFiltersOpen(false) : setActivityFiltersOpen(false)}><X size={16} /></button></div>
-            <label className="workspace-search">
-              <span>Buscar</span>
-              <input value={filters.search} onChange={(event) => updateFilter('search', event.target.value)} placeholder="Código, nome, descrição…" />
-            </label>
-            <label>
-              <span>Responsável</span>
-              <select value={filters.responsible} onChange={(event) => updateFilter('responsible', event.target.value)}>
-                <option value="">Todos</option>
-                {responsibleNames.map((name) => <option key={name} value={name}>{name}</option>)}
-              </select>
-            </label>
-            <label>
-              <span>Área</span>
-              <select value={filters.area} onChange={(event) => updateFilter('area', event.target.value)}>
-                <option value="">Todas</option>
-                {activityEditorAreas.map((area) => <option key={area.id} value={area.id}>{area.is_active ? area.name : `${area.name} · inativa`}</option>)}
-              </select>
-            </label>
-            <label>
-              <span>Tipo</span>
-              <select value={filters.type} onChange={(event) => updateFilter('type', event.target.value)}>
-                <option value="">Todos</option>
-                {(Object.keys(activityTypeLabels) as ActivityType[]).map((type) => <option key={type} value={type}>{activityTypeLabels[type]}</option>)}
-              </select>
-            </label>
-            <label>
-              <span>{tab === 'home' ? 'Status da semana' : 'Situação geral'}</span>
-              <select value={tab === 'home' && filters.status === 'overdue' ? '' : filters.status} onChange={(event) => updateFilter('status', event.target.value)}>
-                <option value="">Todos</option>
-                {(tab === 'home' ? Object.entries(weeklyStatusLabels) : Object.entries(generalStatusLabels)).map(([status, label]) => <option key={status} value={status}>{label}</option>)}
-              </select>
-            </label>
-            <label>
-              <span>De</span>
-              <input type="date" value={filters.from} onChange={(event) => updateFilter('from', event.target.value)} />
-            </label>
-            <label>
-              <span>Até</span>
-              <input type="date" value={filters.to} onChange={(event) => updateFilter('to', event.target.value)} />
-            </label>
-            <button className="workspace-clear-filters" type="button" onClick={() => setFilters(defaultFilters)}>Limpar filtros</button>
-          </div>}
+
 
           {tab === 'home' && <PerformancePanel
             periodLabel={selectedWeek ? `Semana ${selectedWeek.number} · ${formatWeekRange(selectedWeek)}` : 'Indicadores do ciclo atual'}
@@ -1566,8 +1522,52 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             <section className="workspace-activities-section" aria-labelledby="activity-view-title">
               <div className="workspace-list-heading">
                 <div><p className="workspace-kicker">FLUXO CONTÍNUO · SEM SPRINTS OBRIGATÓRIAS</p><h2 id="activity-view-title">Quadro Kanban de atividades</h2></div>
-                <div className="activity-view-tools"><span className="workspace-count">{visibleActivities.length} de {activities.length}</span></div>
+                <div className="activity-view-tools"><span className="workspace-count">{visibleActivities.length} de {activities.length}</span><button className={`workspace-refresh workspace-filter-icon-button${Object.values(filters).some(Boolean) ? ' has-active-filters' : ''}`} type="button" aria-label="Abrir filtros" title="Filtros" aria-expanded={activityFiltersOpen} aria-controls="workspace-filter-panel" onClick={() => setActivityFiltersOpen((current) => !current)}><Filter size={19} aria-hidden="true" />{Object.values(filters).some(Boolean) && <span className="workspace-filter-active-dot" aria-label="Filtros ativos" />}</button></div>
               </div>
+          {tab === 'activities' && activityFiltersOpen && <div className="workspace-filter-panel is-marketplace" id="workspace-filter-panel">
+            <div className="workspace-filter-panel-heading"><strong>Filtrar atividades</strong><button type="button" aria-label="Fechar filtros" onClick={() => setActivityFiltersOpen(false)}><X size={16} /></button></div>
+            <label className="workspace-search">
+              <span>Buscar</span>
+              <input value={filters.search} onChange={(event) => updateFilter('search', event.target.value)} placeholder="Código, nome, descrição…" />
+            </label>
+            <label>
+              <span>Responsável</span>
+              <select value={filters.responsible} onChange={(event) => updateFilter('responsible', event.target.value)}>
+                <option value="">Todos</option>
+                {responsibleNames.map((name) => <option key={name} value={name}>{name}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>Área</span>
+              <select value={filters.area} onChange={(event) => updateFilter('area', event.target.value)}>
+                <option value="">Todas</option>
+                {activityEditorAreas.map((area) => <option key={area.id} value={area.id}>{area.is_active ? area.name : `${area.name} · inativa`}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>Tipo</span>
+              <select value={filters.type} onChange={(event) => updateFilter('type', event.target.value)}>
+                <option value="">Todos</option>
+                {(Object.keys(activityTypeLabels) as ActivityType[]).map((type) => <option key={type} value={type}>{activityTypeLabels[type]}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>Situação geral</span>
+              <select value={filters.status} onChange={(event) => updateFilter('status', event.target.value)}>
+                <option value="">Todos</option>
+                {Object.entries(generalStatusLabels).map(([status, label]) => <option key={status} value={status}>{label}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>De</span>
+              <input type="date" value={filters.from} onChange={(event) => updateFilter('from', event.target.value)} />
+            </label>
+            <label>
+              <span>Até</span>
+              <input type="date" value={filters.to} onChange={(event) => updateFilter('to', event.target.value)} />
+            </label>
+            <button className="workspace-clear-filters" type="button" onClick={() => setFilters(defaultFilters)}>Limpar filtros</button>
+          </div>}
               {profile.role === 'admin' && (
                 <section className="activity-wip-editor" aria-label="Configuração de limites WIP">
                   <div><strong>Limites WIP por área</strong><p>Opcional e configurável pela Administração; vazio significa sem limite. Ajuste após observar o fluxo da equipe.</p></div>
