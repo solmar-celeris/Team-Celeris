@@ -1369,7 +1369,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
             <button type="button" role="tab" aria-selected={agendaSubtab === 'availability'} className={agendaSubtab === 'availability' ? 'is-active' : ''} onClick={() => navigateToAgendaSubtab('availability')}><ClockWithArrowsIcon size={20} /><span>Disponibilidades</span></button>
             </div>}
 
-          {(tab === 'activities' || tab === 'home') && <p className="workspace-permission-note">{permissionSummary}</p>}
+          {tab === 'home' && <p className="workspace-permission-note">{permissionSummary}</p>}
 
           {errorMessage && (
             <div className="workspace-alert workspace-alert-error" role="alert">
