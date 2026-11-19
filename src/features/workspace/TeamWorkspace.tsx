@@ -1353,7 +1353,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
               {(tab === 'activities' || tab === 'home') && <button className="workspace-refresh" type="button" onClick={() => void loadData(true)} disabled={loading || refreshing}>
                 {refreshing ? 'Atualizando…' : '↻ Atualizar'}
               </button>}
-              {tab === 'activities' && (profile.role === 'developer' || isDeveloper || profile.role === 'admin' || profile.role === 'area_lead') && (
+              {(profile.role === 'developer' || isDeveloper || profile.role === 'admin' || profile.role === 'area_lead') && (
                 <button className="workspace-add-button" type="button" onClick={() => { setDialogError(''); setDialogActivity(null); }}>
                   <span aria-hidden="true">+</span> Nova atividade
                 </button>
