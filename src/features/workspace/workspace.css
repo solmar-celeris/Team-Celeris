@@ -5370,3 +5370,14 @@ body:has(.workspace-frame.is-popup),
   .workspace-filter-panel.is-marketplace input,
   .workspace-filter-panel.is-marketplace select { min-height: 42px; }
 }
+
+/* Diálogos de edição devem ficar acima do popup da página e de seus cabeçalhos fixos. */
+.workspace-screen > .workspace-dialog-backdrop {
+  position: fixed !important;
+  z-index: 2147483647 !important;
+  isolation: isolate !important;
+}
+.workspace-screen > .workspace-dialog-backdrop > .workspace-dialog {
+  position: relative !important;
+  z-index: 1 !important;
+}
