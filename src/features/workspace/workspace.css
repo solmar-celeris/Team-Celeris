@@ -5521,3 +5521,148 @@ body:has(.workspace-frame.is-popup),
     overflow-wrap: anywhere !important;
   }
 }
+
+/* Ajustes mobile do popup de Calendário e Disponibilidades. */
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main > .workspace-page-heading.is-calendar-heading {
+    display: flex !important; align-items: center !important; justify-content: space-between !important;
+    flex-wrap: nowrap !important; gap: 6px !important; overflow: hidden !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main > .workspace-page-heading.is-calendar-heading > div:first-child {
+    flex: 1 1 auto !important; min-width: 0 !important; gap: 7px !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main > .workspace-page-heading.is-calendar-heading .workspace-heading-icon {
+    flex: 0 0 27px !important; width: 27px !important; height: 27px !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main > .workspace-page-heading.is-calendar-heading h1 {
+    font-size: 17px !important; white-space: nowrap !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main > .workspace-page-heading.is-calendar-heading .workspace-heading-actions {
+    display: flex !important; flex: 0 0 auto !important; width: auto !important;
+    min-width: 0 !important; flex-wrap: nowrap !important; justify-content: flex-end !important;
+    gap: 5px !important; margin: 0 !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main > .workspace-page-heading.is-calendar-heading .workspace-popup-close,
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main > .workspace-page-heading.is-calendar-heading .workspace-share-button {
+    flex: 0 0 34px !important; width: 34px !important; min-width: 34px !important;
+    height: 34px !important; min-height: 34px !important; padding: 0 !important;
+    font-size: 0 !important; gap: 0 !important; justify-content: center !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main > .workspace-module-tabs.is-agenda {
+    display: none !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .team-calendar,
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .availability-workspace {
+    width: 100% !important; max-width: 100% !important; min-width: 0 !important;
+    box-sizing: border-box !important; overflow-wrap: anywhere !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .team-calendar-toolbar {
+    display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, auto) !important;
+    gap: 8px !important; box-sizing: border-box !important; width: 100% !important; min-width: 0 !important;
+    padding: 10px !important; overflow: hidden !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .team-calendar-month-nav {
+    grid-column: 1 / -1 !important; grid-row: 1 !important; gap: 8px !important; min-width: 0 !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .team-calendar-month-nav h2 {
+    min-width: 0 !important; flex: 1 1 auto !important; font-size: 16px !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .team-calendar-today {
+    grid-column: 1 !important; grid-row: 2 !important; justify-self: start !important;
+    min-width: 0 !important; min-height: 38px !important; padding: 0 9px !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .team-calendar-add {
+    grid-column: 2 !important; grid-row: 2 !important; justify-self: end !important;
+    min-width: 0 !important; min-height: 38px !important; padding: 0 9px !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .team-calendar-layout {
+    grid-template-columns: minmax(0, 1fr) !important; gap: 10px !important; min-width: 0 !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .team-calendar-agenda {
+    order: -1 !important; box-sizing: border-box !important; width: 100% !important; min-width: 0 !important; padding: 11px !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .team-calendar-board {
+    width: 100% !important; min-width: 0 !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .team-calendar-weekdays,
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .team-calendar-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important; min-width: 0 !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .team-calendar-weekdays {
+    padding: 7px 2px !important; font-size: 7px !important; letter-spacing: 0 !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .team-calendar-day {
+    min-width: 0 !important; min-height: 58px !important; padding: 3px !important; gap: 3px !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .team-calendar-day-number {
+    width: 20px !important; height: 20px !important; font-size: 9px !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .team-calendar-day-events > span {
+    padding: 1px 2px !important; font-size: 7px !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .team-calendar-legend {
+    flex-wrap: wrap !important; gap: 7px 10px !important; padding: 8px !important; font-size: 9px !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .availability-heading {
+    align-items: stretch !important; flex-direction: column !important; gap: 8px !important;
+    margin: 0 0 12px !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .availability-heading h1 {
+    font-size: clamp(21px, 6vw, 27px) !important; line-height: 1.15 !important; overflow-wrap: anywhere !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .availability-heading-actions {
+    justify-content: flex-start !important; flex-wrap: wrap !important; gap: 6px !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .availability-heading-actions button {
+    min-width: 0 !important; min-height: 38px !important; padding: 0 10px !important; font-size: 10px !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .availability-summary {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; gap: 7px !important; margin-bottom: 12px !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .availability-stat {
+    box-sizing: border-box !important; min-width: 0 !important; padding: 9px !important; gap: 7px !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .availability-stat-icon {
+    width: 28px !important; height: 28px !important; flex-basis: 28px !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .availability-stat strong { font-size: 17px !important; }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .availability-stat-context {
+    display: none !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .availability-section {
+    box-sizing: border-box !important; width: 100% !important; min-width: 0 !important; padding: 11px !important; margin-bottom: 12px !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .availability-section-heading {
+    align-items: flex-start !important; flex-wrap: wrap !important; gap: 6px !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .availability-section-heading h2 {
+    font-size: 17px !important; line-height: 1.25 !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .availability-editor-scroll {
+    max-width: 100% !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .availability-editor { min-width: 620px !important; }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .availability-person-days {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important; gap: 3px !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .availability-person-day {
+    min-width: 0 !important; padding: 4px 2px !important; overflow-wrap: anywhere !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .availability-hour-chips {
+    gap: 2px !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .availability-hour-chips span {
+    padding: 2px !important; font-size: 7px !important; white-space: normal !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .availability-shift-card {
+    grid-template-columns: minmax(0, 1fr) !important; gap: 8px !important; min-width: 0 !important;
+  }
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .availability-shift-actions {
+    justify-content: flex-start !important; flex-wrap: wrap !important;
+  }
+}
+@media (max-width: 390px) {
+  .workspace-screen > .workspace-frame.is-popup > .workspace-main .availability-summary {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
