@@ -5668,94 +5668,52 @@ body:has(.workspace-frame.is-popup),
 }
 
 
-/* Workspace navigation: uniform buttons, aligned icons and unclipped labels */
+/* Workspace tabs: compact, consistent sizing and clear active state */
 .workspace-screen > .workspace-topbar > .workspace-desktop-nav {
-  display: grid !important;
-  grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
-  align-items: stretch !important;
-  gap: 5px !important;
-  flex: 1 1 auto !important;
-  min-width: 0 !important;
+  display: grid !important; grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+  gap: 4px !important; align-items: stretch !important; flex: 1 1 auto !important; min-width: 0 !important;
 }
-.workspace-screen > .workspace-topbar > .workspace-desktop-nav > button,
-.workspace-screen > .workspace-bottom-nav .workspace-nav > button {
-  box-sizing: border-box !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  min-width: 0 !important;
-  max-width: none !important;
-  height: auto !important;
-  min-height: 56px !important;
-  padding: 5px 3px !important;
-  gap: 4px !important;
-  overflow: visible !important;
+.workspace-screen > .workspace-topbar > .workspace-desktop-nav > button {
+  box-sizing: border-box !important; min-width: 0 !important; min-height: 48px !important;
+  padding: 4px 2px !important; gap: 3px !important; display: flex !important; flex-direction: column !important;
+  align-items: center !important; justify-content: center !important; border-radius: 9px !important;
 }
-.workspace-screen > .workspace-topbar > .workspace-desktop-nav .workspace-nav-icon,
-.workspace-screen > .workspace-bottom-nav .workspace-nav-icon {
-  box-sizing: border-box !important;
-  flex: 0 0 24px !important;
-  width: 24px !important;
-  height: 24px !important;
-  display: grid !important;
-  place-items: center !important;
-  margin: 0 !important;
+.workspace-screen > .workspace-topbar > .workspace-desktop-nav .workspace-nav-icon {
+  width: 21px !important; height: 21px !important; flex: 0 0 21px !important; margin: 0 !important;
+  display: grid !important; place-items: center !important;
 }
-.workspace-screen > .workspace-topbar > .workspace-desktop-nav .workspace-nav-icon svg,
-.workspace-screen > .workspace-bottom-nav .workspace-nav-icon svg {
-  width: 18px !important;
-  height: 18px !important;
+.workspace-screen > .workspace-topbar > .workspace-desktop-nav .workspace-nav-icon svg { width: 17px !important; height: 17px !important; }
+.workspace-screen > .workspace-topbar > .workspace-desktop-nav .workspace-nav-label {
+  display: block !important; width: 100% !important; min-width: 0 !important; max-width: 100% !important;
+  margin: 0 !important; text-align: center !important; font-size: 9px !important; line-height: 1.1 !important;
+  white-space: normal !important; overflow-wrap: anywhere !important;
 }
-.workspace-screen > .workspace-topbar > .workspace-desktop-nav .workspace-nav-label,
-.workspace-screen > .workspace-bottom-nav .workspace-nav-label {
-  display: block !important;
-  width: 100% !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-  overflow: visible !important;
-  text-align: center !important;
-  white-space: normal !important;
-  overflow-wrap: anywhere !important;
-  word-break: normal !important;
-  line-height: 1.15 !important;
-  font-size: 10px !important;
-  -webkit-line-clamp: unset !important;
-  line-clamp: unset !important;
-}
-.workspace-screen > .workspace-topbar > .workspace-desktop-nav > button.is-active,
-.workspace-screen > .workspace-bottom-nav .workspace-nav > button.is-active {
-  align-items: center !important;
-}
+.workspace-screen > .workspace-topbar > .workspace-desktop-nav > button.is-active { box-shadow: inset 0 -2px var(--orange) !important; }
 @media (max-width: 900px) {
   .workspace-screen > .workspace-topbar > .workspace-desktop-nav { display: none !important; }
-  .workspace-screen > .workspace-bottom-nav .workspace-nav {
-    display: grid !important;
-    grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
-    align-items: stretch !important;
-    gap: 2px !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    overflow: visible !important;
+  .workspace-screen > nav.workspace-nav.workspace-bottom-nav {
+    display: grid !important; grid-template-columns: repeat(8, minmax(0, 1fr)) !important; gap: 1px !important;
+    align-items: stretch !important; width: 100% !important; min-width: 0 !important; overflow: visible !important;
   }
-  .workspace-screen > .workspace-bottom-nav .workspace-nav > button {
-    min-height: 58px !important;
-    padding: 4px 2px !important;
-    border-radius: 8px !important;
+  .workspace-screen > nav.workspace-nav.workspace-bottom-nav > button {
+    box-sizing: border-box !important; min-width: 0 !important; min-height: 54px !important;
+    padding: 3px 1px !important; gap: 2px !important; display: flex !important; flex-direction: column !important;
+    align-items: center !important; justify-content: center !important; border-radius: 7px !important;
   }
-  .workspace-screen > .workspace-bottom-nav .workspace-nav-label { font-size: clamp(7px, 2.1vw, 9px) !important; }
+  .workspace-screen > nav.workspace-nav.workspace-bottom-nav > button .workspace-nav-icon {
+    width: 21px !important; height: 21px !important; flex: 0 0 21px !important; margin: 0 !important;
+    display: grid !important; place-items: center !important;
+  }
+  .workspace-screen > nav.workspace-nav.workspace-bottom-nav > button .workspace-nav-icon svg { width: 17px !important; height: 17px !important; }
+  .workspace-screen > nav.workspace-nav.workspace-bottom-nav > button .workspace-nav-label {
+    display: block !important; width: 100% !important; min-width: 0 !important; max-width: 100% !important;
+    margin: 0 !important; text-align: center !important; font-size: clamp(6.8px, 1.85vw, 8.2px) !important;
+    line-height: 1.05 !important; white-space: normal !important; overflow-wrap: anywhere !important;
+  }
+  .workspace-screen > nav.workspace-nav.workspace-bottom-nav > button.is-active { box-shadow: inset 0 2px var(--orange) !important; }
 }
 @media (max-width: 380px) {
-  .workspace-screen > .workspace-bottom-nav .workspace-nav > button { min-height: 56px !important; padding: 3px 1px !important; gap: 3px !important; }
-  .workspace-screen > .workspace-bottom-nav .workspace-nav-label { font-size: 6.8px !important; letter-spacing: 0 !important; }
-  .workspace-screen > .workspace-bottom-nav .workspace-nav-icon { width: 21px !important; height: 21px !important; flex-basis: 21px !important; }
-  .workspace-screen > .workspace-bottom-nav .workspace-nav-icon svg { width: 16px !important; height: 16px !important; }
+  .workspace-screen > nav.workspace-nav.workspace-bottom-nav > button { min-height: 52px !important; padding: 2px 0 !important; }
+  .workspace-screen > nav.workspace-nav.workspace-bottom-nav > button .workspace-nav-icon { width: 19px !important; height: 19px !important; flex-basis: 19px !important; }
+  .workspace-screen > nav.workspace-nav.workspace-bottom-nav > button .workspace-nav-icon svg { width: 16px !important; height: 16px !important; }
 }
-
-/* Navigation alignment fix: bottom nav is itself .workspace-nav */
-.workspace-screen > nav.workspace-nav.workspace-bottom-nav { display:grid !important; grid-template-columns:repeat(8,minmax(0,1fr)) !important; align-items:stretch !important; gap:2px !important; width:100% !important; min-width:0 !important; overflow:visible !important; }
-.workspace-screen > nav.workspace-nav.workspace-bottom-nav > button { box-sizing:border-box !important; display:flex !important; flex-direction:column !important; align-items:center !important; justify-content:center !important; min-width:0 !important; min-height:56px !important; height:auto !important; padding:3px 1px !important; gap:3px !important; overflow:visible !important; }
-.workspace-screen > nav.workspace-nav.workspace-bottom-nav > button .workspace-nav-icon { flex:0 0 22px !important; width:22px !important; height:22px !important; display:grid !important; place-items:center !important; margin:0 !important; }
-.workspace-screen > nav.workspace-nav.workspace-bottom-nav > button .workspace-nav-icon svg { width:17px !important; height:17px !important; }
-.workspace-screen > nav.workspace-nav.workspace-bottom-nav > button .workspace-nav-label { display:block !important; width:100% !important; min-width:0 !important; max-width:100% !important; overflow:visible !important; text-align:center !important; white-space:normal !important; overflow-wrap:anywhere !important; line-height:1.1 !important; font-size:clamp(7px,1.9vw,9px) !important; }
-@media(max-width:380px){.workspace-screen > nav.workspace-nav.workspace-bottom-nav > button{min-height:54px !important;padding:2px 0 !important}.workspace-screen > nav.workspace-nav.workspace-bottom-nav > button .workspace-nav-label{font-size:6.6px !important}}
