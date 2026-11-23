@@ -1329,7 +1329,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           <span className="workspace-nav-icon"><Package aria-hidden="true" /></span><span className="workspace-nav-label">Inventário</span>
         </button>
         <button type="button" title="BSC Sustentável" aria-label="BSC Sustentável" className={tab === 'ecoceleris' ? 'is-active' : ''} onClick={() => navigateToTab('ecoceleris')} aria-current={tab === 'ecoceleris' ? 'page' : undefined}>
-          <span className="workspace-nav-icon"><Leaf aria-hidden="true" /></span><span className="workspace-nav-label">BSC Sustentável</span>
+          <span className="workspace-nav-icon"><Leaf aria-hidden="true" /></span><span className="workspace-nav-label">BSC Sust.</span>
         </button>
       </nav>
       <button type="button" className="workspace-files-floater" onClick={() => navigateToTab('files')} aria-label="Abrir Arquivos" title="Arquivos">
