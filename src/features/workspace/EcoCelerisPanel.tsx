@@ -11,7 +11,7 @@ const label=(k:string)=>kinds.find(x=>x[0]===k)?.[1]||k;
 const fmt=(n:number)=>new Intl.NumberFormat('pt-BR',{maximumFractionDigits:2}).format(Number(n||0));
 const fresh=(cycle:string)=>({log_type:'reuse',item_id:'',material_label:'',quantity:'1',unit:'unidade',hours:'1',cycle,task_reference:'',responsible_id:'',destination:'',notes:'',occurred_on:new Date().toISOString().slice(0,10)});
 export default function EcoCelerisPanel({client,userId}:Props){
- const [view,setView]=useState<'routine'|'indicators'>('routine'),[logs,setLogs]=useState<Log[]>([]),[items,setItems]=useState<Item[]>([]),[members,setMembers]=useState<Member[]>([]),[reviews,setReviews]=useState<Review[]>([]);
+ const [view,setView]=useState<'routine'|'indicators'>('routine'),[logs,setLogs]=useState<Log[]>([]),[items,setItems]=useState<Item[]>([]),[members,setMembers]=useState<Member[]>([]);
  const [cycle,setCycle]=useState('Ciclo atual'),[search,setSearch]=useState(''),[show,setShow]=useState(false),[form,setForm]=useState(fresh('Ciclo atual'));
  const [error,setError]=useState(''),[notice,setNotice]=useState(''),[saving,setSaving]=useState(false);
  async function refresh(){const [l,i,m]=await Promise.all([client.from('ecoceleris_logs').select('*').order('occurred_on',{ascending:false}).limit(200),client.from('inventory_items').select('id,name,code,unit,is_active').eq('is_active',true).order('name'),client.from('profiles').select('user_id,full_name').eq('status','active').order('full_name')]);const f=[l,i,m].find(x=>x.error);if(f?.error)throw f.error;setLogs((l.data||[]) as Log[]);setItems((i.data||[]) as Item[]);setMembers((m.data||[]) as Member[]);}
