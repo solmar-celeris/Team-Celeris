@@ -125,7 +125,7 @@ const workspaceTabs: { id: WorkspaceTab; label: string; icon: WorkspaceTabIcon }
   { id: 'files', label: 'Arquivos', icon: Folder },
   { id: 'manual', label: 'Normas', icon: BookOpen },
   { id: 'inventory', label: 'Inventário', icon: Package },
-  { id: 'ecoceleris', label: 'EcoCeleris', icon: Leaf },
+  { id: 'ecoceleris', label: 'BSC Sustentável', icon: Leaf },
 ];
 
 const defaultFilters: FilterState = {
@@ -1328,8 +1328,8 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
         <button type="button" title="Inventário" aria-label="Inventário" className={tab === 'inventory' ? 'is-active' : ''} onClick={() => navigateToTab('inventory')} aria-current={tab === 'inventory' ? 'page' : undefined}>
           <span className="workspace-nav-icon"><Package aria-hidden="true" /></span><span className="workspace-nav-label">Inventário</span>
         </button>
-        <button type="button" title="EcoCeleris" aria-label="EcoCeleris" className={tab === 'ecoceleris' ? 'is-active' : ''} onClick={() => navigateToTab('ecoceleris')} aria-current={tab === 'ecoceleris' ? 'page' : undefined}>
-          <span className="workspace-nav-icon"><Leaf aria-hidden="true" /></span><span className="workspace-nav-label">EcoCeleris</span>
+        <button type="button" title="BSC Sustentável" aria-label="BSC Sustentável" className={tab === 'ecoceleris' ? 'is-active' : ''} onClick={() => navigateToTab('ecoceleris')} aria-current={tab === 'ecoceleris' ? 'page' : undefined}>
+          <span className="workspace-nav-icon"><Leaf aria-hidden="true" /></span><span className="workspace-nav-label">BSC Sustentável</span>
         </button>
       </nav>
       <button type="button" className="workspace-files-floater" onClick={() => navigateToTab('files')} aria-label="Abrir Arquivos" title="Arquivos">
