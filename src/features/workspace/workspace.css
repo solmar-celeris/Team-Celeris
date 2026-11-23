@@ -1858,7 +1858,7 @@
   .workspace-topbar > .workspace-nav.is-area-channel {
     grid-area: navigation !important;
     display: grid !important;
-    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
     grid-auto-flow: row !important;
     width: 100% !important;
     min-width: 0 !important;
