@@ -188,7 +188,6 @@ export default function InventoryWorkspace({ client, userId, isAdmin }: Props) {
     { id: 'assets', label: 'Patrimônio', icon: MonitorIcon },
     { id: 'movements', label: 'Movimentações', icon: ArrowLeftRight },
     { id: 'registers', label: 'Cadastros', icon: ClipboardList },
-    { id: 'ecoceleris', label: 'EcoCeleris', icon: Package },
   ] as const;
 
   return <section className="inventory-workspace" aria-label="Gestão integrada de patrimônio e estoque">
