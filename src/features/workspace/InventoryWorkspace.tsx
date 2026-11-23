@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ArrowLeftRight, Boxes, CheckCircle2, ClipboardList, HardDrive, MapPin, Monitor, Package, Plus, RefreshCw, Search, ShieldCheck, Tag, X } from 'lucide-react';
 import './inventory-workspace.css';
-import EcoCelerisPanel from './EcoCelerisPanel';
 
 type Area = { id: string; name: string };
 type Category = { id: string; item_type: 'asset' | 'consumable'; name: string; description: string; is_active: boolean };
@@ -22,7 +21,7 @@ const assetStatusLabels: Record<string, string> = { available: 'Disponível', in
 const movementLabels: Record<string, string> = { entry: 'Entrada', exit: 'Saída', transfer: 'Transferência', return: 'Devolução', adjustment_in: 'Ajuste de entrada', adjustment_out: 'Ajuste de saída' };
 
 export default function InventoryWorkspace({ client, userId, isAdmin }: Props) {
-  const [section, setSection] = useState<'overview' | 'stock' | 'assets' | 'movements' | 'registers' | 'ecoceleris'>('overview');
+  const [section, setSection] = useState<'overview' | 'stock' | 'assets' | 'movements' | 'registers'>('overview');
   const [items, setItems] = useState<Item[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
@@ -203,7 +202,6 @@ export default function InventoryWorkspace({ client, userId, isAdmin }: Props) {
     {notice && <div className="inventory-message is-success" role="status">{notice}</div>}
     <nav className="inventory-tabs" aria-label="Seções do inventário">{tabs.map((tab) => { const Icon = tab.icon; return <button key={tab.id} type="button" className={section === tab.id ? 'is-active' : ''} onClick={() => { setSection(tab.id); setSearch(''); setError(''); setNotice(''); }}><Icon size={16} />{tab.label}</button>; })}</nav>
     {loading ? <div className="inventory-loading"><span /> Carregando os registros do Inventário…</div> : <>
-      {section === 'ecoceleris' && <EcoCelerisPanel client={client} userId={userId} isAdmin={isAdmin} />}
       {section === 'overview' && <div className="inventory-overview">
         <div className="inventory-stat-grid">
           <article><span>Itens cadastrados</span><strong>{items.filter((item) => item.is_active).length}</strong><small>Materiais e equipamentos</small></article>
