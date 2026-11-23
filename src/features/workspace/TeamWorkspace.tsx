@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useState, type DragEvent, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowLeftRight, Share2, BookOpen, CalendarDays, Check, ClipboardList, Filter, Folder, Package, GripVertical, Newspaper, Megaphone, MessageCircle, Moon, Sun, Trash2, X, Paperclip, ExternalLink, Video, Maximize2, Minimize2, type LucideProps, type LucideIcon } from 'lucide-react';
+import { ArrowLeftRight, Share2, BookOpen, CalendarDays, Check, ClipboardList, Filter, Folder, Package, Leaf, GripVertical, Newspaper, Megaphone, MessageCircle, Moon, Sun, Trash2, X, Paperclip, ExternalLink, Video, Maximize2, Minimize2, type LucideProps, type LucideIcon } from 'lucide-react';
 import {
   activityTypeLabels,
   activityFlowLabels,
@@ -41,6 +41,7 @@ import WeeklyActivityCard, { type WeeklyReportDraft } from './WeeklyActivityCard
 import PerformancePanel from '../dashboard/PerformancePanel';
 import { flushPendingWorkspacePushEvents, notifyActivityChange, notifyWorkspacePush } from '../../lib/notifications';
 import InventoryWorkspace from './InventoryWorkspace';
+import EcoCelerisPanel from './EcoCelerisPanel';
 import './workspace.css';
 
 type TeamWorkspaceProps = {
@@ -100,7 +101,7 @@ type ActivityFormState = {
 };
 type AttachmentSubmission = { files: File[]; driveName: string; driveUrl: string };
 type WeeklyDraft = WeeklyReportDraft;
-type WorkspaceTab = 'home' | 'activities' | 'agenda' | 'conversations' | 'membersChat' | 'files' | 'manual' | 'inventory';
+type WorkspaceTab = 'home' | 'activities' | 'agenda' | 'conversations' | 'membersChat' | 'files' | 'manual' | 'inventory' | 'ecoceleris';
 type AgendaSubtab = 'calendar' | 'availability' | 'meetings';
 type WorkspaceTabIcon = LucideIcon;
 type PushDeepLink =
@@ -124,6 +125,7 @@ const workspaceTabs: { id: WorkspaceTab; label: string; icon: WorkspaceTabIcon }
   { id: 'files', label: 'Arquivos', icon: Folder },
   { id: 'manual', label: 'Normas', icon: BookOpen },
   { id: 'inventory', label: 'Inventário', icon: Package },
+  { id: 'ecoceleris', label: 'EcoCeleris', icon: Leaf },
 ];
 
 const defaultFilters: FilterState = {
@@ -177,6 +179,7 @@ function workspaceRouteFromUrl(): { tab: WorkspaceTab; agendaSubtab: AgendaSubta
   else if (route === 'files') tab = 'files';
   else if (route === 'norms') tab = 'manual';
   else if (route === 'inventory') tab = 'inventory';
+  else if (route === 'ecoceleris') tab = 'ecoceleris';
   else if (route === 'chat') tab = 'membersChat';
   else tab = 'home';
   const agendaSubtab: AgendaSubtab = route === 'availability'
@@ -192,6 +195,7 @@ function workspaceRouteKey(tab: WorkspaceTab, agendaSubtab: AgendaSubtab): strin
   if (tab === 'conversations') return 'announcements';
   if (tab === 'files') return 'files';
   if (tab === 'inventory') return 'inventory';
+  if (tab === 'ecoceleris') return 'ecoceleris';
   return 'norms';
 }
 
@@ -1324,6 +1328,9 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
         <button type="button" title="Inventário" aria-label="Inventário" className={tab === 'inventory' ? 'is-active' : ''} onClick={() => navigateToTab('inventory')} aria-current={tab === 'inventory' ? 'page' : undefined}>
           <span className="workspace-nav-icon"><Package aria-hidden="true" /></span><span className="workspace-nav-label">Inventário</span>
         </button>
+        <button type="button" title="EcoCeleris" aria-label="EcoCeleris" className={tab === 'ecoceleris' ? 'is-active' : ''} onClick={() => navigateToTab('ecoceleris')} aria-current={tab === 'ecoceleris' ? 'page' : undefined}>
+          <span className="workspace-nav-icon"><Leaf aria-hidden="true" /></span><span className="workspace-nav-label">EcoCeleris</span>
+        </button>
       </nav>
       <button type="button" className="workspace-files-floater" onClick={() => navigateToTab('files')} aria-label="Abrir Arquivos" title="Arquivos">
         <Folder aria-hidden="true" />
@@ -1614,6 +1621,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
                     {tab === 'inventory' && (
             <InventoryWorkspace client={client} userId={userId} isAdmin={profile.role === 'admin'} />
           )}
+          {tab === 'ecoceleris' && <EcoCelerisPanel client={client} userId={userId} />}
           {tab === 'files' && (
             <SharedContentWorkspace client={client} mode="files" userId={userId} isAdmin={profile.role === 'admin'} areas={activeAreas} members={members} areaId={null} isGeneralChannel={true} channelId={activeChannel?.id ?? ''} />
           )}
