@@ -248,7 +248,7 @@ export default function ActivityDeliveriesPanel({ client, activity, userId, canU
                 {(attachments[delivery.id]?.length ?? 0) > 0 && (
                   <ul className="activity-delivery-files">
                     {attachments[delivery.id].map((attachment) => {
-                      const href = attachment.kind === 'drive_link' ? attachment.drive_url : attachmentUrls[attachment.id];
+                      const href = attachment.drive_url || (attachment.kind === 'drive_link' ? null : attachmentUrls[attachment.id]);
                       return <li key={attachment.id}>
                         {href ? <a href={href} target="_blank" rel="noopener noreferrer">{attachment.file_name}</a> : <span>{attachment.file_name}</span>}
                         <small>{attachment.content_type ?? 'Link'}</small>
