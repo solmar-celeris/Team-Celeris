@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useState, type ChangeEvent, type FormEvent, type SyntheticEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Activity } from './domain';
 import './activity-deliveries.css';
@@ -57,14 +57,18 @@ export default function ActivityDeliveriesPanel({ client, activity, userId, canU
   const [attachmentUrls, setAttachmentUrls] = useState<Record<string, string>>({});
   const [description, setDescription] = useState('');
   const [files, setFiles] = useState<File[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
-  useEffect(() => {
-    void loadDeliveries();
-  }, [activity.id]);
+  function handleToggle(event: SyntheticEvent<HTMLDetailsElement>) {
+    if (event.currentTarget.open && !loaded && !loading) {
+      setLoaded(true);
+      void loadDeliveries();
+    }
+  }
 
   async function loadDeliveries() {
     setLoading(true);
@@ -78,6 +82,7 @@ export default function ActivityDeliveriesPanel({ client, activity, userId, canU
 
     if (deliveryError) {
       setError('Não foi possível carregar as entregas. Confira se a atualização do banco foi aplicada.');
+      setLoaded(false);
       setLoading(false);
       return;
     }
@@ -100,6 +105,7 @@ export default function ActivityDeliveriesPanel({ client, activity, userId, canU
 
     if (attachmentError) {
       setError('As entregas foram carregadas, mas não foi possível consultar seus anexos.');
+      setLoaded(false);
       setLoading(false);
       return;
     }
@@ -205,7 +211,7 @@ export default function ActivityDeliveriesPanel({ client, activity, userId, canU
   }
 
   return (
-    <details className="activity-deliveries">
+    <details className="activity-deliveries" onToggle={handleToggle}>
       <summary>Entregas e histórico <span>{deliveries.length}</span></summary>
       <div className="activity-deliveries-content">
         {loading ? <p className="activity-deliveries-muted" role="status">Carregando entregas…</p> : deliveries.length === 0 ? (
