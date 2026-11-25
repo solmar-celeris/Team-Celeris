@@ -376,13 +376,7 @@ function buildMutation(form: ActivityFormState, members: ActivityMember[]): Acti
 function validateActivity(form: ActivityFormState): string | null {
   if (!form.area_id) return 'Selecione uma área.';
   if (!form.name.trim()) return 'Informe o nome da atividade.';
-  // Marcos podem ser registrados sem datas; o planejamento será preenchido depois.
-  if (form.activity_type === 'pontual' && !form.due_date) {
-    return 'Para uma atividade Pontual, preencha o prazo.';
-  }
-  if (form.activity_type === 'pontual' && !form.due_date) {
-    return 'Para uma atividade Pontual, preencha o prazo.';
-  }
+  // Datas e responsáveis podem ser definidos posteriormente durante o planejamento.
   if (form.activity_type === 'rotina' && !['Semanal', 'Quinzenal', 'Mensal'].includes(form.frequency)) {
     return 'Escolha uma frequência válida para a Rotina.';
   }
@@ -1878,8 +1872,8 @@ function ActivityDialog({
           <label><span>Data inicial</span>
             <input type="date" value={form.start_date} onChange={(event) => change('start_date', event.target.value)} />
           </label>
-          <label><span>Prazo{form.activity_type === 'pontual' && <b> obrigatório</b>}</span>
-            <input type="date" required={form.activity_type === 'pontual'} value={form.due_date} onChange={(event) => change('due_date', event.target.value)} />
+          <label><span>Prazo</span>
+            <input type="date" value={form.due_date} onChange={(event) => change('due_date', event.target.value)} />
           </label>
           <label><span>Responsável</span>
             <input maxLength={120} value={form.responsible_name} onChange={(event) => change('responsible_name', event.target.value)} placeholder="Nome ou A definir" />
