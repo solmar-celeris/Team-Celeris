@@ -9,7 +9,7 @@ type EventKind = 'meeting' | 'training' | 'dsb' | 'sepex' | 'technical_visit' | 
 type CalendarEvent = {
   id: string; title: string; event_scope: EventScope; event_kind: EventKind; event_date: string;
   start_time: string | null; end_time: string | null; location: string; description: string;
-  created_by: string; created_at: string;
+  created_by: string; created_at: string; source_activity_id: string | null;
 };
 type EventDraft = {
   title: string; event_scope: EventScope; event_kind: EventKind; event_date: string;
@@ -58,7 +58,7 @@ export default function TeamCalendar({ client, userId, isAdmin, initialDate, ini
   const loadEvents = useCallback(async () => {
     setLoading(true); setError('');
     const { data, error: loadError } = await client.from('calendar_events')
-      .select('id,title,event_scope,event_kind,event_date,start_time,end_time,location,description,created_by,created_at')
+      .select('id,title,event_scope,event_kind,event_date,start_time,end_time,location,description,created_by,created_at,source_activity_id')
       .gte('event_date', startDate).lte('event_date', endDate)
       .order('event_date', { ascending: true }).order('start_time', { ascending: true });
     if (loadError) setError(eventError(loadError));
@@ -163,7 +163,7 @@ export default function TeamCalendar({ client, userId, isAdmin, initialDate, ini
           <div className="team-calendar-legend"><span><i className="is-internal" /> Interno</span><span><i className="is-external" /> Externo</span></div>
         </div>
         <aside className="team-calendar-agenda"><div className="team-calendar-agenda-heading"><div><p className="workspace-kicker">CALENDÁRIO DO DIA</p><h3>{dateLabel(selectedDate)}</h3></div><button type="button" aria-label="Adicionar evento nesta data" onClick={openCreate}><Plus aria-hidden="true" /></button></div>
-          {loading ? <p className="team-calendar-empty">Carregando eventos…</p> : selectedEvents.length === 0 ? <p className="team-calendar-empty">Nenhum evento nesta data. Use “Adicionar evento” para incluir uma reunião, treinamento ou compromisso externo.</p> : <div className="team-calendar-event-list">{selectedEvents.map((event) => <article id={`calendar-event-${event.id}`} className={`team-calendar-event is-${event.event_scope}${initialEventId === event.id ? ' is-push-target' : ''}`} key={event.id}><div className="team-calendar-event-label"><span>{event.event_scope === 'internal' ? 'INTERNO' : 'EXTERNO'}</span><small>{kindLabel(event.event_kind)}</small></div><h4>{event.title}</h4>{(event.start_time || event.end_time) && <p><Clock3 aria-hidden="true" />{event.start_time?.slice(0, 5) ?? '—'}{event.end_time ? ` – ${event.end_time.slice(0, 5)}` : ''}</p>}{event.location && <p><MapPin aria-hidden="true" />{event.location}</p>}{event.description && <p className="team-calendar-event-description">{event.description}</p>}{(event.created_by === userId || isAdmin) && <div className="team-calendar-event-actions"><button type="button" onClick={() => openEdit(event)}>Editar</button><button type="button" onClick={() => void removeEvent(event)} disabled={removing === event.id}><Trash2 aria-hidden="true" />{removing === event.id ? 'Removendo…' : 'Remover'}</button></div>}</article>)}</div>}
+          {loading ? <p className="team-calendar-empty">Carregando eventos…</p> : selectedEvents.length === 0 ? <p className="team-calendar-empty">Nenhum evento nesta data. Use “Adicionar evento” para incluir uma reunião, treinamento ou compromisso externo.</p> : <div className="team-calendar-event-list">{selectedEvents.map((event) => <article id={`calendar-event-${event.id}`} className={`team-calendar-event is-${event.event_scope}${initialEventId === event.id ? ' is-push-target' : ''}`} key={event.id}><div className="team-calendar-event-label"><span>{event.event_scope === 'internal' ? 'INTERNO' : 'EXTERNO'}</span><small>{event.source_activity_id ? 'Marco' : kindLabel(event.event_kind)}</small></div><h4>{event.title}</h4>{(event.start_time || event.end_time) && <p><Clock3 aria-hidden="true" />{event.start_time?.slice(0, 5) ?? '—'}{event.end_time ? ` – ${event.end_time.slice(0, 5)}` : ''}</p>}{event.location && <p><MapPin aria-hidden="true" />{event.location}</p>}{event.description && <p className="team-calendar-event-description">{event.description}</p>}{!event.source_activity_id && (event.created_by === userId || isAdmin) && <div className="team-calendar-event-actions"><button type="button" onClick={() => openEdit(event)}>Editar</button><button type="button" onClick={() => void removeEvent(event)} disabled={removing === event.id}><Trash2 aria-hidden="true" />{removing === event.id ? 'Removendo…' : 'Remover'}</button></div>}</article>)}</div>}
         </aside>
       </div>
       {modal && <div className="team-calendar-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) setModal(false); }}><section className="team-calendar-modal" role="dialog" aria-modal="true" aria-labelledby="calendar-form-title"><header><div><p className="workspace-kicker">CALENDÁRIO DA EQUIPE</p><h3 id="calendar-form-title">{editing ? 'Editar evento' : 'Novo evento'}</h3></div><button type="button" aria-label="Fechar" onClick={() => setModal(false)} disabled={saving}><X aria-hidden="true" /></button></header>
