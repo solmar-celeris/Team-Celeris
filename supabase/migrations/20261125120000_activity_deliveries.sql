@@ -37,8 +37,12 @@ begin
 end
 $$;
 
-create index if not exists activity_attachments_delivery
-  on public.activity_attachments(delivery_id, created_at)
+create index if not exists activity_deliveries_actor_id
+  on public.activity_deliveries(actor_id) where actor_id is not null;
+create index if not exists activity_attachments_created_by
+  on public.activity_attachments(created_by);
+create index if not exists activity_attachments_delivery_activity
+  on public.activity_attachments(delivery_id, activity_id)
   where delivery_id is not null;
 
 create or replace function public.set_activity_delivery_actor_name()
@@ -99,6 +103,16 @@ with check (
 );
 
 revoke all on public.activity_deliveries from public, anon, authenticated;
+drop policy if exists activity_attachments_insert_editors on public.activity_attachments;
+create policy activity_attachments_insert_editors
+on public.activity_attachments
+for insert to authenticated
+with check (
+  public.is_active_member()
+  and created_by = (select auth.uid())
+  and public.can_edit_activity(activity_id)
+);
+
 grant select, insert on public.activity_deliveries to authenticated;
 grant select on public.activity_attachments to authenticated;
 grant insert, delete on public.activity_attachments to authenticated;
