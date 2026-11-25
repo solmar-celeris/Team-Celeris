@@ -94,7 +94,7 @@ on public.activity_deliveries
 for insert to authenticated
 with check (
   public.is_active_member()
-  and actor_id = auth.uid()
+  and actor_id = (select auth.uid())
   and public.can_edit_activity(activity_id)
 );
 
