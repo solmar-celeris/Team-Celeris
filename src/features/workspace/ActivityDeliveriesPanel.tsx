@@ -17,6 +17,8 @@ type Delivery = {
   actor_name: string;
   created_at: string;
   google_doc_url: string | null;
+  google_drive_status: 'pending' | 'synced' | 'error';
+  google_drive_error: string | null;
 };
 
 type DeliveryAttachment = {
@@ -60,6 +62,7 @@ export default function ActivityDeliveriesPanel({ client, activity, userId, canU
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [syncingDeliveryId, setSyncingDeliveryId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
@@ -75,7 +78,7 @@ export default function ActivityDeliveriesPanel({ client, activity, userId, canU
     setError('');
     const { data, error: deliveryError } = await client
       .from('activity_deliveries')
-      .select('id,activity_id,description,actor_name,created_at,google_doc_url')
+      .select('id,activity_id,description,actor_name,created_at,google_doc_url,google_drive_status,google_drive_error')
       .eq('activity_id', activity.id)
       .order('created_at', { ascending: false })
       .order('id', { ascending: false });
@@ -133,6 +136,22 @@ export default function ActivityDeliveriesPanel({ client, activity, userId, canU
     setAttachments(nextAttachments);
     setAttachmentUrls(nextUrls);
     setLoading(false);
+  }
+
+  async function syncDelivery(deliveryId: string) {
+    setSyncingDeliveryId(deliveryId);
+    setError('');
+    setNotice('');
+    const { error: syncError } = await client.functions.invoke('sync-activity-delivery-drive', {
+      body: { delivery_id: deliveryId },
+    });
+    if (syncError) {
+      setNotice('Entrega salva no histórico. A sincronização com o Google Drive falhou; tente novamente.');
+    } else {
+      setNotice('Entrega e arquivos sincronizados com a pasta do setor no Google Drive.');
+    }
+    await loadDeliveries();
+    setSyncingDeliveryId(null);
   }
 
   function handleFiles(event: ChangeEvent<HTMLInputElement>) {
@@ -195,7 +214,7 @@ export default function ActivityDeliveriesPanel({ client, activity, userId, canU
 
       setDescription('');
       setFiles([]);
-      setNotice('Entrega registrada no histórico do cartão.');
+      await syncDelivery(deliveryId);
       await loadDeliveries();
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : 'Erro inesperado.';
@@ -238,6 +257,12 @@ export default function ActivityDeliveriesPanel({ client, activity, userId, canU
                   </ul>
                 )}
                 {delivery.google_doc_url && <a className="activity-delivery-doc" href={delivery.google_doc_url} target="_blank" rel="noopener noreferrer">Abrir relatório no Google Docs</a>}
+                {!delivery.google_doc_url && canUpdate && (
+                  <button type="button" className="activity-delivery-retry" onClick={() => void syncDelivery(delivery.id)} disabled={syncingDeliveryId === delivery.id}>
+                    {syncingDeliveryId === delivery.id ? 'Sincronizando…' : 'Enviar para Google Drive'}
+                  </button>
+                )}
+                {delivery.google_drive_status === 'error' && <p className="activity-deliveries-error">Não sincronizado com o Drive. Você pode tentar novamente.</p>}
               </li>
             ))}
           </ol>
