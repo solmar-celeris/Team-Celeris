@@ -31,6 +31,7 @@ export type Activity = {
 export type ActivityAttachment = {
   id: string;
   activity_id: string;
+  delivery_id: string | null;
   kind: 'file' | 'drive_link';
   storage_path: string | null;
   content_type: string | null;
