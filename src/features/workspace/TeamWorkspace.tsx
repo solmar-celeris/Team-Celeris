@@ -38,7 +38,6 @@ import ManualFunctions from './ManualFunctions';
 import AvailabilityWorkspace from './AvailabilityWorkspace';
 import MeetingsWorkspace from './MeetingsWorkspace';
 import WeeklyActivityCard, { type WeeklyReportDraft } from './WeeklyActivityCard';
-import ActivityDeliveriesPanel from './ActivityDeliveriesPanel';
 import PerformancePanel from '../dashboard/PerformancePanel';
 import { flushPendingWorkspacePushEvents, notifyActivityChange, notifyWorkspacePush } from '../../lib/notifications';
 import InventoryWorkspace from './InventoryWorkspace';
@@ -377,7 +376,13 @@ function buildMutation(form: ActivityFormState, members: ActivityMember[]): Acti
 function validateActivity(form: ActivityFormState): string | null {
   if (!form.area_id) return 'Selecione uma área.';
   if (!form.name.trim()) return 'Informe o nome da atividade.';
-  // Datas e responsáveis podem ser definidos posteriormente durante o planejamento.
+  // Marcos podem ser registrados sem datas; o planejamento será preenchido depois.
+  if (form.activity_type === 'pontual' && !form.due_date) {
+    return 'Para uma atividade Pontual, preencha o prazo.';
+  }
+  if (form.activity_type === 'pontual' && !form.due_date) {
+    return 'Para uma atividade Pontual, preencha o prazo.';
+  }
   if (form.activity_type === 'rotina' && !['Semanal', 'Quinzenal', 'Mensal'].includes(form.frequency)) {
     return 'Escolha uma frequência válida para a Rotina.';
   }
@@ -637,7 +642,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
           .select('user_id,full_name,avatar_path,area_id,role,status')
           .eq('status', 'active')
           .order('full_name', { ascending: true }),
-        client.from('activity_attachments').select('id,activity_id,delivery_id,kind,storage_path,content_type,file_name,file_size,drive_url,created_at').order('created_at', { ascending: true }),
+        client.from('activity_attachments').select('id,activity_id,kind,storage_path,content_type,file_name,file_size,drive_url,created_at').order('created_at', { ascending: true }),
         client.from('activity_flow_wip_limits').select('area_id,flow_status,limit_count'),
       ]);
       const failure = activityResult.error ?? areaResult.error ?? profileResult.error ?? attachmentResult.error ?? wipResult.error;
@@ -891,7 +896,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
     const area = areasById.get(activity.area_id);
     const canFlow = mayUpdateActivity(activity);
     const canEdit = isAreaActive(activity.area_id) && canManageActivity(profile, activity.area_id);
-    const related = activityAttachments.filter((attachment) => attachment.activity_id === activity.id && !attachment.delivery_id);
+    const related = activityAttachments.filter((attachment) => attachment.activity_id === activity.id);
     const selectedTarget = flowTargetById[activity.id] ?? '';
     const isDragging = draggedActivityId === activity.id;
     return (
@@ -910,7 +915,6 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
         {activity.description && <p className="activity-board-card-description">{activity.description}</p>}
         <div className="activity-board-card-facts"><span>Responsável: {activity.responsible_name || 'A definir'}</span><span>Esforço: {activity.effort_points === null ? 'não estimado' : `${activity.effort_points} ponto(s)`}</span></div>
         {activity.flow_status === 'blocked' && <p className="activity-blocked-reason"><strong>Bloqueio:</strong> {activity.blocked_reason}</p>}
-        <ActivityDeliveriesPanel client={client} activity={activity} userId={userId} canUpdate={canFlow} />
         {related.length > 0 && <ul className="activity-attachments" aria-label="Anexos da atividade">{related.map((attachment) => <li key={attachment.id}>
           {attachment.kind === 'drive_link' && attachment.drive_url
             ? <a href={attachment.drive_url} target="_blank" rel="noopener noreferrer"><ExternalLink size={13} aria-hidden="true" />{attachment.file_name}<span className="sr-only"> (abre em nova aba; acesso depende das permissões do Google)</span></a>
@@ -1874,8 +1878,8 @@ function ActivityDialog({
           <label><span>Data inicial</span>
             <input type="date" value={form.start_date} onChange={(event) => change('start_date', event.target.value)} />
           </label>
-          <label><span>Prazo</span>
-            <input type="date" value={form.due_date} onChange={(event) => change('due_date', event.target.value)} />
+          <label><span>Prazo{form.activity_type === 'pontual' && <b> obrigatório</b>}</span>
+            <input type="date" required={form.activity_type === 'pontual'} value={form.due_date} onChange={(event) => change('due_date', event.target.value)} />
           </label>
           <label><span>Responsável</span>
             <input maxLength={120} value={form.responsible_name} onChange={(event) => change('responsible_name', event.target.value)} placeholder="Nome ou A definir" />
