@@ -1074,7 +1074,7 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
         const activityType = normalizedType as ActivityType;
         const startDate = String(item.start_date ?? '').trim() || null;
         const dueDate = String(item.due_date ?? '').trim() || null;
-        const isDate = (value: string | null) => !value || /^\\d{4}-\\d{2}-\\d{2}$/.test(value);
+        const isDate = (value: string | null) => !value || /^\d{4}-\d{2}-\d{2}$/.test(value);
         if (!isDate(startDate) || !isDate(dueDate)) throw new Error(`Atividade “${name}”: datas devem usar AAAA-MM-DD.`);
         if (startDate && dueDate && dueDate < startDate) throw new Error(`Atividade “${name}”: a data final antecede a inicial.`);
         const frequency = String(item.frequency ?? '').trim();
