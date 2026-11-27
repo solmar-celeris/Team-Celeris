@@ -5717,3 +5717,58 @@ body:has(.workspace-frame.is-popup),
   .workspace-screen > nav.workspace-nav.workspace-bottom-nav > button .workspace-nav-icon { width: 19px !important; height: 19px !important; flex-basis: 19px !important; }
   .workspace-screen > nav.workspace-nav.workspace-bottom-nav > button .workspace-nav-icon svg { width: 16px !important; height: 16px !important; }
 }
+
+
+/* Kanban mobile: mantém uma coluna por vez, sem comprimir as quatro etapas. */
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .workspace-screen .activity-board {
+    box-sizing: border-box !important;
+    display: grid !important;
+    grid-template-columns: none !important;
+    grid-auto-columns: minmax(0, 86vw) !important;
+    grid-auto-flow: column !important;
+    gap: 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 2px 12px 14px 2px !important;
+    margin: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x mandatory !important;
+    overscroll-behavior-x: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .workspace-screen .activity-board-column {
+    box-sizing: border-box !important;
+    width: 86vw !important;
+    min-width: 0 !important;
+    max-width: 86vw !important;
+    scroll-snap-align: start !important;
+  }
+
+  .workspace-screen .activity-board-column > header {
+    position: relative !important;
+    z-index: 1 !important;
+  }
+
+  .workspace-screen .activity-board-cards,
+  .workspace-screen .activity-board-card {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .workspace-screen .activity-board-card {
+    box-sizing: border-box !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .workspace-screen .activity-card-attachment-controls input,
+  .workspace-screen .activity-card-attachment-controls button {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 42px !important;
+  }
+}
