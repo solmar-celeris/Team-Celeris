@@ -1,4 +1,5 @@
 -- Importa as 43 atividades do cronograma SolMar Celeris 2027.
+-- Usa o gerador de códigos já existente e sincroniza marcos com o calendário.
 -- Reexecução segura: não reinsere atividades com o mesmo nome na mesma área.
 
 begin;
@@ -19,6 +20,10 @@ begin
   end if;
 end;
 $$;
+
+-- A migration roda sem sessão autenticada. A autoria dos eventos é definida
+-- a partir do administrador ativo; desabilita-se só o trigger que exige auth.uid().
+alter table public.calendar_events disable trigger calendar_events_set_actor;
 
 with payload as (
   select *
@@ -41,23 +46,13 @@ $activities$::jsonb) as x(
     effort_points smallint
   )
 ), resolved as (
-  select p.*, a.id as area_id, a.code_prefix
+  select p.*, a.id as area_id
   from payload p
   join public.areas a on a.name = p.area and a.is_active = true
   where not exists (
     select 1 from public.activities existing
     where existing.area_id = a.id and existing.name = p.name
   )
-), numbered as (
-  select r.*,
-    row_number() over (partition by r.area_id order by r.name) as row_number_in_area
-  from resolved r
-), current_codes as (
-  select a.id as area_id,
-    coalesce(max(nullif(substring(act.code from '([0-9]+)$'), '')::integer), 0) as max_number
-  from public.areas a
-  left join public.activities act on act.area_id = a.id
-  group by a.id
 ), admin_user as (
   select user_id
   from public.profiles
@@ -66,24 +61,24 @@ $activities$::jsonb) as x(
   limit 1
 )
 insert into public.activities (
-  code, area_id, name, description, activity_type, frequency,
+  area_id, name, description, activity_type, frequency,
   execution_condition, responsible_name, responsible_user_id,
   start_date, due_date, expected_deliverable, notes, created_by,
   flow_status, priority, effort_points
 )
 select
-  n.code_prefix || '-' || lpad((cc.max_number + n.row_number_in_area)::text, 2, '0'),
-  n.area_id, n.name, coalesce(n.description, ''),
-  n.activity_type::public.activity_type,
-  coalesce(n.frequency, ''), coalesce(n.execution_condition, ''),
-  coalesce(n.responsible_name, 'A definir'), n.responsible_user_id,
-  n.start_date, n.due_date, coalesce(n.expected_deliverable, ''),
-  coalesce(n.notes, ''), admin_user.user_id,
-  'backlog', coalesce(n.priority, 'medium'), n.effort_points
-from numbered n
-join current_codes cc on cc.area_id = n.area_id
+  r.area_id, r.name, coalesce(r.description, ''),
+  r.activity_type::public.activity_type,
+  coalesce(r.frequency, ''), coalesce(r.execution_condition, ''),
+  coalesce(r.responsible_name, 'A definir'), r.responsible_user_id,
+  r.start_date, r.due_date, coalesce(r.expected_deliverable, ''),
+  coalesce(r.notes, ''), admin_user.user_id,
+  'backlog', coalesce(r.priority, 'medium'), r.effort_points
+from resolved r
 cross join admin_user
-where n.activity_type in ('marco', 'pontual', 'rotina', 'condicional')
-  and (n.start_date is null or n.due_date is null or n.start_date <= n.due_date);
+where r.activity_type in ('marco', 'pontual', 'rotina', 'condicional')
+  and (r.start_date is null or r.due_date is null or r.start_date <= r.due_date);
+
+alter table public.calendar_events enable trigger calendar_events_set_actor;
 
 commit;
