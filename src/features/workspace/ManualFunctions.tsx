@@ -39,7 +39,7 @@ const roles: ManualRole[] = [
     deliverables: ['Objetivos, prioridades e decisões gerais registrados.', 'Cronograma integrado e acompanhamento consolidado de entregas, riscos e desvios.'],
   },
   {
-    area: 'Gestão de Pessoas — GP',
+    area: 'Gestão',
     group: 'direct',
     summary: 'Integração, desenvolvimento e continuidade dos membros, capacitação e relacionamento com patrocinadores e apoiadores.',
     responsibilities: [
@@ -47,7 +47,7 @@ const roles: ManualRole[] = [
       'Mapear competências, necessidades de capacitação e oportunidades de desenvolvimento.',
       'Manter a matriz de competências, registros de treinamento e histórico de participação.',
       'Prospectar empresas, instituições e organizações com potencial de patrocínio; realizar contatos iniciais, apresentar oportunidades de apoio e acompanhar relacionamentos.',
-      'Articular com Administrativo-Financeiro as condições, os valores e a formalização de recursos.',
+      'Articular com Financeiro as condições, os valores e a formalização de recursos.',
       'Trabalhar com Marketing na preparação de propostas, apresentações e contrapartidas de comunicação.',
       'Apoiar a transferência de conhecimento entre gerações da equipe.',
     ],
@@ -56,7 +56,7 @@ const roles: ManualRole[] = [
     deliverables: ['Matriz de competências e plano de capacitação.', 'Registros de contatos, prospecções e acompanhamentos de patrocinadores.', 'Registros de integração, participação e treinamento.'],
   },
   {
-    area: 'Administrativo-Financeiro',
+    area: 'Financeiro',
     group: 'direct',
     summary: 'Organização administrativa e controle responsável dos recursos financeiros, materiais e patrimoniais.',
     responsibilities: [
@@ -84,7 +84,7 @@ const roles: ManualRole[] = [
       'Desenvolver produtos, materiais institucionais e peças de divulgação.',
       'Gerenciar redes sociais, identidade visual e calendário de publicações.',
       'Planejar campanhas, ações promocionais, vendas e divulgação de produtos.',
-      'Preparar apresentações, propostas visuais e materiais de contrapartida para patrocinadores em conjunto com Gestão de Pessoas.',
+      'Preparar apresentações, propostas visuais e materiais de contrapartida para patrocinadores em conjunto com Gestão.',
       'Divulgar resultados técnicos, eventos, atividades e conquistas do projeto.',
       'Manter coerência visual e textual nos materiais públicos.',
     ],
@@ -96,7 +96,7 @@ const roles: ManualRole[] = [
         name: 'Produtos',
         responsibilities: [
           'Planejar e desenvolver produtos relacionados à identidade e às necessidades do projeto.',
-          'Levantar custos e possibilidades de produção e comercialização com apoio do Administrativo-Financeiro.',
+          'Levantar custos e possibilidades de produção e comercialização com apoio do Financeiro.',
           'Criar protótipos visuais, definir apresentação e acompanhar a qualidade.',
           'Manter registro dos produtos, estoque quando aplicável e resultados de vendas.',
         ],
@@ -122,7 +122,7 @@ const roles: ManualRole[] = [
       'Elaborar modelos tridimensionais, montagens e desenhos técnicos.',
       'Planejar fabricação, montagem, inspeção, manutenção e testes.',
       'Documentar alterações, falhas, medições e melhorias.',
-      'Trabalhar com Elétrica e Eletrônica para compatibilizar instalação, fixação, proteção e acesso aos componentes, incluindo sensores, módulos e dispositivos embarcados.',
+      'Trabalhar com Elétrica e Telemetria para compatibilizar instalação, fixação, proteção e acesso aos componentes, incluindo sensores, módulos e dispositivos embarcados.',
     ],
     tools: ['SolidWorks ou CAD equivalente; desenho técnico e modelagem 3D.', 'Ansys para análise estrutural e, conforme o objetivo, CFD.', 'Materiais, resistência dos materiais, hidrodinâmica, propulsão, transmissão e metrologia.', 'Impressora 3D para prototipagem, gabaritos, suportes e componentes auxiliares.', 'Prensa quando aplicável e somente após treinamento específico.'],
     training: ['SolidWorks: peças, montagens e desenhos técnicos.', 'Ansys Mechanical: geometria, malha, materiais, cargas e interpretação de tensões e deformações.', 'Ansys Fluent: fundamentos de CFD e escoamento ao redor do casco.', 'Impressão 3D: arquivos, fatiamento, materiais, tolerâncias, parâmetros e inspeção.', 'Operação segura da prensa, conforme equipamento e procedimento.', 'Metrologia, fabricação e validação experimental.'],
@@ -139,14 +139,14 @@ const roles: ManualRole[] = [
       'Definir cabeamento, conexões, dimensionamento de condutores, proteções e procedimentos de segurança elétrica.',
       'Realizar ensaios, inspeções, medições e testes de desempenho energético, incluindo diagnóstico de falhas elétricas.',
       'Avaliar consumo, autonomia e eficiência e documentar a manutenção.',
-      'Alinhar com Mecânica Naval a instalação dos componentes e com Eletrônica os pontos de medição, sinais e requisitos de monitoramento. Elétrica responde pela infraestrutura de energia e suas proteções; Eletrônica, pela instrumentação, aquisição e transmissão dos dados.',
+      'Alinhar com Mecânica Naval a instalação dos componentes e com Telemetria os pontos de medição, sinais e requisitos de monitoramento. Elétrica responde pela infraestrutura de energia e suas proteções; Telemetria, pela instrumentação, aquisição e transmissão dos dados.',
     ],
     tools: ['Planilhas de cálculo e documentação elétrica.', 'Instrumentos de medição e diagnóstico.', 'Circuitos elétricos, energia fotovoltaica, baterias LiFePO4, BMS, MPPT, acionamento de motores e proteção elétrica.', 'Ferramentas de desenho e simulação de circuitos, conforme a necessidade.'],
     training: ['Sistemas fotovoltaicos.', 'Baterias, BMS e MPPT.', 'Acionamento de motores, dimensionamento de condutores e proteção elétrica.', 'Segurança elétrica e procedimentos de medição.'],
     deliverables: ['Diagramas elétricos e memórias de cálculo.', 'Lista de componentes e especificações.', 'Registros de montagem, inspeção e testes energéticos.', 'Relatórios de autonomia, consumo e desempenho.'],
   },
   {
-    area: 'Eletrônica - ELT',
+    area: 'Telemetria',
     group: 'direct',
     summary: 'Circuitos, sensores, instrumentação, microcontroladores, sistemas embarcados, automação, controle e telemetria.',
     responsibilities: [
@@ -157,8 +157,8 @@ const roles: ManualRole[] = [
       'Realizar testes, calibração, inspeções e diagnóstico de falhas em sensores, instrumentos, circuitos, microcontroladores, sistemas embarcados, automação e telemetria, mantendo registros técnicos.',
       'Alinhar com Elétrica os sinais, pontos de medição, alimentação e limites de interface dos sistemas monitorados; com Mecânica Naval, compatibilizar instalação física, fixação, proteção e acesso aos sensores e dispositivos.',
     ],
-    tools: ['ESP32, Arduino IDE ou PlatformIO, Visual Studio Code e Git; componentes, módulos, instrumentos e ferramentas para desenvolvimento e prototipagem eletrônica.', 'Eletrônica analógica e digital, desenvolvimento e montagem de circuitos, leitura de sensores, instrumentação, programação de microcontroladores, sistemas embarcados e comunicação entre dispositivos.', 'Protocolos de comunicação, Wi-Fi/Bluetooth quando aplicável, aquisição e tratamento de dados, armazenamento e visualização de informações, interfaces de monitoramento, automação e sistemas de controle.'],
-    training: ['Programação de ESP32 e de outros microcontroladores e dispositivos utilizados no projeto.', 'Eletrônica aplicada, desenvolvimento, montagem e teste de circuitos, instrumentação, sistemas embarcados e integração de sensores.', 'Protocolos de comunicação, aquisição e processamento de dados, instrumentação, automação, lógica de controle e análise de dados.'],
+    tools: ['ESP32, Arduino IDE ou PlatformIO, Visual Studio Code e Git; componentes, módulos, instrumentos e ferramentas para desenvolvimento e prototipagem eletrônica.', 'Telemetria analógica e digital, desenvolvimento e montagem de circuitos, leitura de sensores, instrumentação, programação de microcontroladores, sistemas embarcados e comunicação entre dispositivos.', 'Protocolos de comunicação, Wi-Fi/Bluetooth quando aplicável, aquisição e tratamento de dados, armazenamento e visualização de informações, interfaces de monitoramento, automação e sistemas de controle.'],
+    training: ['Programação de ESP32 e de outros microcontroladores e dispositivos utilizados no projeto.', 'Telemetria aplicada, desenvolvimento, montagem e teste de circuitos, instrumentação, sistemas embarcados e integração de sensores.', 'Protocolos de comunicação, aquisição e processamento de dados, instrumentação, automação, lógica de controle e análise de dados.'],
     deliverables: ['Código-fonte, programação de dispositivos e lógicas de automação documentados.', 'Diagramas eletrônicos e de integração, listas de componentes, sensores, instrumentos e módulos e registros de configuração dos dispositivos.', 'Registros de montagem, calibração, inspeção, testes e diagnóstico de circuitos, sensores, sistemas embarcados e sistemas automatizados.', 'Sistemas de telemetria e monitoramento, interfaces e painéis de visualização, registros de dados e relatórios operacionais.'],
   },
 
@@ -211,20 +211,20 @@ const transversal = [
 ];
 
 const competencies: Competency[] = [
-  { skill: 'Gestão de pessoas e integração', area: 'Gestão de Pessoas', level: 'Básico', recommendation: 'FM2S: Fundamentos em Gestão de Pessoas; Sebrae: Gestão de Pessoas; YouTube: conteúdos de gestão de equipes e comunicação.' },
-  { skill: 'Prospecção de patrocinadores', area: 'Gestão de Pessoas', level: 'Básico', recommendation: 'Sebrae: atendimento, negociação e vendas; YouTube: prospecção comercial, elaboração de propostas e comunicação institucional.' },
-  { skill: 'Controle financeiro e orçamento', area: 'Administrativo-Financeiro', level: 'Básico', recommendation: 'Sebrae: Gestão Financeira e Como controlar o fluxo de caixa; Fundação Bradesco: cursos de Administração/Finanças; YouTube: Excel para controles financeiros.' },
-  { skill: 'Compras e gestão patrimonial', area: 'Administrativo-Financeiro', level: 'Básico', recommendation: 'FM2S: Fundamentos da Gestão Logística; Sebrae: gestão e controles; YouTube: compras, estoque e inventário.' },
+  { skill: 'Gestão de pessoas e integração', area: 'Gestão', level: 'Básico', recommendation: 'FM2S: Fundamentos em Gestão; Sebrae: Gestão; YouTube: conteúdos de gestão de equipes e comunicação.' },
+  { skill: 'Prospecção de patrocinadores', area: 'Gestão', level: 'Básico', recommendation: 'Sebrae: atendimento, negociação e vendas; YouTube: prospecção comercial, elaboração de propostas e comunicação institucional.' },
+  { skill: 'Controle financeiro e orçamento', area: 'Financeiro', level: 'Básico', recommendation: 'Sebrae: Gestão Financeira e Como controlar o fluxo de caixa; Fundação Bradesco: cursos de Administração/Finanças; YouTube: Excel para controles financeiros.' },
+  { skill: 'Compras e gestão patrimonial', area: 'Financeiro', level: 'Básico', recommendation: 'FM2S: Fundamentos da Gestão Logística; Sebrae: gestão e controles; YouTube: compras, estoque e inventário.' },
   { skill: 'Marketing digital e redes sociais', area: 'Marketing', level: 'Básico', recommendation: 'Sebrae: Marketing Digital e Redes Sociais; Sebrae: Faça suas redes bombarem com o Canva; YouTube: Curso em Vídeo e tutoriais de Canva.' },
   { skill: 'Desenvolvimento de produtos', area: 'Marketing — Produtos', level: 'Básico', recommendation: 'Sebrae: precificação e vendas; YouTube: desenvolvimento de produto, prototipagem, Canva e pesquisa de público.' },
   { skill: 'CAD e SolidWorks', area: 'Mecânica Naval', level: 'Básico', recommendation: 'YouTube: tutoriais de SolidWorks em português, modelagem de peças, montagens e desenhos técnicos; consultar também materiais oficiais da SOLIDWORKS.' },
   { skill: 'Ansys Mechanical', area: 'Mecânica Naval', level: 'Básico', recommendation: 'YouTube: aulas introdutórias de Ansys Workbench/Mechanical, malha, materiais e condições de contorno; materiais gratuitos da Ansys Learning.' },
   { skill: 'Ansys Fluent e CFD', area: 'Mecânica Naval', level: 'Básico', recommendation: 'O DOCX associa a esta linha a recomendação “Telemetria, eletrônica aplicada, automação, ESP32 e sensores”; mantida como consta na matriz, sem inferir outra recomendação.' },
-  { skill: 'Eletrônica', area: 'Elétrica', level: 'Básico', recommendation: 'YouTube: Mundo da Elétrica e aulas de dimensionamento fotovoltaico; consultar materiais técnicos gratuitos de fabricantes.', sourceNote: 'Linha preservada como registrada no DOCX (“Eletrônica | Elétrica | Básico”). A recomendação associada menciona dimensionamento fotovoltaico; a célula pode estar desalinhada no documento e não é interpretada aqui como competência técnica adicional.' },
-  { skill: 'Baterias, BMS e MPPT', area: 'Elétrica / Eletrônica', level: 'Básico', recommendation: 'YouTube: Mundo da Elétrica e canais de eletrônica/energia; buscar aulas sobre LiFePO4, BMS, MPPT e dimensionamento.' },
+  { skill: 'Telemetria', area: 'Elétrica', level: 'Básico', recommendation: 'YouTube: Mundo da Elétrica e aulas de dimensionamento fotovoltaico; consultar materiais técnicos gratuitos de fabricantes.', sourceNote: 'Linha preservada como registrada no DOCX (“Telemetria | Elétrica | Básico”). A recomendação associada menciona dimensionamento fotovoltaico; a célula pode estar desalinhada no documento e não é interpretada aqui como competência técnica adicional.' },
+  { skill: 'Baterias, BMS e MPPT', area: 'Elétrica / Telemetria', level: 'Básico', recommendation: 'YouTube: Mundo da Elétrica e canais de eletrônica/energia; buscar aulas sobre LiFePO4, BMS, MPPT e dimensionamento.' },
   { skill: 'Dimensionamento e segurança elétrica', area: 'Elétrica', level: 'Conforme atividade', recommendation: 'YouTube: Mundo da Elétrica; cursos e materiais gratuitos de segurança elétrica. Atividades práticas exigem capacitação e autorização adequadas.' },
-  { skill: 'Telemetria, eletrônica aplicada, automação, ESP32 e sensores', area: 'Eletrônica - ELT', level: 'Básico', recommendation: 'YouTube: aulas de ESP32/Arduino, eletrônica básica e automação; documentação e exemplos oficiais do Arduino e Espressif. Buscar conteúdos introdutórios de circuitos, sensores, acionamentos e lógica de controle.' },
-  { skill: 'Git e organização de código', area: 'Eletrônica - ELT', level: 'Básico', recommendation: 'Curso em Vídeo: curso de Git e GitHub; YouTube: versionamento, branches e colaboração com GitHub.' },
+  { skill: 'Telemetria, eletrônica aplicada, automação, ESP32 e sensores', area: 'Telemetria', level: 'Básico', recommendation: 'YouTube: aulas de ESP32/Arduino, eletrônica básica e automação; documentação e exemplos oficiais do Arduino e Espressif. Buscar conteúdos introdutórios de circuitos, sensores, acionamentos e lógica de controle.' },
+  { skill: 'Git e organização de código', area: 'Telemetria', level: 'Básico', recommendation: 'Curso em Vídeo: curso de Git e GitHub; YouTube: versionamento, branches e colaboração com GitHub.' },
   { skill: 'Impressão 3D', area: 'Mecânica Naval', level: 'Básico', recommendation: 'YouTube: aulas de modelagem 3D, fatiamento e calibração; tutoriais gratuitos do fabricante da impressora e do fatiador utilizado.' },
   { skill: 'Operação de prensa', area: 'Integrantes autorizados', level: 'Treinamento específico obrigatório', recommendation: 'Priorizar manual do fabricante, treinamento presencial e procedimento interno. Vídeos são apenas material complementar, nunca substituem autorização e treinamento prático.' },
   { skill: 'Documentação técnica', area: 'Todas as áreas', level: 'Básico', recommendation: 'FM2S: Introdução ao Lean e gestão da qualidade; YouTube: desenho técnico, elaboração de relatórios e organização de documentação.' },
@@ -241,12 +241,12 @@ const indicators = [
 ];
 
 const interfaces = [
-  { area: 'Gestão de Pessoas', detail: 'Integração, capacitação e desenvolvimento dos membros; articulação de patrocínios com Administrativo-Financeiro e Marketing.' },
-  { area: 'Administrativo-Financeiro', detail: 'Apoio às áreas com orçamento, compras, cotações, patrimônio, documentos e formalização de recursos.' },
-  { area: 'Marketing', detail: 'Divulgação de atividades e resultados; produtos e materiais; contrapartidas em conjunto com Gestão de Pessoas.' },
-  { area: 'Mecânica Naval', detail: 'Integração da estrutura, componentes, fabricação e testes com Elétrica e Eletrônica.' },
-  { area: 'Elétrica', detail: 'Integração de geração, armazenamento, distribuição, alimentação e acionamento com Mecânica Naval e Eletrônica; alinhamento dos pontos de medição e requisitos de energia.' },
-  { area: 'Eletrônica - ELT', detail: 'Integração de circuitos, sensores, instrumentação, sistemas embarcados, automação e telemetria com Elétrica e Mecânica Naval; integração de informações e ferramentas digitais conforme a necessidade do projeto.' },
+  { area: 'Gestão', detail: 'Integração, capacitação e desenvolvimento dos membros; articulação de patrocínios com Financeiro e Marketing.' },
+  { area: 'Financeiro', detail: 'Apoio às áreas com orçamento, compras, cotações, patrimônio, documentos e formalização de recursos.' },
+  { area: 'Marketing', detail: 'Divulgação de atividades e resultados; produtos e materiais; contrapartidas em conjunto com Gestão.' },
+  { area: 'Mecânica Naval', detail: 'Integração da estrutura, componentes, fabricação e testes com Elétrica e Telemetria.' },
+  { area: 'Elétrica', detail: 'Integração de geração, armazenamento, distribuição, alimentação e acionamento com Mecânica Naval e Telemetria; alinhamento dos pontos de medição e requisitos de energia.' },
+  { area: 'Telemetria', detail: 'Integração de circuitos, sensores, instrumentação, sistemas embarcados, automação e telemetria com Elétrica e Mecânica Naval; integração de informações e ferramentas digitais conforme a necessidade do projeto.' },
 ];
 
 const guidelines = [
@@ -292,7 +292,7 @@ export default function ManualFunctions({ areaFilter }: { areaFilter?: string } 
       {!areaFilter && <section className="manual-org-intro" aria-labelledby="manual-org-title">
         <p className="workspace-kicker">ESTRUTURA ORGANIZACIONAL · MANUAL REVISADO</p>
         <h2 id="manual-org-title">Coordenação Geral e seis setores.</h2>
-        <p>A Coordenação Geral integra as áreas, define prioridades e acompanha o projeto, sem exclusividade docente ou atribuição automática de execução. Os seis setores são Gestão de Pessoas, Administrativo-Financeiro, Marketing, Mecânica Naval, Elétrica e Eletrônica - ELT. Produtos e Redes Sociais são frentes internas de Marketing.</p>
+        <p>A Coordenação Geral integra as áreas, define prioridades e acompanha o projeto, sem exclusividade docente ou atribuição automática de execução. Os seis setores são Gestão, Financeiro, Marketing, Mecânica Naval, Elétrica e Telemetria. Produtos e Redes Sociais são frentes internas de Marketing.</p>
         <div className="manual-org-area-list">
           <span>{roles.find((role) => role.group === 'coordination')?.area}</span>
           {directRoles.map((role) => (
