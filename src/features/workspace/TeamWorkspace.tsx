@@ -1,6 +1,6 @@
-import { Fragment, useCallback, useEffect, useMemo, useState, type DragEvent, type FormEvent } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ArrowLeftRight, Share2, BookOpen, CalendarDays, Check, ClipboardList, Filter, Folder, Package, Leaf, GripVertical, Newspaper, Megaphone, MessageCircle, Moon, Sun, Trash2, X, Paperclip, ExternalLink, Video, Maximize2, Minimize2, type LucideProps, type LucideIcon } from 'lucide-react';
+import { ArrowLeftRight, Share2, BookOpen, CalendarDays, Check, ClipboardList, Filter, Folder, Package, Leaf, GripVertical, Newspaper, Megaphone, MessageCircle, Moon, Sun, Trash2, X, Paperclip, ExternalLink, Video, Maximize2, Minimize2, FileUp, type LucideProps, type LucideIcon } from 'lucide-react';
 import {
   activityTypeLabels,
   activityFlowLabels,
@@ -466,6 +466,8 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [savingActivity, setSavingActivity] = useState(false);
+  const activityImportInput = useRef<HTMLInputElement>(null);
+  const [importingActivities, setImportingActivities] = useState(false);
   const [removingActivityId, setRemovingActivityId] = useState<string | null>(null);
   const [confirmRemoveActivityId, setConfirmRemoveActivityId] = useState<string | null>(null);
   const [savingWeeklyId, setSavingWeeklyId] = useState<string | null>(null);
@@ -1038,6 +1040,84 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
     } finally { setSavingActivity(false); }
   }
 
+  async function importActivitiesFile(file: File | undefined) {
+    if (!file) return;
+    if (profile.role !== 'admin' || profile.status !== 'active') {
+      setFeedback('Somente administradores ativos podem importar atividades.');
+      return;
+    }
+    setImportingActivities(true);
+    setFeedback('');
+    try {
+      const parsed: unknown = JSON.parse(await file.text());
+      if (!Array.isArray(parsed) || parsed.length === 0) {
+        throw new Error('O arquivo precisa conter uma lista JSON de atividades.');
+      }
+      if (parsed.length > 250) throw new Error('Importe no máximo 250 atividades por arquivo.');
+      const areaByName = new Map(areas.map((area) => [area.name.trim().toLocaleLowerCase('pt-BR'), area.id]));
+      const allowedTypes: ActivityType[] = ['marco', 'pontual', 'rotina', 'condicional'];
+      const rows = parsed.map((entry, index) => {
+        if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+          throw new Error(`Atividade ${index + 1}: registro inválido.`);
+        }
+        const item = entry as Record<string, unknown>;
+        const areaName = String(item.area ?? item.area_name ?? '').trim();
+        const areaId = areaByName.get(areaName.toLocaleLowerCase('pt-BR'));
+        if (!areaId) throw new Error(`Atividade ${index + 1}: setor “${areaName || 'não informado'}” não encontrado.`);
+        const name = String(item.name ?? '').trim();
+        if (!name) throw new Error(`Atividade ${index + 1}: nome obrigatório.`);
+        const rawType = String(item.activity_type ?? item.type ?? '').trim().toLocaleLowerCase('pt-BR');
+        const normalizedType = rawType === 'projeto' ? 'pontual' : rawType;
+        if (!allowedTypes.includes(normalizedType as ActivityType)) {
+          throw new Error(`Atividade “${name}”: tipo inválido. Use Marco, Pontual, Rotina ou Condicional.`);
+        }
+        const activityType = normalizedType as ActivityType;
+        const startDate = String(item.start_date ?? '').trim() || null;
+        const dueDate = String(item.due_date ?? '').trim() || null;
+        const isDate = (value: string | null) => !value || /^\\d{4}-\\d{2}-\\d{2}$/.test(value);
+        if (!isDate(startDate) || !isDate(dueDate)) throw new Error(`Atividade “${name}”: datas devem usar AAAA-MM-DD.`);
+        if (startDate && dueDate && dueDate < startDate) throw new Error(`Atividade “${name}”: a data final antecede a inicial.`);
+        const frequency = String(item.frequency ?? '').trim();
+        const condition = String(item.execution_condition ?? '').trim();
+        if (activityType === 'marco' && (!startDate || !dueDate)) throw new Error(`Atividade “${name}”: Marco exige data inicial e final.`);
+        if (activityType === 'pontual' && !dueDate) throw new Error(`Atividade “${name}”: Pontual exige data final.`);
+        if (activityType === 'rotina' && !['Semanal', 'Quinzenal', 'Mensal'].includes(frequency)) throw new Error(`Atividade “${name}”: Rotina exige frequência Semanal, Quinzenal ou Mensal.`);
+        if (activityType === 'condicional' && !condition) throw new Error(`Atividade “${name}”: Condicional exige uma condição de execução.`);
+        const priority = String(item.priority ?? 'medium');
+        if (!['low', 'medium', 'high', 'urgent'].includes(priority)) throw new Error(`Atividade “${name}”: prioridade inválida.`);
+        const effort = item.effort_points === null || item.effort_points === undefined || item.effort_points === '' ? null : Number(item.effort_points);
+        if (effort !== null && (!Number.isInteger(effort) || effort < 0 || effort > 100)) throw new Error(`Atividade “${name}”: esforço deve ser um inteiro entre 0 e 100.`);
+        return {
+          area_id: areaId,
+          name,
+          description: String(item.description ?? ''),
+          activity_type: activityType,
+          frequency,
+          execution_condition: condition,
+          responsible_name: String(item.responsible_name ?? 'A definir'),
+          responsible_user_id: null,
+          start_date: startDate,
+          due_date: dueDate,
+          expected_deliverable: String(item.expected_deliverable ?? ''),
+          notes: String(item.notes ?? ''),
+          priority,
+          effort_points: effort,
+          flow_status: 'backlog',
+          blocked_reason: '',
+        };
+      });
+      const { data, error } = await client.from('activities').insert(rows).select('id');
+      if (error) throw error;
+      setFeedback(`${data?.length ?? rows.length} atividades importadas com sua sessão autenticada. Todas foram adicionadas ao Backlog.`);
+      await loadData(true);
+    } catch (error) {
+      setFeedback(`Importação não concluída: ${errorText(error)}`);
+    } finally {
+      setImportingActivities(false);
+      if (activityImportInput.current) activityImportInput.current.value = '';
+    }
+  }
+
   async function uploadActivityFiles(activity: Activity, files: File[]) {
     if (!mayUpdateActivity(activity)) return;
     const unsupported = files.find((file) => !ACTIVITY_FILE_TYPES[file.type.toLowerCase()] || file.size <= 0 || file.size > 15 * 1024 * 1024);
@@ -1361,9 +1441,21 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
                 {refreshing ? 'Atualizando…' : '↻ Atualizar'}
               </button>}
               {tab === 'activities' && profile.role === 'admin' && (
-                <button className="workspace-add-button" type="button" onClick={() => { setDialogError(''); setDialogActivity(null); }}>
-                  <span aria-hidden="true">+</span> Nova atividade
-                </button>
+                <>
+                  <input
+                    ref={activityImportInput}
+                    type="file"
+                    accept="application/json,.json"
+                    hidden
+                    onChange={(event) => void importActivitiesFile(event.currentTarget.files?.[0])}
+                  />
+                  <button className="workspace-refresh" type="button" onClick={() => activityImportInput.current?.click()} disabled={importingActivities || loading}>
+                    <FileUp size={15} aria-hidden="true" /> {importingActivities ? 'Importando…' : 'Importar atividades'}
+                  </button>
+                  <button className="workspace-add-button" type="button" onClick={() => { setDialogError(''); setDialogActivity(null); }}>
+                    <span aria-hidden="true">+</span> Nova atividade
+                  </button>
+                </>
               )}
             </div>
           </div>
