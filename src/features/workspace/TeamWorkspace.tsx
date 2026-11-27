@@ -1449,8 +1449,8 @@ export default function TeamWorkspace({ client, userId, profile, theme, onThemeC
                     hidden
                     onChange={(event) => void importActivitiesFile(event.currentTarget.files?.[0])}
                   />
-                  <button className="workspace-refresh" type="button" onClick={() => activityImportInput.current?.click()} disabled={importingActivities || loading}>
-                    <FileUp size={15} aria-hidden="true" /> {importingActivities ? 'Importando…' : 'Importar atividades'}
+                  <button className="workspace-refresh workspace-import-button" type="button" title="Importar o arquivo JSON com as atividades de 2027" aria-label="Importar JSON 2027" onClick={() => activityImportInput.current?.click()} disabled={importingActivities || loading}>
+                    <FileUp size={15} aria-hidden="true" /> {importingActivities ? 'Importando 2027…' : 'Importar JSON 2027'}
                   </button>
                   <button className="workspace-add-button" type="button" onClick={() => { setDialogError(''); setDialogActivity(null); }}>
                     <span aria-hidden="true">+</span> Nova atividade
